@@ -43,10 +43,11 @@ public:
 			texCoords.topLeft = { tileLeftCorner, tileTopCorner };
 			texCoords.topRight = { tileRightCorner, tileTopCorner };
 		} else {
-			texCoords.bottomLeft = { tileLeftCorner, 1.0 - tileTopCorner };
-			texCoords.bottomRight = { tileRightCorner, 1.0 - tileTopCorner };
-			texCoords.topLeft = { tileLeftCorner, 1.0 - tileBottomCorner };
-			texCoords.topRight = { tileRightCorner, 1.0 - tileBottomCorner };
+			const double bias = 0.000001;
+			texCoords.bottomLeft = { tileLeftCorner + bias, 1.0 - tileTopCorner + bias };
+			texCoords.bottomRight = { tileRightCorner - bias, 1.0 - tileTopCorner + bias };
+			texCoords.topLeft = { tileLeftCorner + bias, 1.0 - tileBottomCorner - bias };
+			texCoords.topRight = { tileRightCorner - bias, 1.0 - tileBottomCorner - bias };
 		}
 
 		return texCoords;

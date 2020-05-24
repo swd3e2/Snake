@@ -99,6 +99,7 @@
     <ClInclude Include="src\FileSystem\Platform\WindowFileLoader.h" />
     <ClInclude Include="src\Game\Level.h" />
     <ClInclude Include="src\Game\LevelBuilder.h" />
+    <ClInclude Include="src\Game\Loader\LevelSaver.h" />
     <ClInclude Include="src\Game\RawLevel.h" />
     <ClInclude Include="src\Game\LevelRenderer.h" />
     <ClInclude Include="src\Game\Loader\LevelLoader.h" />
