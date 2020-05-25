@@ -18,7 +18,7 @@ public:
 
 		for (int y = 0; y < rawLevel->map.size(); y++) {
 			for (int x = 0; x < rawLevel->map[y].size(); x++) {
-				TileTexCoords texCoords = tilemap->getTexCoords(rawLevel->map[y][x]);
+				TileTexCoords texCoords = tilemap->getTexCoords(rawLevel->map[y][x].tileIndex, rawLevel->map[y][x].flipX);
 
 				const int leftBottomIndex = vertices.size();
 				vertices.push_back(vertex(x,	  -y,		0.0f, 1.0f, texCoords.bottomLeft.x, texCoords.bottomLeft.y));
@@ -44,6 +44,7 @@ public:
 
 		level->vertexBuffer = std::make_shared<VertexBuffer>(vertices.size(), sizeof(vertex), vertices.data());
 		level->indexBuffer = std::make_shared<IndexBuffer>(indices.size(), indices.data());
+		level->texture = tilemap->texture;
 
 		return level;
 	}

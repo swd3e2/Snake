@@ -26,10 +26,10 @@ public:
 		double tileWidthMaxRelative = (1.0f / tileWidth) * (tile.x + 1);
 		double tileHeightMaxRelative = (1.0f / tileHeight) * (tile.y + 1);
 
-		data.push_back(vertex( 1.0f,  1.0f, 0.0f, 1.0f, tileWidthMaxRelative, tileHeightMaxRelative));
-		data.push_back(vertex( 1.0f, -1.0f, 0.0f, 1.0f, tileWidthMaxRelative, tileHeightMinRelative));
-		data.push_back(vertex(-1.0f, -1.0f, 0.0f, 1.0f, tileWidthMinRelative, tileHeightMinRelative));
-		data.push_back(vertex(-1.0f,  1.0f, 0.0f, 1.0f, tileWidthMinRelative, tileHeightMaxRelative));
+		data.push_back(vertex(1.0f, 1.0f, 0.0f, 1.0f, tileWidthMaxRelative, tileHeightMaxRelative));
+		data.push_back(vertex(1.0f, 0.0f, 0.0f, 1.0f, tileWidthMaxRelative, tileHeightMinRelative));
+		data.push_back(vertex(0.0f, 0.0f, 0.0f, 1.0f, tileWidthMinRelative, tileHeightMinRelative));
+		data.push_back(vertex(0.0f, 1.0f, 0.0f, 1.0f, tileWidthMinRelative, tileHeightMaxRelative));
 
 		vertexBuffer = std::make_shared<VertexBuffer>(4, sizeof(vertex), data.data());
 

@@ -2,13 +2,16 @@
 
 class InputManager {
 private:
-	bool keyboardKeys[256];
+	bool keyboardKeys[349];
 	bool mouseButton[5];
+
+	double mousePositionX;
+	double mousePositionY;
 
 	static InputManager* _instance;
 private:
 	InputManager() {
-		for (int i = 0; i < 256; i++) {
+		for (int i = 0; i < 348; i++) {
 			keyboardKeys[i] = false;
 		}
 		for (int i = 0; i < 5; i++) {
@@ -35,5 +38,10 @@ public:
 
 	void setKeyPressed(int keyCode, bool state) {
 		keyboardKeys[keyCode] = state;
+	}
+
+	void setCursorPosition(double x, double y) {
+		mousePositionX = x;
+		mousePositionX = y;
 	}
 };

@@ -60,7 +60,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Snake\vendor\entt;$(SolutionDir)Snake\vendor;$(SolutionDir)Snake\vendor\lua;$(SolutionDir)Snake\vendor\stb-master;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Snake\vendor\entt;$(SolutionDir)Snake\vendor;$(SolutionDir)Snake\vendor\lua;$(SolutionDir)Snake\vendor\stb-master;$(SolutionDir)Snake\vendor\json-develop\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -77,7 +77,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Snake\vendor\entt;$(SolutionDir)Snake\vendor;$(SolutionDir)Snake\vendor\lua;$(SolutionDir)Snake\vendor\stb-master;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Snake\vendor\entt;$(SolutionDir)Snake\vendor;$(SolutionDir)Snake\vendor\lua;$(SolutionDir)Snake\vendor\stb-master;$(SolutionDir)Snake\vendor\json-develop\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -90,13 +90,18 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\Input\InputManager.cpp" />
+    <ClCompile Include="src\Interface\imgui\imgui.cpp" />
+    <ClCompile Include="src\Interface\imgui\imgui_demo.cpp" />
+    <ClCompile Include="src\Interface\imgui\imgui_draw.cpp" />
+    <ClCompile Include="src\Interface\imgui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="src\Interface\imgui\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="src\Interface\imgui\imgui_widgets.cpp" />
     <ClCompile Include="src\Main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Application.h" />
     <ClInclude Include="src\Components.h" />
-    <ClInclude Include="src\FileSystem\FileLoader.h" />
-    <ClInclude Include="src\FileSystem\Platform\WindowFileLoader.h" />
+    <ClInclude Include="src\FileSystem\File.h" />
     <ClInclude Include="src\Game\Level.h" />
     <ClInclude Include="src\Game\LevelBuilder.h" />
     <ClInclude Include="src\Game\Loader\LevelSaver.h" />
@@ -106,6 +111,15 @@
     <ClInclude Include="src\Game\MenuRenderer.h" />
     <ClInclude Include="src\Graphics\2DRenderer.h" />
     <ClInclude Include="src\Graphics\IndexBuffer.h" />
+    <ClInclude Include="src\Interface\imgui\imconfig.h" />
+    <ClInclude Include="src\Interface\imgui\imgui.h" />
+    <ClInclude Include="src\Interface\imgui\imgui_impl_glfw.h" />
+    <ClInclude Include="src\Interface\imgui\imgui_impl_opengl3.h" />
+    <ClInclude Include="src\Interface\imgui\imgui_internal.h" />
+    <ClInclude Include="src\Interface\imgui\imstb_rectpack.h" />
+    <ClInclude Include="src\Interface\imgui\imstb_textedit.h" />
+    <ClInclude Include="src\Interface\imgui\imstb_truetype.h" />
+    <ClInclude Include="src\Interface\MainInterface.h" />
     <ClInclude Include="src\Quad.h" />
     <ClInclude Include="src\Registry.h" />
     <ClInclude Include="src\RenderSystem.h" />

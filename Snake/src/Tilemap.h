@@ -13,8 +13,9 @@ struct TileTexCoords {
 };
 
 class Tilemap {
-private:
+public:
 	std::shared_ptr<Texture> texture;
+private:
 	glm::vec2 tileSize;
 	int tilesInRow;
 	int tilesInColumn;
@@ -26,24 +27,26 @@ public:
 		tilesInColumn = texture->getHeight() / tileSize.y;
 	}
 
-	TileTexCoords getTexCoords(int val) {
+	TileTexCoords getTexCoords(int val, bool flipX = false) {
 		TileTexCoords texCoords;
 
 		int tileX = val % tilesInRow;
 		int tileY = val / tilesInRow;
 
 		double tileLeftCorner = (1.0 / (double)tilesInRow) * (double)tileX;
-		double tileBottomCorner = (1.0 / (double)tilesInColumn) * (double)tileY;
 		double tileRightCorner = (1.0 / (double)tilesInRow) * (tileX + 1.0);
+		
+		double tileBottomCorner = (1.0 / (double)tilesInColumn) * (double)tileY;
 		double tileTopCorner = (1.0 / (double)tilesInColumn) * (tileY + 1.0);
 
-		if (0) {
-			texCoords.bottomLeft = { tileLeftCorner, tileBottomCorner };
-			texCoords.bottomRight = { tileRightCorner, tileBottomCorner };
-			texCoords.topLeft = { tileLeftCorner, tileTopCorner };
-			texCoords.topRight = { tileRightCorner, tileTopCorner };
+		const double bias = 0.000001;
+
+		if (flipX) {
+			texCoords.bottomLeft = { tileRightCorner - bias, 1.0 - tileTopCorner + bias };
+			texCoords.bottomRight = { tileLeftCorner + bias, 1.0 - tileTopCorner + bias };
+			texCoords.topLeft = { tileRightCorner - bias, 1.0 - tileBottomCorner - bias };
+			texCoords.topRight = { tileLeftCorner + bias, 1.0 - tileBottomCorner - bias };
 		} else {
-			const double bias = 0.000001;
 			texCoords.bottomLeft = { tileLeftCorner + bias, 1.0 - tileTopCorner + bias };
 			texCoords.bottomRight = { tileRightCorner - bias, 1.0 - tileTopCorner + bias };
 			texCoords.topLeft = { tileLeftCorner + bias, 1.0 - tileBottomCorner - bias };

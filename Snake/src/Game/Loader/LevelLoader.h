@@ -6,6 +6,8 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <nlohmann/json.hpp>
+#include "../../FileSystem/File.h"
 
 class LevelLoader {
 public:
@@ -14,21 +16,29 @@ public:
 
         std::ifstream myfile(path);
 
-        std::string line;
-        while (std::getline(myfile, line)) {
-            std::vector<int> currentLineVector;
-            std::string temp;
+        using json = nlohmann::json;
 
-            for (auto& it : line) {
-                if (it != ',') {
-                    temp += it;
-                } else {
-                    currentLineVector.push_back(std::stoi(temp));
-                    temp.clear();
-                }
+        File levelFile("test.json");
+
+        auto levelData = json::parse(levelFile.getConent());
+
+        std::map<int, std::map<int, TileData>> map;
+        for (auto& it : levelData["layers"][0]["tiles"]) {
+            TileData data;
+            data.tileIndex = it["tile"].get<int>();
+            data.flipX = it["flipX"].get<bool>();
+
+            map[it["y"].get<int>()][it["x"].get<int>()] = data;
+        }
+
+        for (auto& it : map) {
+            std::vector<TileData> currentLineVector;
+            for (auto& iit : it.second) {
+                currentLineVector.push_back(iit.second);
             }
             level->map.push_back(currentLineVector);
         }
+
         return level;
 	}
 };

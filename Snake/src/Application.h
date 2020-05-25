@@ -15,6 +15,7 @@
 #include "Game/Loader/LevelLoader.h"
 #include "Game/LevelBuilder.h"
 #include "Tilemap.h"
+#include "Interface/MainInterface.h"
 
 void GLAPIENTRY
 MessageCallback(GLenum source,
@@ -37,12 +38,19 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
 }
 
+void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
+{
+    InputManager::instance()->setCursorPosition(xpos, ypos);
+}
+
 class Application {
 private:
     entt::registry registry;
     RenderSystem rs;
     GLFWwindow* window;
     std::chrono::time_point<std::chrono::steady_clock> m_Start;
+
+    std::shared_ptr<MainInterface> interface;
 public:
     ~Application() {
         glfwTerminate();
@@ -65,6 +73,7 @@ public:
 
         glDebugMessageCallback(MessageCallback, 0);
         glfwSetKeyCallback(window, key_callback);
+        glfwSetCursorPosCallback(window, cursor_position_callback);
 
         rs.init(&registry);
 
@@ -76,13 +85,23 @@ public:
         auto level = builder.build(rawLevel, tilemap);
         rs.level = level;
 
-
+        interface = std::make_shared<MainInterface>(window, &registry);
         //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glDisable(GL_CULL_FACE);
         glFrontFace(GL_CW);
+
+        auto entity = registry.create();
+        registry.emplace<Render>(entity, 0, 8);
+        registry.emplace<Position>(entity, 10.0f, 10.0f);
+        registry.emplace<Player>(entity);
+        registry.emplace<Animation>(entity, 0.0, 0, 8, 7, 7);
+
+        registry.create();
+        registry.create();
 	}
 
 	void run() {
+        double dt = 0.0;
 
         while (!glfwWindowShouldClose(window))
         {
@@ -93,6 +112,37 @@ public:
             //int lscript = luaL_dofile(L, "src/test.lua");
 
             rs.update(16.0);
+            registry.view<Position, Player>().each([](auto& pos) {
+                if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_UP)) {
+                    pos.y += 0.1;
+                } else if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_DOWN)) {
+                    pos.y -= 0.1f;
+                }
+
+                if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_LEFT)) {
+                    pos.x -= 0.1f;
+                } else if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_RIGHT)) {
+                    pos.x += 0.1f;
+                }
+            });
+
+
+            registry.view<Animation, Render>().each([dt](auto& animation, auto& render) {
+                animation.animationTime += dt;
+
+                if (animation.animationTime > 300.0) {
+                    animation.animationTime = 0.0;
+
+                    if (render.xIndex == animation.startX && render.yIndex == animation.startY) {
+                        render.xIndex = animation.endX;
+                        render.yIndex = animation.endY;
+                    } else {
+                        render.xIndex = animation.startX;
+                        render.yIndex = animation.startY;
+                    }
+                }
+            });
+            interface->update(16.0);
 
             /* Swap front and back buffers */
             glfwSwapBuffers(window);
@@ -100,7 +150,8 @@ public:
             /* Poll for and process events */
             glfwPollEvents();
 
-            auto elapsed = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - m_Start);
+            dt = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - m_Start).count();
+
             //std::cout << elapsed.count() << std::endl;
         }
 	}

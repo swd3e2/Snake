@@ -13,11 +13,11 @@ struct TileIndex {
 };
 
 struct TileData {
-    bool inverseX = false;
-    bool inverseY = false;
+    bool flipX = false;
+    bool flipY = false;
     int tileIndex = 0;
 };
 
 struct RawLevel {
-    std::vector<std::vector<int>> map;
+    std::vector<std::vector<TileData>> map;
 };
