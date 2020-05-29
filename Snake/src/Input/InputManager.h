@@ -1,12 +1,15 @@
 #pragma once
 
 class InputManager {
+public:
+	double mousePosX = 0.0;
+	double mousePosY = 0.0;
+
+	double mouseMoveX = 0.0;
+	double mouseMoveY = 0.0;
 private:
 	bool keyboardKeys[349];
 	bool mouseButton[5];
-
-	double mousePositionX;
-	double mousePositionY;
 
 	static InputManager* _instance;
 private:
@@ -41,7 +44,10 @@ public:
 	}
 
 	void setCursorPosition(double x, double y) {
-		mousePositionX = x;
-		mousePositionX = y;
+		mouseMoveX = x - mousePosX;
+		mouseMoveY = y - mousePosY;
+
+		mousePosX = x;
+		mousePosY = y;
 	}
 };

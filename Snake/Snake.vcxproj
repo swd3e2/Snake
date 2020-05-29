@@ -60,7 +60,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Snake\vendor\entt;$(SolutionDir)Snake\vendor;$(SolutionDir)Snake\vendor\lua;$(SolutionDir)Snake\vendor\stb-master;$(SolutionDir)Snake\vendor\json-develop\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Snake\vendor\entt;$(SolutionDir)Snake\vendor;$(SolutionDir)Snake\vendor\lua;$(SolutionDir)Snake\vendor\stb-master;$(SolutionDir)Snake\vendor\json-develop\include;$(SolutionDir)Snake\vendor\tinygltf;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -77,7 +77,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Snake\vendor\entt;$(SolutionDir)Snake\vendor;$(SolutionDir)Snake\vendor\lua;$(SolutionDir)Snake\vendor\stb-master;$(SolutionDir)Snake\vendor\json-develop\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Snake\vendor\entt;$(SolutionDir)Snake\vendor;$(SolutionDir)Snake\vendor\lua;$(SolutionDir)Snake\vendor\stb-master;$(SolutionDir)Snake\vendor\json-develop\include;$(SolutionDir)Snake\vendor\tinygltf;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -97,19 +97,17 @@
     <ClCompile Include="src\Interface\imgui\imgui_impl_opengl3.cpp" />
     <ClCompile Include="src\Interface\imgui\imgui_widgets.cpp" />
     <ClCompile Include="src\Main.cpp" />
+    <ClCompile Include="src\Model\Import\GltfImporter.cpp" />
+    <ClCompile Include="src\Model\Import\tinygltfimpl.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Application.h" />
+    <ClInclude Include="src\Camera.h" />
+    <ClInclude Include="src\Common\Helper.h" />
     <ClInclude Include="src\Components.h" />
     <ClInclude Include="src\FileSystem\File.h" />
-    <ClInclude Include="src\Game\Level.h" />
-    <ClInclude Include="src\Game\LevelBuilder.h" />
-    <ClInclude Include="src\Game\Loader\LevelSaver.h" />
     <ClInclude Include="src\Game\RawLevel.h" />
-    <ClInclude Include="src\Game\LevelRenderer.h" />
-    <ClInclude Include="src\Game\Loader\LevelLoader.h" />
     <ClInclude Include="src\Game\MenuRenderer.h" />
-    <ClInclude Include="src\Graphics\2DRenderer.h" />
     <ClInclude Include="src\Graphics\IndexBuffer.h" />
     <ClInclude Include="src\Interface\imgui\imconfig.h" />
     <ClInclude Include="src\Interface\imgui\imgui.h" />
@@ -120,6 +118,11 @@
     <ClInclude Include="src\Interface\imgui\imstb_textedit.h" />
     <ClInclude Include="src\Interface\imgui\imstb_truetype.h" />
     <ClInclude Include="src\Interface\MainInterface.h" />
+    <ClInclude Include="src\Model\Animation.h" />
+    <ClInclude Include="src\Model\ImportData.h" />
+    <ClInclude Include="src\Model\Import\GltfImporter.h" />
+    <ClInclude Include="src\Model\Material.h" />
+    <ClInclude Include="src\Model\Model.h" />
     <ClInclude Include="src\Quad.h" />
     <ClInclude Include="src\Registry.h" />
     <ClInclude Include="src\RenderSystem.h" />
@@ -128,10 +131,8 @@
     <ClInclude Include="src\Graphics\ShaderInputLayout.h" />
     <ClInclude Include="src\Graphics\ShaderPipeline.h" />
     <ClInclude Include="src\Graphics\Texture.h" />
-    <ClInclude Include="src\TiledQuad.h" />
     <ClInclude Include="src\Graphics\vertex.h" />
     <ClInclude Include="src\Graphics\VertexBuffer.h" />
-    <ClInclude Include="src\Tilemap.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\test.lua" />

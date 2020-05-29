@@ -2,21 +2,27 @@
 
 #include <glm/glm.hpp>
 
-struct vertex {
-    glm::vec4 pos;
-    glm::vec2 tex;
-    glm::vec2 temp;
+struct vertex
+{
+	vertex(float px = 0.0f, float py = 0.0f, float pz = 0.0f,
+		float tv = 0.0f, float tu = 0.0f,
+		float nx = 0.0f, float ny = 0.0f, float nz = 0.0f)
+		: pos(px, py, pz),
+		texCoord(tv, tu),
+		normal(nx, ny, nz),
+		tangent(0.0f, 0.0f, 0.0f),
+		bitangent(0.0f, 0.0f, 0.0f)
+	{}
 
-    vertex(float x, float y, float z, float w, float tx = 0.0f, float ty = 0.0f) {
-        pos.x = x;
-        pos.y = y;
-        pos.z = z;
-        pos.w = w;
+	glm::vec3 pos;
+	glm::vec2 texCoord;
+	glm::vec3 normal;
+	glm::vec3 tangent;
+	glm::vec3 bitangent;
 
-        tex.x = tx;
-        tex.y = ty;
-
-        temp.x = 0.0f;
-        temp.y = 0.0f;
-    }
+	struct VertexBoneData
+	{
+		int joints[4]{};
+		float weights[4]{};
+	} boneData;
 };
