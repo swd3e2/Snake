@@ -1,0 +1,6 @@
+[submodule "Snake/vendor/tinygltf"]
+	path = Snake/vendor/tinygltf
+	url = https://github.com/syoyo/tinygltf.git
+[submodule "Snake/vendor/bullet"]
+	path = Snake/vendor/bullet
+	url = https://github.com/bulletphysics/bullet3
