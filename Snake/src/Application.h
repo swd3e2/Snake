@@ -78,25 +78,14 @@ public:
 
         interface = std::make_shared<MainInterface>(window, &registry);
 
-        auto entity = registry.create();
-        registry.emplace<Render>(entity, 0, 8);
-        registry.emplace<Position>(entity, 10.0f, 10.0f);
-        registry.emplace<Player>(entity);
-        registry.emplace<Animation>(entity, 0.0, 0, 8, 7, 7);
-
-        registry.create();
-        registry.create();
-
         GltfImporter importer;
         std::shared_ptr<Import::Model> importModel = importer.import("scene.gltf");
         std::shared_ptr<Model> model = std::make_shared<Model>(importModel);
 
-        rs.testModel = model;
-        interface->model = model;
-
-        for (auto& it : importModel->meshes[0]->vertices) {
-            //std::cout << "x: " << it.normal.x << " y: " << it.normal.y << " z: " << it.normal.z << std::endl;
-        }
+        auto entity = registry.create();
+        registry.emplace<Render>(entity, model);
+        registry.emplace<Transform>(entity);
+        registry.emplace<Player>(entity);
 
         if (glfwRawMouseMotionSupported())
             glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
@@ -115,21 +104,6 @@ public:
             //int lscript = luaL_dofile(L, "src/test.lua");
 
             rs.update(16.0);
-            registry.view<Position, Player>().each([](auto& pos) {
-                if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_UP)) {
-                    pos.y += 0.1;
-                } else if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_DOWN)) {
-                    pos.y -= 0.1f;
-                }
-
-                if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_LEFT)) {
-                    pos.x -= 0.1f;
-                } else if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_RIGHT)) {
-                    pos.x += 0.1f;
-                }
-            });
-
-
             interface->update(16.0);
 
             /* Swap front and back buffers */

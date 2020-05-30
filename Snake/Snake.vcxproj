@@ -106,7 +106,6 @@
     <ClInclude Include="src\Common\Helper.h" />
     <ClInclude Include="src\Components.h" />
     <ClInclude Include="src\FileSystem\File.h" />
-    <ClInclude Include="src\Game\RawLevel.h" />
     <ClInclude Include="src\Game\MenuRenderer.h" />
     <ClInclude Include="src\Graphics\IndexBuffer.h" />
     <ClInclude Include="src\Interface\imgui\imconfig.h" />
@@ -136,6 +135,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="src\test.lua" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="CMakeLists.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

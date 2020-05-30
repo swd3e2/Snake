@@ -7,11 +7,11 @@
 #include "../Model/Model.h"
 
 class MainInterface {
-public:
-	std::shared_ptr<Model> model;
 private:
 	const char* glsl_version = "#version 130";
 	entt::registry* registry;
+	entt::entity selectedEntity;
+	bool isEntitySelected = false;
 public:
 	MainInterface(GLFWwindow* window, entt::registry* registry) :
 		registry(registry)
@@ -37,14 +37,29 @@ public:
 
 		ImGui::Begin("Entities");
 		std::string temp = "Entity ¹";
-		registry->each([&temp](const entt::entity& entity) {
-			ImGui::Text((temp + std::to_string((int)entity)).c_str());
+		registry->each([&](const entt::entity& entity) {
+			if (ImGui::Selectable("Entity")) {
+				selectedEntity = entity;
+				isEntitySelected = true;
+			}
 		});
 		ImGui::End();
 
 		ImGui::Begin("Entities");
 		ImGui::Text("Nodes");
-		drawNodeHierarchy(model->getRootNode(), model->getNodes());
+
+		if (isEntitySelected && registry->has<Render>(selectedEntity)) {
+			const Render& render = registry->get<Render>(selectedEntity);
+			if (render.model != nullptr) {
+				drawNodeHierarchy(render.model->getRootNode(), render.model->getNodes());
+			}
+
+			const Transform& transform = registry->get<Transform>(selectedEntity);
+			ImGui::DragFloat3("Translation###T", (float*)&transform.translation, 0.01f, -10000.0f, 10000.0f);
+			ImGui::DragFloat3("Scale###S", (float*)&transform.scale, 0.01f, -10000.0f, 10000.0f);
+			ImGui::DragFloat3("Rotation###R", (float*)&transform.rotation, 0.01f, -10000.0f, 10000.0f);
+		}
+		
 		ImGui::End();
 
 		ImGui::Render();

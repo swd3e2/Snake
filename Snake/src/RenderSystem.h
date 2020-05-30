@@ -26,6 +26,7 @@ private:
     };
     struct ModelData {
         glm::mat4 toWorld;
+        glm::mat4 inverseToWorld;
     };
     struct MeshData {
         glm::mat4 transform;
@@ -43,7 +44,6 @@ public:
     std::shared_ptr<ShaderBuffer> shaderBuffer;
     std::shared_ptr<ShaderBuffer> modelShaderBuffer;
     std::shared_ptr<ShaderBuffer> meshShaderBuffer;
-    std::shared_ptr<Model> testModel;
 
     entt::registry* registry;
     
@@ -70,6 +70,7 @@ public:
             "layout(std140, binding = 1) uniform Model\n"
             "{\n"
             "    mat4 toWorld;\n"
+            "    mat4 inverseToWorld;\n"
             "};\n"
             "layout(std140, binding = 2) uniform Mesh\n"
             "{\n"
@@ -91,7 +92,7 @@ public:
             "\n"
             "void main() {\n"
             "    gl_Position = vec4(pos.x, pos.y, pos.z, 1.0f) * transform * toWorld * WVP;\n"
-            "    vs_out.normal = normalize(vec3(matrixTransform * vec4(normalize(normal), 0.0f)));\n"
+            "    vs_out.normal = normalize(vec3(inverseToWorld * matrixTransform * vec4(normalize(normal), 0.0f)));\n"
             "    vs_out.texCoord = texCoords;\n"
             "    return;\n"
             "}\n";
@@ -106,11 +107,12 @@ public:
             "    vec3 normal;\n"
             "} fs_in;\n"
             "uniform sampler2D diffuseTexture; //0\n"
+            "uniform sampler2D normalTexture;  //1\n"
             "void main()\n"
             "{\n"
             "    vec4 color = texture(diffuseTexture, fs_in.texCoord);\n"
-            "    FragColor = vec4(0.4f, 0.4f, 0.4f, 1.0f) + clamp(dot(vec3(1.0f, 0.0f, 0.0f), fs_in.normal), 0.0f, 1.0f) * vec4(0.3f, 0.3f, 0.3f, 1.0f);"
-            //"    FragColor.rgb = fs_in.normal;"
+            "    FragColor = vec4(0.4f, 0.4f, 0.4f, 1.0f) + clamp(dot(vec3(0.0f, 1.0f, 0.0f), fs_in.normal), 0.0f, 1.0f) * vec4(0.3f, 0.3f, 0.3f, 1.0f);"
+            "    FragColor.rgb = fs_in.normal;"
             "}\n";
 
         shaderPipeline = std::make_shared<ShaderPipeline>(vertexShaderCode, pixelShaderCode);
@@ -151,27 +153,34 @@ public:
 		shaderBuffer->update(&projectionData);
 		shaderBuffer->bind(0);
 
-        modelData.toWorld = glm::mat4(1.0f);
-        modelShaderBuffer->update(&modelData);
-        modelShaderBuffer->bind(1);
+        registry->view<Transform, Render>().each([&](Transform& transform, Render& render) {
+            modelData.toWorld = glm::mat4(1.0f);
+            modelData.toWorld = glm::translate(modelData.toWorld, transform.translation);
+            modelData.toWorld = modelData.toWorld * glm::eulerAngleXYZ(transform.rotation.x, transform.rotation.y, transform.rotation.z);
+            modelData.toWorld = glm::scale(modelData.toWorld, transform.scale);
+            modelData.inverseToWorld = glm::inverse(modelData.toWorld);
 
-        this->updateTransform(testModel->getRootNode(), testModel.get(), glm::mat4(1.0f));
+            modelShaderBuffer->update(&modelData);
+            modelShaderBuffer->bind(1);
 
-        const std::vector<std::shared_ptr<Model::SubMesh>>& submeshes = testModel->getSubMeshes();
-        for (auto& node : testModel->getNodes()) {
-            if (node->mesh == -1) continue;
+            this->updateTransform(render.model->getRootNode(), render.model.get(), glm::mat4(1.0f));
 
-            const std::shared_ptr<Model::SubMesh>& submesh = submeshes[node->mesh];
-            meshData.transform = glm::transpose(node->transform.worldTransform);
-            meshData.matrixTransform = glm::transpose(node->transform.matrixTransform);
-            meshShaderBuffer->update(&meshData);
-            meshShaderBuffer->bind(2);
+            const std::vector<std::shared_ptr<Model::SubMesh>>& submeshes = render.model->getSubMeshes();
+            for (auto& node : render.model->getNodes()) {
+                if (node->mesh == -1) continue;
 
-            submesh->vBuffer->bind();
-            submesh->iBuffer->bind();
+                const std::shared_ptr<Model::SubMesh>& submesh = submeshes[node->mesh];
+                meshData.transform = glm::transpose(node->transform.worldTransform);
+                meshData.matrixTransform = glm::transpose(node->transform.matrixTransform);
+                meshShaderBuffer->update(&meshData);
+                meshShaderBuffer->bind(2);
 
-            glDrawElements(GL_TRIANGLES, submesh->iBuffer->getSize(), GL_UNSIGNED_INT, 0);
-        }
+                submesh->vBuffer->bind();
+                submesh->iBuffer->bind();
+
+                glDrawElements(GL_TRIANGLES, submesh->iBuffer->getSize(), GL_UNSIGNED_INT, 0);
+            }
+        });
 
         if (InputManager::instance()->isKeyPressed(GLFW_KEY_E)) {
             camera.m_Rotation.x -= (float)InputManager::instance()->mouseMoveX * 0.0045f;
@@ -179,15 +188,15 @@ public:
         }
 
         if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_W)) {
-            camera.m_Position += camera.forwardVec * 1.2f;
+            camera.m_Position += camera.forwardVec * 11.2f;
         } else if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_S)) {
-            camera.m_Position -= camera.forwardVec * 1.2f;
+            camera.m_Position -= camera.forwardVec * 11.2f;
         }
 
         if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_A)) {
-            camera.m_Position += camera.rightVec * 1.2f;
+            camera.m_Position += camera.rightVec * 11.2f;
         } else if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_D)) {
-            camera.m_Position -= camera.rightVec * 1.2f;
+            camera.m_Position -= camera.rightVec * 11.2f;
         }
 
         camera.update();

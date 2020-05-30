@@ -3,15 +3,16 @@
 #include <memory>
 #include <glm/glm.hpp>
 #include <string>
+#include "Model/Model.h"
 
-struct Position {
-	float x = 0.0f;
-	float y = 0.0f;
+struct Transform {
+	glm::vec3 translation;
+	glm::vec3 rotation;
+	glm::vec3 scale = glm::vec3(1.0f, 1.0f, 1.0f);
 };
 
 struct Render {
-	int xIndex = 0;
-	int yIndex = 0;
+	std::shared_ptr<Model> model;
 };
 
 struct Script {
