@@ -18,7 +18,7 @@ enum InputDataType
 
 class ShaderInputLayout {
 private:
-	std::size_t stride = 0;
+	unsigned int stride = 0;
 	int size = 0;
 
 	unsigned int vao = 0;
@@ -27,13 +27,13 @@ public:
 	{
 		InputDataType type;
 		std::string name;
-		size_t offset;
+		int offset;
 
 		InputLayoutElement(InputDataType type, const std::string& name) :
 			type(type), name(name)
 		{}
 
-		const size_t getSize() const
+		const int getSize() const
 		{
 			switch (type)
 			{
@@ -50,7 +50,7 @@ public:
 			return 0;
 		}
 
-		const size_t getNumberElements() const
+		const int getNumberElements() const
 		{
 			switch (type)
 			{
@@ -110,5 +110,6 @@ private:
 		case Bool:
 			return GL_BOOL;
 		}
+		return GL_FLOAT;
 	}
 };

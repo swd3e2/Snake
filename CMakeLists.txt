@@ -65,7 +65,7 @@ set(INCLUDE_DIRS
 add_executable(Snake ${SOURCES} ${HEADERS})
 
 target_include_directories(Snake PRIVATE ${INCLUDE_DIRS})
-target_link_libraries(Snake opengl32 Snake/vendor/libs/glew32s Snake/vendor/libs/glfw/glfw3)
+target_link_libraries(Snake opengl32 ../Snake/vendor/libs/glew32s ../Snake/vendor/libs/glfw/glfw3)
 
 set_target_properties(
     Snake PROPERTIES
