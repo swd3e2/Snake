@@ -9,7 +9,7 @@ public:
 		std::string result;
 
 		int lastEntry = -1;
-		int stringLenght = strlen(string);
+		size_t stringLenght = strlen(string);
 
 		for (int i = 0; i < stringLenght; i++) {
 			if (string[i] == entry) {

@@ -171,9 +171,9 @@ void GltfImporter::processMaterials(Import::Model* model, const tinygltf::Model&
 			} else if (value.first == "metallicRoughnessTexture") {
 				material.roughnesTexture = gltfModel.images[gltfModel.textures[value.second.TextureIndex()].source].uri;
 			} else if (value.first == "metallicFactor") {
-				material.metallicFactor = value.second.number_value;
+				material.metallicFactor = (float)value.second.number_value;
 			} else if (value.first == "roughnessFactor") {
-				material.roughnessFactor = value.second.number_value;
+				material.roughnessFactor = (float)value.second.number_value;
 			} else if (value.first == "baseColorFactor") {
 				material.baseColorFactor = glm::vec4(
 					value.second.number_array[0],
@@ -192,7 +192,7 @@ void GltfImporter::processMaterials(Import::Model* model, const tinygltf::Model&
 			} else if (value.first == "occlusionTexture") {
 				material.occlusionTexture = gltfModel.images[gltfModel.textures[value.second.TextureIndex()].source].uri;
 			} else if (value.first == "emissiveFactor") {
-				material.emissiveFactor = value.second.number_value;
+				material.emissiveFactor = (float)value.second.number_value;
 			}
 		}
 
@@ -444,9 +444,6 @@ void GltfImporter::getTransformMatrix(const tinygltf::Node& modelNode, const std
 			modelNode.matrix[12], modelNode.matrix[13], modelNode.matrix[14], modelNode.matrix[15]
 		);
 
-		glm::vec3 scale;
-		glm::quat rotation;
-		glm::vec3 translation;
 		glm::vec3 skew;
 		glm::vec4 perspective;
 
@@ -456,7 +453,7 @@ void GltfImporter::getTransformMatrix(const tinygltf::Node& modelNode, const std
 			node->translation = glm::vec3(modelNode.translation[0], modelNode.translation[1], modelNode.translation[2]);
 		}
 		if (modelNode.rotation.size() > 0) {
-			node->rotation = glm::quat(modelNode.rotation[3], modelNode.rotation[0], modelNode.rotation[1], modelNode.rotation[2]);
+			node->rotation = glm::quat((float)modelNode.rotation[3], (float)modelNode.rotation[0], (float)modelNode.rotation[1], (float)modelNode.rotation[2]);
 		}
 		if (modelNode.scale.size() > 0) {
 			node->scale = glm::vec3(modelNode.scale[0], modelNode.scale[1], modelNode.scale[2]);

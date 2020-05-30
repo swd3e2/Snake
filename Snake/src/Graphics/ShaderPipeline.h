@@ -44,7 +44,7 @@ public:
         }
 
         std::unordered_map<std::string, int> textures;
-        int size = 0;
+        size_t size = 0;
 
         {
             const char* charShaderCode = pixelShaderCode.c_str();

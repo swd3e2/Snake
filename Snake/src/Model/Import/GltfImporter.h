@@ -8,7 +8,7 @@
 #define TINYGLTF_NO_STB_IMAGE
 #define TINYGLTF_NO_STB_IMAGE_WRITE
 #include <nlohmann/json.hpp>
-#include <tinygltf/tiny_gltf.h>
+#include <tiny_gltf.h>
 
 #include <glm/gtx/matrix_decompose.hpp>
 #include <fstream>
