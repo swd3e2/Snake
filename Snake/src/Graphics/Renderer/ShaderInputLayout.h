@@ -19,9 +19,8 @@ enum InputDataType
 class ShaderInputLayout {
 private:
 	unsigned int stride = 0;
-	int size = 0;
-
 	unsigned int vao = 0;
+	int size = 0;
 public:
 	struct InputLayoutElement
 	{

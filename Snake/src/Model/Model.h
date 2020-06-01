@@ -1,8 +1,8 @@
 #pragma once
 
 #include "ImportData.h"
-#include "../Graphics/VertexBuffer.h"
-#include "../Graphics/IndexBuffer.h"
+#include "../Graphics/Renderer/VertexBuffer.h"
+#include "../Graphics/Renderer/IndexBuffer.h"
 #include "Material.h"
 
 class Model {
@@ -75,21 +75,16 @@ public:
 			renderable->id = i;
 			renderable->material = model->meshes[i]->material;
 
-			renderable->vBuffer = std::make_shared<VertexBuffer>(model->meshes[i]->vertices.size(), sizeof(vertex), model->meshes[i]->vertices.data());
-			renderable->iBuffer = std::make_shared<IndexBuffer>(model->meshes[i]->indices.size(), model->meshes[i]->indices.data());
+			renderable->vBuffer.reset(VertexBuffer::create(model->meshes[i]->vertices.size(), sizeof(vertex), model->meshes[i]->vertices.data()));
+			renderable->iBuffer.reset(IndexBuffer::create(model->meshes[i]->indices.size(), model->meshes[i]->indices.data()));
 
 			submeshes.push_back(renderable);
 		}
 
 	}
 
-	const std::vector<std::shared_ptr<SubMesh>>& getSubMeshes() const {
-		return submeshes;
-	}
-
-	const std::vector<std::shared_ptr<Node>>& getNodes() const {
-		return nodes;
-	}
-
+	const std::vector<std::shared_ptr<SubMesh>>& getSubMeshes() const { return submeshes; }
+	const std::vector<std::shared_ptr<Node>>& getNodes() const { return nodes; }
 	const int getRootNode() const { return rootNode; }
+	const std::string getImportFilename() const { return filename; }
 };

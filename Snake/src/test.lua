@@ -1,11 +1,13 @@
-if isButtonPressed(87) then
-    a.z = a.z + 0.1
-elseif isButtonPressed(83) then
-    a.z = a.z - 0.1
+if isButtonPressed(265) then
+    translation.z = translation.z + 5.1
+elseif isButtonPressed(264) then
+    translation.z = translation.z - 5.1
 end
 
-if isButtonPressed(65) then
-    a.x = a.x + 0.1
-elseif isButtonPressed(68) then
-    a.x = a.x - 0.1
+if isButtonPressed(263) then
+    translation.x = translation.x + 5.1
+elseif isButtonPressed(262) then
+    translation.x = translation.x - 5.1
 end
+
+rotation.y = rotation.y + 0.01

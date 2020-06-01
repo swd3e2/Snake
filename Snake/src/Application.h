@@ -15,6 +15,9 @@
 #include "Interface/MainInterface.h"
 #include "Model/Import/GltfImporter.h"
 #include "Model/Model.h"
+#include "ScriptSystem.h"
+#include "Saver.h"
+#include "Loader.h"
 
 void GLAPIENTRY
 MessageCallback(GLenum source,
@@ -50,6 +53,7 @@ private:
     std::chrono::time_point<std::chrono::steady_clock> m_Start;
 
     std::shared_ptr<MainInterface> interface;
+    ScriptSystem scriptSystem;
 public:
     ~Application() {
         glfwTerminate();
@@ -61,11 +65,12 @@ public:
             return;
         }
 
-        window = glfwCreateWindow(1920, 1080, "Hello World", NULL, NULL);
+        window = glfwCreateWindow(1920, 1080, "Snake", NULL, NULL);
         if (!window) {
             glfwTerminate();
             return;
         }
+
         /* Make the window's context current */
         glfwMakeContextCurrent(window);
         glewInit();
@@ -75,17 +80,23 @@ public:
         glfwSetCursorPosCallback(window, cursor_position_callback);
 
         rs.init(&registry);
+        scriptSystem.init(&registry);
 
         interface = std::make_shared<MainInterface>(window, &registry);
 
-        GltfImporter importer;
-        std::shared_ptr<Import::Model> importModel = importer.import("scene.gltf");
-        std::shared_ptr<Model> model = std::make_shared<Model>(importModel);
+        // GltfImporter importer;
+        // std::shared_ptr<Import::Model> importModel = importer.import("scene.gltf");
+        // std::shared_ptr<Model> model = std::make_shared<Model>(importModel);
 
-        auto entity = registry.create();
-        registry.emplace<Render>(entity, model);
-        registry.emplace<Transform>(entity);
-        registry.emplace<Player>(entity);
+        // auto entity = registry.create();
+        // registry.emplace<Render>(entity, model);
+        // registry.emplace<Transform>(entity);
+        // registry.emplace<Script>(entity, "test.lua");
+
+        // Saver saver;
+        // saver.saveToFile("test.json", &registry);
+        Loader loader;
+        loader.loadFromFile("test.json", &registry);
 
         if (glfwRawMouseMotionSupported())
             glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
@@ -94,18 +105,16 @@ public:
 	void run() {
         double dt = 0.0;
 
-        while (!glfwWindowShouldClose(window))
-        {
+        while (!glfwWindowShouldClose(window)) {
             /* Render here */
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
             m_Start = std::chrono::high_resolution_clock::now();
-            
-            //int lscript = luaL_dofile(L, "src/test.lua");
 
             rs.update(16.0);
             interface->update(16.0);
-
+            scriptSystem.update();
+            
             /* Swap front and back buffers */
             glfwSwapBuffers(window);
 

@@ -3,21 +3,23 @@
 #include "Input/InputManager.h"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include "Graphics/ShaderPipeline.h"
-#include "Graphics/ShaderInputLayout.h"
-#include "Graphics/VertexBuffer.h"
-#include "Graphics/ShaderBuffer.h"
+#include "Graphics/Renderer/ShaderPipeline.h"
+#include "Graphics/Renderer/ShaderInputLayout.h"
+#include "Graphics/Renderer/VertexBuffer.h"
+#include "Graphics/Renderer/ConstantBuffer.h"
+#include "Graphics/Renderer/Texture.h"
 #include <vector>
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <utility>
 #include <entt/entt.hpp>
 #include "Components.h"
-#include "Graphics/Texture.h"
 #include "Graphics/vertex.h"
 #include "Camera.h"
 #include "Model/Model.h"
-
+#include <queue>
+#include "Graphics/Platform/OpenGL/OpenGLRenderer.h"
+#include "FileSystem/File.h"
 
 class RenderSystem {
 private:
@@ -32,18 +34,24 @@ private:
         glm::mat4 transform;
         glm::mat4 matrixTransform;
     };
-
+    struct MaterialData {
+        glm::vec4 color;
+    };
+    std::queue<std::function<void()>> commands;
 public:
     mvp projectionData;
     ModelData modelData;
     MeshData meshData;
-
+    MaterialData materialData;
+    OpenGlRenderer renderer;
+    
     std::shared_ptr<ShaderPipeline> shaderPipeline;
     std::shared_ptr<ShaderInputLayout> shaderInputLayout;
     std::shared_ptr<VertexBuffer> vertexBuffer;
-    std::shared_ptr<ShaderBuffer> shaderBuffer;
-    std::shared_ptr<ShaderBuffer> modelShaderBuffer;
-    std::shared_ptr<ShaderBuffer> meshShaderBuffer;
+    std::shared_ptr<ConstantBuffer> shaderBuffer;
+    std::shared_ptr<ConstantBuffer> modelShaderBuffer;
+    std::shared_ptr<ConstantBuffer> meshShaderBuffer;
+    std::shared_ptr<ConstantBuffer> materialShaderBuffer;
 
     entt::registry* registry;
     
@@ -58,64 +66,10 @@ public:
 	void init(entt::registry* registry) {
         this->registry = registry;
 
-        const char* vertexShaderCode = 
-            "#version 460\n"
-            "layout(location = 0) in vec3 pos;\n"
-            "layout(location = 1) in vec2 texCoords;\n"
-            "layout(location = 2) in vec3 normal;\n"
-            "layout(std140, binding = 0) uniform Matrices\n"
-            "{\n"
-            "    mat4 WVP;\n"
-            "};\n"
-            "layout(std140, binding = 1) uniform Model\n"
-            "{\n"
-            "    mat4 toWorld;\n"
-            "    mat4 inverseToWorld;\n"
-            "};\n"
-            "layout(std140, binding = 2) uniform Mesh\n"
-            "{\n"
-            "    mat4 transform;\n"
-            "    mat4 matrixTransform;\n"
-            "};\n"
-            "out VS_OUT\n"
-            "{\n"
-            "    vec4 position;\n"
-            "    vec2 texCoord;\n"
-            "    vec3 normal;\n"
-            "} vs_out;\n"
-            "out gl_PerVertex\n"
-            "{\n"
-            "  vec4 gl_Position;\n"
-            "  float gl_PointSize;\n"
-            "  float gl_ClipDistance[];\n"
-            "};\n"
-            "\n"
-            "void main() {\n"
-            "    gl_Position = vec4(pos.x, pos.y, pos.z, 1.0f) * transform * toWorld * WVP;\n"
-            "    vs_out.normal = normalize(vec3(inverseToWorld * matrixTransform * vec4(normalize(normal), 0.0f)));\n"
-            "    vs_out.texCoord = texCoords;\n"
-            "    return;\n"
-            "}\n";
+        File fileVS("E:/dev/Snake/Debug/Debug/defaultVS.glsl");
+        File filePS("E:/dev/Snake/Debug/Debug/defaultPS.glsl");
 
-        const char* pixelShaderCode = 
-            "#version 460\n"
-            "out vec4 FragColor;\n"
-            "in VS_OUT\n"
-            "{\n"
-            "    vec4 position;\n"
-            "    vec2 texCoord;\n"
-            "    vec3 normal;\n"
-            "} fs_in;\n"
-            "uniform sampler2D diffuseTexture; //0\n"
-            "uniform sampler2D normalTexture;  //1\n"
-            "void main()\n"
-            "{\n"
-            "    vec4 color = texture(diffuseTexture, fs_in.texCoord);\n"
-            "    FragColor = vec4(0.4f, 0.4f, 0.4f, 1.0f) + clamp(dot(vec3(0.0f, 1.0f, 0.0f), fs_in.normal), 0.0f, 1.0f) * vec4(0.3f, 0.3f, 0.3f, 1.0f);"
-            "    FragColor.rgb = fs_in.normal;"
-            "}\n";
-
-        shaderPipeline = std::make_shared<ShaderPipeline>(vertexShaderCode, pixelShaderCode);
+        shaderPipeline.reset(ShaderPipeline::create(fileVS.getConent(), filePS.getConent()));
         shaderInputLayout = std::make_shared<ShaderInputLayout>();
 
         shaderInputLayout->add({ InputDataType::Float3, "pos" });
@@ -131,11 +85,12 @@ public:
         data.push_back(vertex( 0.0f,  0.5f, 0.0f, 1.0f, 1.0f, 1.0f));
         data.push_back(vertex( 0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 1.0f));
 
-        vertexBuffer = std::make_shared<VertexBuffer>(data.size(), sizeof(vertex), data.data());
+        vertexBuffer.reset(VertexBuffer::create(data.size(), sizeof(vertex), data.data()));
 
-        shaderBuffer = std::make_shared<ShaderBuffer>(sizeof(projectionData), &projectionData);
-        modelShaderBuffer = std::make_shared<ShaderBuffer>(sizeof(modelData), &modelData);
-        meshShaderBuffer = std::make_shared<ShaderBuffer>(sizeof(meshData), &meshData);
+        shaderBuffer.reset(ConstantBuffer::create(0, sizeof(projectionData), &projectionData));
+        modelShaderBuffer.reset(ConstantBuffer::create(1, sizeof(modelData), &modelData));
+        meshShaderBuffer.reset(ConstantBuffer::create(2, sizeof(meshData), &meshData));
+        materialShaderBuffer.reset(ConstantBuffer::create(3, sizeof(materialData), &materialData));
 
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
@@ -146,22 +101,26 @@ public:
 	}
 
 	void update(double dt) {
-		shaderPipeline->bind();
+        renderer.bindShaderPipeline(shaderPipeline);
         shaderInputLayout->bind();
 
 		projectionData.projection = glm::transpose(camera.getPerspectiveMatrix() * camera.getViewMatrix());
 		shaderBuffer->update(&projectionData);
-		shaderBuffer->bind(0);
+		renderer.bindConstantBuffer(shaderBuffer);
 
         registry->view<Transform, Render>().each([&](Transform& transform, Render& render) {
             modelData.toWorld = glm::mat4(1.0f);
             modelData.toWorld = glm::translate(modelData.toWorld, transform.translation);
             modelData.toWorld = modelData.toWorld * glm::eulerAngleXYZ(transform.rotation.x, transform.rotation.y, transform.rotation.z);
-            modelData.toWorld = glm::scale(modelData.toWorld, transform.scale);
+            modelData.toWorld = glm::transpose(glm::scale(modelData.toWorld, transform.scale));
             modelData.inverseToWorld = glm::inverse(modelData.toWorld);
 
             modelShaderBuffer->update(&modelData);
-            modelShaderBuffer->bind(1);
+		    renderer.bindConstantBuffer(modelShaderBuffer);
+
+            materialData.color = glm::vec4(0.3f, 0.3f, 0.3f, 1.0f);
+            materialShaderBuffer->update(&materialData);
+            renderer.bindConstantBuffer(materialShaderBuffer);
 
             this->updateTransform(render.model->getRootNode(), render.model.get(), glm::mat4(1.0f));
 
@@ -173,14 +132,20 @@ public:
                 meshData.transform = glm::transpose(node->transform.worldTransform);
                 meshData.matrixTransform = glm::transpose(node->transform.matrixTransform);
                 meshShaderBuffer->update(&meshData);
-                meshShaderBuffer->bind(2);
+                renderer.bindConstantBuffer(meshShaderBuffer);
 
-                submesh->vBuffer->bind();
-                submesh->iBuffer->bind();
+                renderer.bindVertexBuffer(submesh->vBuffer);
+                renderer.bindIndexBuffer(submesh->iBuffer);
 
-                glDrawElements(GL_TRIANGLES, submesh->iBuffer->getSize(), GL_UNSIGNED_INT, 0);
+                renderer.drawIndexed(submesh->iBuffer->getSize());
             }
         });
+
+        while(!commands.empty()) {
+            std::function<void()> command = commands.back();
+            command();
+            commands.pop();
+        }
 
         if (InputManager::instance()->isKeyPressed(GLFW_KEY_E)) {
             camera.m_Rotation.x -= (float)InputManager::instance()->mouseMoveX * 0.0045f;
