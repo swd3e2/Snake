@@ -25,3 +25,6 @@
 [submodule "Snake/vendor/lua-bridge"]
 	path = Snake/vendor/lua-bridge
 	url = https://github.com/vinniefalco/LuaBridge
+[submodule "Snake/vendor/ImGuizmo"]
+	path = Snake/vendor/ImGuizmo
+	url = https://github.com/CedricGuillemet/ImGuizmo.git
