@@ -2,8 +2,9 @@
 
 #include <GL/glew.h>
 #include "RenderContext.h"
+#include "Graphics/Bindable.h"
 
-class ConstantBuffer {
+class ConstantBuffer : public Bindable {
 private:
 	size_t size = 0;
 	int position = 0;
@@ -16,5 +17,4 @@ public:
 	static ConstantBuffer* create(int pos, size_t size, void* data);
 
 	virtual void update(void* data) = 0;
-	virtual void bind(RenderContext* context) = 0;
 };

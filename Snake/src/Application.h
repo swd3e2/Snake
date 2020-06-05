@@ -64,16 +64,16 @@ public:
         if (!glfwInit()) {
             return;
         }
-
+        
         window = glfwCreateWindow(1920, 1080, "Snake", NULL, NULL);
         if (!window) {
             glfwTerminate();
             return;
         }
-
         /* Make the window's context current */
         glfwMakeContextCurrent(window);
         glewInit();
+        //glfwSwapInterval( 0 );
 
         glDebugMessageCallback(MessageCallback, 0);
         glfwSetKeyCallback(window, key_callback);
@@ -84,27 +84,18 @@ public:
 
         interface = std::make_shared<MainInterface>(window, &registry);
 
-        // GltfImporter importer;
-        // std::shared_ptr<Import::Model> importModel = importer.import("scene.gltf");
-        // std::shared_ptr<Model> model = std::make_shared<Model>(importModel);
-
-        // auto entity = registry.create();
-        // registry.emplace<Render>(entity, model);
-        // registry.emplace<Transform>(entity);
-        // registry.emplace<Script>(entity, "test.lua");
-
         // Saver saver;
         // saver.saveToFile("test.json", &registry);
         Loader loader;
         loader.loadFromFile("test.json", &registry);
 
-        if (glfwRawMouseMotionSupported())
-            glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+        //if (glfwRawMouseMotionSupported())
+            //glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 	}
 
 	void run() {
         double dt = 0.0;
-
+        
         while (!glfwWindowShouldClose(window)) {
             /* Render here */
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -112,7 +103,7 @@ public:
             m_Start = std::chrono::high_resolution_clock::now();
 
             rs.update(16.0);
-            interface->update(16.0);
+            interface->update(dt);
             scriptSystem.update();
             
             /* Swap front and back buffers */

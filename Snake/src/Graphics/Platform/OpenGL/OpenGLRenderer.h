@@ -6,40 +6,10 @@
 #define OPENGL_RENDERER_H
 
 class OpenGlRenderer : public Renderer {
-private:
-    OpenGLContext* context;
 public:
     OpenGlRenderer() {
         _rendererType = RendererType::OpenGL;
-        context = new OpenGLContext();
-    }
-    
-    virtual void bindIndexBuffer(const std::shared_ptr<IndexBuffer>& indexBuffer) override {
-        indexBuffer->bind(context);
-    }
-
-    virtual void bindVertexBuffer(const std::shared_ptr<VertexBuffer>& vertexBuffer) override {
-        vertexBuffer->bind(context);
-    }
-
-    virtual void bindRenderBuffer(const std::shared_ptr<RenderTarget>& renderTarget) override {
-        
-    }
-
-    virtual void bindDepthBuffer(const std::shared_ptr<DepthBuffer>& depthBuffer) override { 
-        
-    }
-
-    virtual void bindConstantBuffer(const std::shared_ptr<ConstantBuffer>& constantBuffer) override {
-        constantBuffer->bind(context);
-    }
-
-    virtual void bindShaderPipeline(const std::shared_ptr<ShaderPipeline>& shaderPipeline) override {
-        shaderPipeline->bind(context);
-    }
-
-    virtual void bindInputLayout(const std::shared_ptr<ShaderInputLayout>& inputLayout) override {
-
+        _renderContext = new OpenGLContext();
     }
 
     virtual void drawIndexed(int cnt) {

@@ -2,8 +2,9 @@
 
 #include <GL/glew.h>
 #include "RenderContext.h"
+#include "Graphics/Bindable.h"
 
-class IndexBuffer {
+class IndexBuffer : public Bindable {
 protected:
 	int size = 0;
 public:
@@ -12,6 +13,4 @@ public:
 	const int getSize() const { return size; }
 
 	static IndexBuffer* create(int size, void* data);
-
-	virtual void bind(RenderContext* context) = 0;
 };

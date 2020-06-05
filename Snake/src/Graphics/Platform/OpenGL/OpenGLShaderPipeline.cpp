@@ -8,8 +8,6 @@ OpenGLShaderPipeline::OpenGLShaderPipeline(const std::string& vertexShaderCode, 
 
     int isLinked = true;
     glGetProgramiv(vertexShaderId, GL_LINK_STATUS, &isLinked);
-    std::cout << 1 << std::endl;
-    std::cout << vertexShaderCode << std::endl;
 
     if (isLinked == GL_FALSE) {
         GLint maxLength = 0;
@@ -23,8 +21,6 @@ OpenGLShaderPipeline::OpenGLShaderPipeline(const std::string& vertexShaderCode, 
 
     temp = pixelShaderCode.c_str();
     pixelShaderId = glCreateShaderProgramv(GL_FRAGMENT_SHADER, 1, &temp);
-    std::cout << 2 << std::endl;
-    std::cout << pixelShaderCode << std::endl;
 
     glGetProgramiv(pixelShaderId, GL_LINK_STATUS, &isLinked);
 

@@ -3,8 +3,9 @@
 #include <string>
 #include <stb_image.h>
 #include <GL/glew.h>
+#include "Graphics/Bindable.h"
 
-class Texture {
+class Texture : public Bindable {
 public:
     int m_Width = 0;
     int m_Height = 0;
@@ -49,6 +50,11 @@ public:
 
 	void bind(int location) {
 		glActiveTexture(GL_TEXTURE0 + location);
+		glBindTexture(GL_TEXTURE_2D, textureId);
+	}
+
+	void bind(RenderContext* context) {
+		glActiveTexture(GL_TEXTURE0 + 0);
 		glBindTexture(GL_TEXTURE_2D, textureId);
 	}
 

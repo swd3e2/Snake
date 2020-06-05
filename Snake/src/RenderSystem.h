@@ -20,6 +20,15 @@
 #include <queue>
 #include "Graphics/Platform/OpenGL/OpenGLRenderer.h"
 #include "FileSystem/File.h"
+#include "Graphics/RenderGraph/RenderGraph.h"
+
+struct Drawable {
+    VertexBuffer* vb;
+    IndexBuffer* ib;
+    glm::mat4 transform;
+    glm::mat4 nodeTransform;
+    glm::mat4 normalTransform;
+};
 
 class RenderSystem {
 private:
@@ -38,14 +47,18 @@ private:
         glm::vec4 color;
     };
     std::queue<std::function<void()>> commands;
+    std::queue<Drawable> drawables;
 public:
     mvp projectionData;
     ModelData modelData;
     MeshData meshData;
     MaterialData materialData;
     OpenGlRenderer renderer;
-    
+    RenderContext* context;
+    std::unique_ptr<RenderGraph> renderGraph;
+
     std::shared_ptr<ShaderPipeline> shaderPipeline;
+    std::shared_ptr<ShaderPipeline> shaderPipelineTest;
     std::shared_ptr<ShaderInputLayout> shaderInputLayout;
     std::shared_ptr<VertexBuffer> vertexBuffer;
     std::shared_ptr<ConstantBuffer> shaderBuffer;
@@ -65,11 +78,16 @@ public:
 public:
 	void init(entt::registry* registry) {
         this->registry = registry;
+        context = renderer.getContext();
 
-        File fileVS("E:/dev/Snake/Debug/Debug/defaultVS.glsl");
-        File filePS("E:/dev/Snake/Debug/Debug/defaultPS.glsl");
+        File fileVS("defaultVS.glsl");
+        File filePS("defaultPS.glsl");
 
         shaderPipeline.reset(ShaderPipeline::create(fileVS.getConent(), filePS.getConent()));
+
+        
+   
+
         shaderInputLayout = std::make_shared<ShaderInputLayout>();
 
         shaderInputLayout->add({ InputDataType::Float3, "pos" });
@@ -98,15 +116,36 @@ public:
         camera.m_Position.z = -15.0f;
 
         glEnable(GL_DEPTH_TEST);
+
+        renderGraph = std::make_unique<RenderGraph>(&renderer);
+        std::shared_ptr<Pass> forwardRenderPass = std::make_shared<Pass>("forward");
+        forwardRenderPass->bindables.push_back(shaderPipeline.get());
+        //forwardRenderPass->bindables.push_back(shaderInputLayout.get());
+        renderGraph->addPass(forwardRenderPass);
+
+        File fileVS1("defaultVScopy.glsl");
+        File filePS1("defaultPScopy.glsl");
+
+        shaderPipelineTest.reset(ShaderPipeline::create(fileVS1.getConent(), filePS1.getConent()));
+        std::shared_ptr<Pass> testRenderPass = std::make_shared<Pass>("test");
+        testRenderPass->bindables.push_back(shaderPipelineTest.get());
+        //forwardRenderPass->bindables.push_back(shaderInputLayout.get());
+        renderGraph->addPass(testRenderPass);
 	}
 
 	void update(double dt) {
-        renderer.bindShaderPipeline(shaderPipeline);
         shaderInputLayout->bind();
 
 		projectionData.projection = glm::transpose(camera.getPerspectiveMatrix() * camera.getViewMatrix());
-		shaderBuffer->update(&projectionData);
-		renderer.bindConstantBuffer(shaderBuffer);
+		
+        renderGraph->addCommand(std::bind([&](mvp projectionData) {
+            shaderBuffer->update(&projectionData);
+            shaderBuffer->bind(context);
+        }, projectionData));
+        
+        materialData.color = glm::vec4(0.3f, 0.3f, 0.3f, 1.0f);
+        materialShaderBuffer->update(&materialData);
+        materialShaderBuffer->bind(context);
 
         registry->view<Transform, Render>().each([&](Transform& transform, Render& render) {
             modelData.toWorld = glm::mat4(1.0f);
@@ -115,37 +154,42 @@ public:
             modelData.toWorld = glm::transpose(glm::scale(modelData.toWorld, transform.scale));
             modelData.inverseToWorld = glm::inverse(modelData.toWorld);
 
-            modelShaderBuffer->update(&modelData);
-		    renderer.bindConstantBuffer(modelShaderBuffer);
+            std::function<void()> command = std::bind([](ModelData modelData, ConstantBuffer* buffer) {
+                Renderer* tempRenderer = Renderer::instance();
 
-            materialData.color = glm::vec4(0.3f, 0.3f, 0.3f, 1.0f);
-            materialShaderBuffer->update(&materialData);
-            renderer.bindConstantBuffer(materialShaderBuffer);
+                buffer->update(&modelData);
+                buffer->bind(tempRenderer->getContext());
+            }, modelData, modelShaderBuffer.get());
+            renderGraph->addCommand(command);
 
             this->updateTransform(render.model->getRootNode(), render.model.get(), glm::mat4(1.0f));
 
-            const std::vector<std::shared_ptr<Model::SubMesh>>& submeshes = render.model->getSubMeshes();
             for (auto& node : render.model->getNodes()) {
                 if (node->mesh == -1) continue;
+          
+                std::function<void()> command = std::bind([](Model::Node* node, Model* model, ConstantBuffer* buffer) {
+                    Renderer* tempRenderer = Renderer::instance();
+                    std::vector<std::shared_ptr<Model::SubMesh>> submeshes = model->getSubMeshes();
 
-                const std::shared_ptr<Model::SubMesh>& submesh = submeshes[node->mesh];
-                meshData.transform = glm::transpose(node->transform.worldTransform);
-                meshData.matrixTransform = glm::transpose(node->transform.matrixTransform);
-                meshShaderBuffer->update(&meshData);
-                renderer.bindConstantBuffer(meshShaderBuffer);
+                    const std::shared_ptr<Model::SubMesh>& submesh = submeshes[node->mesh];
+                    MeshData meshData;
+                    meshData.transform = glm::transpose(node->transform.worldTransform);
+                    meshData.matrixTransform = glm::transpose(node->transform.matrixTransform);
 
-                renderer.bindVertexBuffer(submesh->vBuffer);
-                renderer.bindIndexBuffer(submesh->iBuffer);
+                    buffer->update(&meshData);
+                    buffer->bind(tempRenderer->getContext());
+                    
+                    submesh->vBuffer->bind(tempRenderer->getContext());
+                    submesh->iBuffer->bind(tempRenderer->getContext());
 
-                renderer.drawIndexed(submesh->iBuffer->getSize());
+                    tempRenderer->drawIndexed(submesh->iBuffer->getSize());
+                }, node.get(), render.model.get(), meshShaderBuffer.get());
+
+                renderGraph->addCommand(command);
             }
         });
 
-        while(!commands.empty()) {
-            std::function<void()> command = commands.back();
-            command();
-            commands.pop();
-        }
+        renderGraph->execute();
 
         if (InputManager::instance()->isKeyPressed(GLFW_KEY_E)) {
             camera.m_Rotation.x -= (float)InputManager::instance()->mouseMoveX * 0.0045f;

@@ -36,16 +36,19 @@ public:
 		ImGui::NewFrame();
 
 		ImGui::Begin("Entities");
-		std::string temp = "Entity ¹";
+		std::string temp = "Entity â„–";
+		int i = 0;
 		registry->each([&](const entt::entity& entity) {
-			if (ImGui::Selectable("Entity")) {
+			if (ImGui::Selectable(("Entity###" + std::to_string(i)).c_str())) {
 				selectedEntity = entity;
 				isEntitySelected = true;
 			}
+			i++;
 		});
 		ImGui::End();
 
 		ImGui::Begin("Entities");
+		ImGui::Text(("Delta " + std::to_string(dt)).c_str());
 		ImGui::Text("Nodes");
 
 		if (isEntitySelected && registry->has<Render>(selectedEntity)) {

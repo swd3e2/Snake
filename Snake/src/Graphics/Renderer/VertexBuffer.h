@@ -2,8 +2,9 @@
 
 #include <GL/glew.h>
 #include "RenderContext.h"
+#include "Graphics/Bindable.h"
 
-class VertexBuffer {
+class VertexBuffer : public Bindable {
 private:
 	int stride = 0;
 	int size = 0;
@@ -13,6 +14,4 @@ public:
 	int getStride() const { return stride; }
 
 	static VertexBuffer* create(int size, int stride, void* data);
-	
-	virtual void bind(RenderContext* context) = 0;
 };
