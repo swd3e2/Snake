@@ -18,12 +18,13 @@ set(INCLUDE_DIRS
     Snake/vendor/json/include
     Snake/vendor/glfw/include
     Snake/vendor/lua-bridge/Source
+    Snake/vendor/ImGuizmo
 )
 
 add_executable(Snake ${SOURCES} ${HEADERS})
 
 target_include_directories(Snake PRIVATE ${INCLUDE_DIRS})
-target_link_libraries(Snake opengl32 ../Snake/vendor/libs/glew32s ../Snake/vendor/libs/glfw/glfw3 ../Snake/vendor/libs/Lua52)
+target_link_libraries(Snake opengl32 Snake/vendor/libs/glew32s Snake/vendor/libs/glfw/glfw3 Snake/vendor/libs/Lua52)
 
 message(STATUS ${CMAKE_CURRENT_SOURCE_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Debug/Debug)

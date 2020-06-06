@@ -21,6 +21,7 @@
 #include "Graphics/Platform/OpenGL/OpenGLRenderer.h"
 #include "FileSystem/File.h"
 #include "Graphics/RenderGraph/RenderGraph.h"
+#include "Graphics/Renderer/RenderTarget.h"
 
 struct Drawable {
     VertexBuffer* vb;
@@ -65,6 +66,7 @@ public:
     std::shared_ptr<ConstantBuffer> modelShaderBuffer;
     std::shared_ptr<ConstantBuffer> meshShaderBuffer;
     std::shared_ptr<ConstantBuffer> materialShaderBuffer;
+    std::shared_ptr<RenderTarget> rt;
 
     entt::registry* registry;
     
@@ -84,9 +86,6 @@ public:
         File filePS("defaultPS.glsl");
 
         shaderPipeline.reset(ShaderPipeline::create(fileVS.getConent(), filePS.getConent()));
-
-        
-   
 
         shaderInputLayout = std::make_shared<ShaderInputLayout>();
 
@@ -117,6 +116,8 @@ public:
 
         glEnable(GL_DEPTH_TEST);
 
+        rt.reset(RenderTarget::create(1920, 1080, 1, TextureFormat::RGBA8));
+
         renderGraph = std::make_unique<RenderGraph>(&renderer);
         std::shared_ptr<Pass> forwardRenderPass = std::make_shared<Pass>("forward");
         forwardRenderPass->bindables.push_back(shaderPipeline.get());
@@ -129,7 +130,7 @@ public:
         shaderPipelineTest.reset(ShaderPipeline::create(fileVS1.getConent(), filePS1.getConent()));
         std::shared_ptr<Pass> testRenderPass = std::make_shared<Pass>("test");
         testRenderPass->bindables.push_back(shaderPipelineTest.get());
-        //forwardRenderPass->bindables.push_back(shaderInputLayout.get());
+        //testRenderPass->bindables.push_back(shaderInputLayout.get());
         renderGraph->addPass(testRenderPass);
 	}
 
@@ -152,6 +153,7 @@ public:
             modelData.toWorld = glm::translate(modelData.toWorld, transform.translation);
             modelData.toWorld = modelData.toWorld * glm::eulerAngleXYZ(transform.rotation.x, transform.rotation.y, transform.rotation.z);
             modelData.toWorld = glm::transpose(glm::scale(modelData.toWorld, transform.scale));
+            modelData.toWorld = glm::transpose(transform.matrix);
             modelData.inverseToWorld = glm::inverse(modelData.toWorld);
 
             std::function<void()> command = std::bind([](ModelData modelData, ConstantBuffer* buffer) {
