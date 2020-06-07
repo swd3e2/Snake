@@ -52,6 +52,7 @@ public:
 			i++;
 		});
 		ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(((OpenGLRenderTarget*)renderTarget)->colorTextures[0])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(((OpenGLRenderTarget*)renderTarget)->colorTextures[1])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
 		ImGui::End();
 
 		ImGui::Begin("Entities");

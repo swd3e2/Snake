@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Graphics/Renderer/ShaderPipeline.h"
+#include "Common/Helper.h"
+#include <string>
 
 class OpenGLShaderPipeline : public ShaderPipeline {
 public:

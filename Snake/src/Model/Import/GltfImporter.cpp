@@ -400,15 +400,13 @@ int GltfImporter::getSkinByMesh(int mesh, const tinygltf::Node& node, const tiny
 	}
 }
 
-std::string GltfImporter::getBinaryFileFolder(std::string gltfFilePath)
-{
+std::string GltfImporter::getBinaryFileFolder(std::string gltfFilePath) {
 	std::replace(gltfFilePath.begin(), gltfFilePath.end(), '\\', '/');
-	gltfFilePath = Helper::trimToLastLineEntry(gltfFilePath.c_str(), '/');
+	gltfFilePath = trimToLastLineEntry(gltfFilePath.c_str(), '/');
 	return gltfFilePath;
 }
 
-int GltfImporter::getJointByNode(int nodeId, const tinygltf::Model& gltfModel)
-{
+int GltfImporter::getJointByNode(int nodeId, const tinygltf::Model& gltfModel) {
 	if (gltfModel.skins.size() == 0) {
 		return -1;
 	}

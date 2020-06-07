@@ -14,7 +14,7 @@ public:
 	TextureFormat textureFormat;
 public:
 	Texture2D(int width, int height, int location, TextureFormat textureFormat) :
-		width(width), height(height) 
+		width(width), height(height), location(location)
 	{}
 
 	static Texture2D* create(int width, int height, int location, void* data, TextureFormat textureFormat = TextureFormat::RGBA8);

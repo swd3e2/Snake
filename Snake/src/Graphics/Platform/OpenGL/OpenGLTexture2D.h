@@ -23,11 +23,11 @@ public:
 		glTextureParameteri(textureId, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTextureParameteri(textureId, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		glTextureParameteri(textureId, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTextureParameteri(textureId, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTextureParameteri(textureId, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTextureParameteri(textureId, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
         if (data != nullptr) {
-            glTextureSubImage2D(textureId, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, data);
+            glTextureSubImage2D(textureId, 0, 0, 0, width, height, getInternalTextureFormat(textureFormat), GL_UNSIGNED_BYTE, data);
         }
     }
 

@@ -76,7 +76,7 @@ public:
 
     double cameraRotX = 0.0f;
     double cameraRotY = 0.0f;
-
+    std::shared_ptr<Texture2D> tex;
     Camera camera;
 public:
 	void init(entt::registry* registry) {
@@ -122,10 +122,13 @@ public:
 
         std::shared_ptr<Texture2D> renderTargetTexture;
         renderTargetTexture.reset(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA8));
+        std::shared_ptr<Texture2D> renderTargetTexture2;
+        renderTargetTexture2.reset(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA32));
         std::shared_ptr<Texture2D> renderTargetDepthTexture;
-        renderTargetDepthTexture.reset(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::D24S8));
+        renderTargetDepthTexture.reset(Texture2D::create(1920, 1080, 1, nullptr, TextureFormat::D24S8));
         rt.reset(RenderTarget::create());
         rt->addColorTexture(renderTargetTexture);
+        rt->addColorTexture(renderTargetTexture2);
         rt->setDepthTexture(renderTargetDepthTexture);
 
         renderGraph = std::make_unique<RenderGraph>(&renderer);
@@ -140,13 +143,15 @@ public:
         testRenderPass->bindables.push_back(Renderer::getMainRenderTarget());
         renderGraph->addPass(testRenderPass);
 
-        std::shared_ptr<RawTexture> texture = std::make_shared<RawTexture>("test.png");
-        std::shared_ptr<Texture2D> tex;
-        tex.reset(Texture2D::create(texture->getWidth(), texture->getHeight(), 0, texture->getData(), texture->getChannels() == 4 ? TextureFormat::RGBA8 : TextureFormat::RGB8));
+        std::shared_ptr<RawTexture> texture = std::make_shared<RawTexture>("texture_01.png");
+        texture->import();
+
+        tex.reset(Texture2D::create(texture->getWidth(), texture->getHeight(), 1, texture->getData(), texture->getChannels() == 4 ? TextureFormat::RGBA8 : TextureFormat::RGB8));
 	}
 
 	void update(double dt) {
         rt->clear(context);
+        tex->bind(context);
         shaderInputLayout->bind();
 
 		projectionData.projection = glm::transpose(camera.getPerspectiveMatrix() * camera.getViewMatrix());
@@ -206,26 +211,30 @@ public:
         renderGraph->execute();
         renderer.bindMainRenderTarget();
 
+        updateCamera();
+	}
+
+    void updateCamera()
+    {
         if (InputManager::instance()->isKeyPressed(GLFW_KEY_E)) {
             camera.m_Rotation.x -= (float)InputManager::instance()->mouseMoveX * 0.0045f;
             camera.m_Rotation.y += (float)InputManager::instance()->mouseMoveY * 0.0045f;
         }
 
         if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_W)) {
-            camera.m_Position += camera.forwardVec * 11.2f;
+            camera.m_Position += camera.forwardVec * 0.2f;
         } else if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_S)) {
-            camera.m_Position -= camera.forwardVec * 11.2f;
+            camera.m_Position -= camera.forwardVec * 0.2f;
         }
 
         if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_A)) {
-            camera.m_Position += camera.rightVec * 11.2f;
+            camera.m_Position += camera.rightVec * 0.2f;
         } else if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_D)) {
-            camera.m_Position -= camera.rightVec * 11.2f;
+            camera.m_Position -= camera.rightVec * 0.2f;
         }
 
         camera.update();
-	}
-
+    }
     void updateTransform(const int nodeId, Model* renderable, const glm::mat4& parentTransform)
     {
         const std::vector<std::shared_ptr<Model::Node>>& nodes = renderable->getNodes();

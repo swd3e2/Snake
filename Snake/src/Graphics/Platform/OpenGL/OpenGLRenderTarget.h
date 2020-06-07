@@ -24,11 +24,15 @@ public:
 
 	virtual void addColorTexture(const std::shared_ptr<Texture2D>& texture) override {
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-
-		unsigned int temp = GL_COLOR_ATTACHMENT0 + colorTexturesCount;
+		
 		GLuint tex = std::static_pointer_cast<OpenGLTexture2D>(texture)->textureId;
-		glNamedFramebufferTexture(fbo, temp, tex, 0);
-		glNamedFramebufferDrawBuffers(fbo, 1, &temp);
+		glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0 + colorTexturesCount, tex, 0);
+
+		unsigned int* temp = new unsigned int[colorTexturesCount + 1];
+		for (int i = 0; i < colorTexturesCount + 1; i++) 
+			temp[i] = GL_COLOR_ATTACHMENT0 + i;
+
+		glNamedFramebufferDrawBuffers(fbo, colorTexturesCount + 1, temp);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
@@ -61,7 +65,7 @@ public:
 
 	virtual void clear(RenderContext* renderContext) override {
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-		glClearColor(1,0,0,0);
+		glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}

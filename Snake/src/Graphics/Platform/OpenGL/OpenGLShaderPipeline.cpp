@@ -34,31 +34,19 @@ OpenGLShaderPipeline::OpenGLShaderPipeline(const std::string& vertexShaderCode, 
     }
 
     std::unordered_map<std::string, int> textures;
-    size_t size = 0;
+    std::vector<std::string> lines = split(pixelShaderCode, '\n');
 
-    {
-        const char* charShaderCode = pixelShaderCode.c_str();
-        const char* entrance = strstr(charShaderCode, "uniform sampler2D");
-        const char* temp;
-        while (entrance != nullptr)
-        {
-            entrance += strlen("uniform sampler2D") + 1; // skip "uniform sampler2D" and space
-            temp = strstr(entrance, ";");
-            size = temp - entrance;
-            char* uniformName = new char[size + 1];
-            strncpy(uniformName, entrance, size);
-            uniformName[size] = '\0';
+    for (auto& line : lines) {
+        if (line.rfind("uniform sampler2D") == 0) {
+            std::vector<std::string> words = split(line, ' ');
 
-            entrance = strstr(entrance, "//");
-            entrance += strlen("//");
-            temp = strstr(entrance, "\n");
-            size = temp - entrance;
-            char* slot = new char[size + 1];
-            strncpy(slot, entrance, size);
-            slot[size] = '\0';
+            std::string textureUniformName = words[2];
+            textureUniformName.erase(std::remove(textureUniformName.begin(), textureUniformName.end(), ';'), textureUniformName.end());
 
-            textures[uniformName] = atoi(slot);
-            entrance = strstr(entrance, "uniform sampler2D");
+            std::string location = words[3];
+            location.erase(std::remove(location.begin(), location.end(), '/'), location.end());
+
+            textures[textureUniformName] = std::atoi(location.c_str());
         }
     }
     
