@@ -6,48 +6,52 @@
 #include <vector>
 #include <iostream>
 #include "Graphics/Renderer/CommonTypes.h"
+#include "Graphics/Renderer/Texture2D.h"
+#include "OpenGLTexture2D.h"
 
 class OpenGLRenderTarget : public RenderTarget
 {
 public:
     unsigned int fbo;
-    unsigned int* colorTexture;
-    unsigned int depthTexture;
+	unsigned int colorTexturesCount = 0;
+	std::vector<std::shared_ptr<Texture2D>> colorTextures;
+	std::shared_ptr<Texture2D> depthTexture;
 public:
-    OpenGLRenderTarget(int width, int height, int cnt, TextureFormat colorTextureFormat = TextureFormat::RGBA8) :
-        RenderTarget(width, height, cnt, colorTextureFormat)
-    {
-        colorTexture = new unsigned int[cnt];
-
+    OpenGLRenderTarget() {
         glCreateFramebuffers(1, &fbo);
-		glCreateTextures(GL_TEXTURE_2D, cnt, colorTexture);
+        //glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
 
-		std::vector<unsigned int> attachmentsToActivate;
-		for (int i = 0; i < cnt; i++) {
-			glTextureStorage2D(colorTexture[i], 1, getTextureFormat(colorTextureFormat), width, height);
-			glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0 + i, colorTexture[i], 0);
-			attachmentsToActivate.push_back(GL_COLOR_ATTACHMENT0 + i);
-		}
+	virtual void addColorTexture(const std::shared_ptr<Texture2D>& texture) override {
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-		unsigned int temp = GL_COLOR_ATTACHMENT0;
-		glNamedFramebufferDrawBuffers(fbo, cnt, &temp);
-
-		glCreateTextures(GL_TEXTURE_2D, 1, &depthTexture);
-		glTextureStorage2D(depthTexture, 1, GL_DEPTH24_STENCIL8, width, height);
-
-		glNamedFramebufferTexture(fbo, GL_DEPTH_STENCIL_ATTACHMENT, depthTexture, 0);
+		unsigned int temp = GL_COLOR_ATTACHMENT0 + colorTexturesCount;
+		GLuint tex = std::static_pointer_cast<OpenGLTexture2D>(texture)->textureId;
+		glNamedFramebufferTexture(fbo, temp, tex, 0);
+		glNamedFramebufferDrawBuffers(fbo, 1, &temp);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
 			std::cout << "Error occured while creating framebuffer" << std::endl;
 		}
-
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    }
+
+		colorTextures.push_back(texture);
+		colorTexturesCount++;
+	}
+
+	virtual void setDepthTexture(const std::shared_ptr<Texture2D>& texture) override {
+		depthTexture = texture;
+		glNamedFramebufferTexture(fbo, GL_DEPTH_STENCIL_ATTACHMENT, std::static_pointer_cast<OpenGLTexture2D>(texture)->textureId, 0);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+			std::cout << "Error occured while creating framebuffer" << std::endl;
+		}
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
 
 	virtual ~OpenGLRenderTarget() {
-		glDeleteTextures(getColorTextureCount(), colorTexture);
-		glDeleteTextures(1, &depthTexture);
 		glDeleteFramebuffers(1, &fbo);
 	}
 
@@ -60,14 +64,5 @@ public:
 		glClearColor(1,0,0,0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	}
-private:
-    unsigned int getTextureFormat(TextureFormat format)
-	{
-		switch (format) {
-			case TextureFormat::RGBA8:     return GL_RGBA8;
-			case TextureFormat::RGBA32:    return GL_RGBA32F;
-		}
-		return GL_RGBA;
 	}
 };

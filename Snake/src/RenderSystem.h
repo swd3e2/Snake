@@ -7,7 +7,7 @@
 #include "Graphics/Renderer/ShaderInputLayout.h"
 #include "Graphics/Renderer/VertexBuffer.h"
 #include "Graphics/Renderer/ConstantBuffer.h"
-#include "Graphics/Renderer/Texture.h"
+#include "Graphics/Renderer/Texture2D.h"
 #include <vector>
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -22,6 +22,7 @@
 #include "FileSystem/File.h"
 #include "Graphics/RenderGraph/RenderGraph.h"
 #include "Graphics/Renderer/RenderTarget.h"
+#include "Import/RawTexture.h"
 
 struct Drawable {
     VertexBuffer* vb;
@@ -119,7 +120,13 @@ public:
 
         glEnable(GL_DEPTH_TEST);
 
-        rt.reset(RenderTarget::create(1920, 1080, 1, TextureFormat::RGBA8));
+        std::shared_ptr<Texture2D> renderTargetTexture;
+        renderTargetTexture.reset(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA8));
+        std::shared_ptr<Texture2D> renderTargetDepthTexture;
+        renderTargetDepthTexture.reset(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::D24S8));
+        rt.reset(RenderTarget::create());
+        rt->addColorTexture(renderTargetTexture);
+        rt->setDepthTexture(renderTargetDepthTexture);
 
         renderGraph = std::make_unique<RenderGraph>(&renderer);
         std::shared_ptr<Pass> forwardRenderPass = std::make_shared<Pass>("forward");
@@ -132,6 +139,10 @@ public:
         testRenderPass->bindables.push_back(shaderPipeline.get());
         testRenderPass->bindables.push_back(Renderer::getMainRenderTarget());
         renderGraph->addPass(testRenderPass);
+
+        std::shared_ptr<RawTexture> texture = std::make_shared<RawTexture>("test.png");
+        std::shared_ptr<Texture2D> tex;
+        tex.reset(Texture2D::create(texture->getWidth(), texture->getHeight(), 0, texture->getData(), texture->getChannels() == 4 ? TextureFormat::RGBA8 : TextureFormat::RGB8));
 	}
 
 	void update(double dt) {

@@ -2,9 +2,9 @@
 #include "Graphics/Renderer.h"
 #include "Graphics/Platform/OpenGL/OpenGLRenderTarget.h"
 
-RenderTarget* RenderTarget::create(int width, int height, int cnt, TextureFormat colorTextureFormat) {
+RenderTarget* RenderTarget::create() {
     switch (Renderer::getType()) {
-        case RendererType::OpenGL: return new OpenGLRenderTarget(width, height, cnt, colorTextureFormat);
+        case RendererType::OpenGL: return new OpenGLRenderTarget();
     }
     return nullptr;
 }
