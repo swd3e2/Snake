@@ -82,7 +82,7 @@ public:
         rs.init(&registry);
         scriptSystem.init(&registry);
 
-        interface = std::make_shared<MainInterface>(window, &registry, &rs.camera);
+        interface = std::make_shared<MainInterface>(window, &registry, &rs.camera, rs.rt.get());
 
         // Saver saver;
         // saver.saveToFile("test.json", &registry);
@@ -99,7 +99,7 @@ public:
         while (!glfwWindowShouldClose(window)) {
             /* Render here */
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
+            
             m_Start = std::chrono::high_resolution_clock::now();
 
             rs.update(16.0);

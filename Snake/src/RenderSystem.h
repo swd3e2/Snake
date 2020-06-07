@@ -67,7 +67,7 @@ public:
     std::shared_ptr<ConstantBuffer> meshShaderBuffer;
     std::shared_ptr<ConstantBuffer> materialShaderBuffer;
     std::shared_ptr<RenderTarget> rt;
-
+    
     entt::registry* registry;
     
     float cameraX = -1.5f;
@@ -86,7 +86,10 @@ public:
         File filePS("defaultPS.glsl");
 
         shaderPipeline.reset(ShaderPipeline::create(fileVS.getConent(), filePS.getConent()));
+        File fileVS1("defaultVScopy.glsl");
+        File filePS1("defaultPScopy.glsl");
 
+        shaderPipelineTest.reset(ShaderPipeline::create(fileVS1.getConent(), filePS1.getConent()));
         shaderInputLayout = std::make_shared<ShaderInputLayout>();
 
         shaderInputLayout->add({ InputDataType::Float3, "pos" });
@@ -120,21 +123,19 @@ public:
 
         renderGraph = std::make_unique<RenderGraph>(&renderer);
         std::shared_ptr<Pass> forwardRenderPass = std::make_shared<Pass>("forward");
-        forwardRenderPass->bindables.push_back(shaderPipeline.get());
+        forwardRenderPass->bindables.push_back(rt.get());
+        forwardRenderPass->bindables.push_back(shaderPipelineTest.get());
         //forwardRenderPass->bindables.push_back(shaderInputLayout.get());
         renderGraph->addPass(forwardRenderPass);
 
-        File fileVS1("defaultVScopy.glsl");
-        File filePS1("defaultPScopy.glsl");
-
-        shaderPipelineTest.reset(ShaderPipeline::create(fileVS1.getConent(), filePS1.getConent()));
         std::shared_ptr<Pass> testRenderPass = std::make_shared<Pass>("test");
-        testRenderPass->bindables.push_back(shaderPipelineTest.get());
-        //testRenderPass->bindables.push_back(shaderInputLayout.get());
+        testRenderPass->bindables.push_back(shaderPipeline.get());
+        testRenderPass->bindables.push_back(Renderer::getMainRenderTarget());
         renderGraph->addPass(testRenderPass);
 	}
 
 	void update(double dt) {
+        rt->clear(context);
         shaderInputLayout->bind();
 
 		projectionData.projection = glm::transpose(camera.getPerspectiveMatrix() * camera.getViewMatrix());
@@ -192,6 +193,7 @@ public:
         });
 
         renderGraph->execute();
+        renderer.bindMainRenderTarget();
 
         if (InputManager::instance()->isKeyPressed(GLFW_KEY_E)) {
             camera.m_Rotation.x -= (float)InputManager::instance()->mouseMoveX * 0.0045f;

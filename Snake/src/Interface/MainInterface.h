@@ -7,6 +7,7 @@
 #include "../Model/Model.h"
 #include <ImGuizmo.h>
 #include "Camera.h"
+#include "Graphics/Platform/OpenGL/OpenGLRenderTarget.h"
 
 class MainInterface {
 private:
@@ -15,9 +16,10 @@ private:
 	entt::entity selectedEntity;
 	bool isEntitySelected = false;
 	Camera* camera;
+	RenderTarget* renderTarget;
 public:
-	MainInterface(GLFWwindow* window, entt::registry* registry, Camera* camera) :
-		registry(registry), camera(camera)
+	MainInterface(GLFWwindow* window, entt::registry* registry, Camera* camera, RenderTarget* renderTarget) :
+		registry(registry), camera(camera), renderTarget(renderTarget)
 	{
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
@@ -49,6 +51,7 @@ public:
 			}
 			i++;
 		});
+		ImGui::Image((void*)*((OpenGLRenderTarget*)renderTarget)->colorTexture, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
 		ImGui::End();
 
 		ImGui::Begin("Entities");

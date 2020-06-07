@@ -29,6 +29,10 @@ public:
     }
 
     virtual void drawIndexed(int cnt) = 0;
+    
+    void bindMainRenderTarget() {
+        _mainRenderTarget->bind(_renderContext);
+    }
 
     static Renderer* instance() { return _instance; }
     static RendererType getType() { return _rendererType; };

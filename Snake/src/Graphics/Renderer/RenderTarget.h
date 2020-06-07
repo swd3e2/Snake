@@ -1,8 +1,9 @@
 #pragma once
 
 #include "CommonTypes.h";
+#include "Graphics/Bindable.h"
 
-class RenderTarget {
+class RenderTarget : public Bindable {
 private:
     int width = 0;
     int height = 0;
@@ -14,5 +15,6 @@ public:
     {}
     virtual ~RenderTarget() {}
     const int getColorTextureCount() const { return cnt; }
+    virtual void clear(RenderContext* renderContext) = 0;
     static RenderTarget* create(int width, int height, int cnt, TextureFormat colorTextureFormat = TextureFormat::RGBA8);
 };

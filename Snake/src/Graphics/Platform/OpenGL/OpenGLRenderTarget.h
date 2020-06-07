@@ -7,9 +7,9 @@
 #include <iostream>
 #include "Graphics/Renderer/CommonTypes.h"
 
-class OpenGLRenderTarget : public RenderTarget, Bindable
+class OpenGLRenderTarget : public RenderTarget
 {
-private:
+public:
     unsigned int fbo;
     unsigned int* colorTexture;
     unsigned int depthTexture;
@@ -29,7 +29,8 @@ public:
 			attachmentsToActivate.push_back(GL_COLOR_ATTACHMENT0 + i);
 		}
 
-		glNamedFramebufferDrawBuffers(fbo, cnt, attachmentsToActivate.data());
+		unsigned int temp = GL_COLOR_ATTACHMENT0;
+		glNamedFramebufferDrawBuffers(fbo, cnt, &temp);
 
 		glCreateTextures(GL_TEXTURE_2D, 1, &depthTexture);
 		glTextureStorage2D(depthTexture, 1, GL_DEPTH24_STENCIL8, width, height);
@@ -54,6 +55,13 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, fbo);
     }
 
+	virtual void clear(RenderContext* renderContext) override {
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		glClearColor(1,0,0,0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+private:
     unsigned int getTextureFormat(TextureFormat format)
 	{
 		switch (format) {
