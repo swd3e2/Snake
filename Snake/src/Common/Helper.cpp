@@ -34,5 +34,6 @@ std::vector<std::string> split(std::string str, char ch) {
 	while (std::getline(ss, temp, ch)) {
 		lines.push_back(temp);
 	}
+    
 	return lines;
 }

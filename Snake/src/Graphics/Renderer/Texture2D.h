@@ -19,6 +19,7 @@ public:
 
 	static Texture2D* create(int width, int height, int location, void* data, TextureFormat textureFormat = TextureFormat::RGBA8);
 
+	virtual void setData(void* data) = 0;
 	const TextureFormat getFormat() const { return textureFormat; }
 	const int getWidth() const { return width; }
 	const int getHeight() const { return height; }

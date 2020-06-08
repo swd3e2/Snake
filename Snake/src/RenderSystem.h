@@ -23,6 +23,7 @@
 #include "Graphics/RenderGraph/RenderGraph.h"
 #include "Graphics/Renderer/RenderTarget.h"
 #include "Import/RawTexture.h"
+#include "Graphics/RenderGraph/FullscreenPass.h"
 
 struct Drawable {
     VertexBuffer* vb;
@@ -87,6 +88,7 @@ public:
         File filePS("defaultPS.glsl");
 
         shaderPipeline.reset(ShaderPipeline::create(fileVS.getConent(), filePS.getConent()));
+
         File fileVS1("defaultVScopy.glsl");
         File filePS1("defaultPScopy.glsl");
 
@@ -113,19 +115,22 @@ public:
         meshShaderBuffer.reset(ConstantBuffer::create(2, sizeof(meshData), &meshData));
         materialShaderBuffer.reset(ConstantBuffer::create(3, sizeof(materialData), &materialData));
 
+        std::shared_ptr<RawTexture> texture = std::make_shared<RawTexture>("texture_01.png");
+        texture->import();
+        tex.reset(Texture2D::create(texture->getWidth(), texture->getHeight(), 0, texture->getData(), texture->getChannels() == 4 ? TextureFormat::RGBA8 : TextureFormat::RGB8));
+
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
         camera.setProjectionMatrix(80.0f, 16.0f / 9.0f, 0.2f, 100000.f);
-        camera.m_Position.z = -15.0f;
 
         glEnable(GL_DEPTH_TEST);
 
         std::shared_ptr<Texture2D> renderTargetTexture;
         renderTargetTexture.reset(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA8));
         std::shared_ptr<Texture2D> renderTargetTexture2;
-        renderTargetTexture2.reset(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA32));
+        renderTargetTexture2.reset(Texture2D::create(1920, 1080, 1, nullptr, TextureFormat::RGBA32));
         std::shared_ptr<Texture2D> renderTargetDepthTexture;
-        renderTargetDepthTexture.reset(Texture2D::create(1920, 1080, 1, nullptr, TextureFormat::D24S8));
+        renderTargetDepthTexture.reset(Texture2D::create(1920, 1080, 2, nullptr, TextureFormat::D24S8));
         rt.reset(RenderTarget::create());
         rt->addColorTexture(renderTargetTexture);
         rt->addColorTexture(renderTargetTexture2);
@@ -135,23 +140,20 @@ public:
         std::shared_ptr<Pass> forwardRenderPass = std::make_shared<Pass>("forward");
         forwardRenderPass->bindables.push_back(rt.get());
         forwardRenderPass->bindables.push_back(shaderPipelineTest.get());
+        forwardRenderPass->bindables.push_back(tex.get());
         //forwardRenderPass->bindables.push_back(shaderInputLayout.get());
         renderGraph->addPass(forwardRenderPass);
 
-        std::shared_ptr<Pass> testRenderPass = std::make_shared<Pass>("test");
+        std::shared_ptr<FullscreenPass> testRenderPass = std::make_shared<FullscreenPass>("test");
         testRenderPass->bindables.push_back(shaderPipeline.get());
         testRenderPass->bindables.push_back(Renderer::getMainRenderTarget());
+        testRenderPass->bindables.push_back(renderTargetTexture.get());
         renderGraph->addPass(testRenderPass);
-
-        std::shared_ptr<RawTexture> texture = std::make_shared<RawTexture>("texture_01.png");
-        texture->import();
-
-        tex.reset(Texture2D::create(texture->getWidth(), texture->getHeight(), 1, texture->getData(), texture->getChannels() == 4 ? TextureFormat::RGBA8 : TextureFormat::RGB8));
 	}
 
 	void update(double dt) {
         rt->clear(context);
-        tex->bind(context);
+        // tex->bind(context);
         shaderInputLayout->bind();
 
 		projectionData.projection = glm::transpose(camera.getPerspectiveMatrix() * camera.getViewMatrix());
@@ -170,7 +172,7 @@ public:
             modelData.toWorld = glm::translate(modelData.toWorld, transform.translation);
             modelData.toWorld = modelData.toWorld * glm::eulerAngleXYZ(transform.rotation.x, transform.rotation.y, transform.rotation.z);
             modelData.toWorld = glm::transpose(glm::scale(modelData.toWorld, transform.scale));
-            modelData.toWorld = glm::transpose(transform.matrix);
+            //modelData.toWorld = glm::transpose(transform.matrix);
             modelData.inverseToWorld = glm::inverse(modelData.toWorld);
 
             std::function<void()> command = std::bind([](ModelData modelData, ConstantBuffer* buffer) {

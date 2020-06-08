@@ -17,12 +17,9 @@ public:
     std::string sink;
     std::vector<Bindable*> bindables;
 public:
-    Pass(const std::string& name) :
-        name(name) 
-    {
-    }
+    Pass(const std::string& name) : name(name) {}
 
-    void execute(Renderer* renderer) {
+    virtual void execute(Renderer* renderer) {
         for (auto& it : bindables) {
             it->bind(renderer->getContext());
         }
@@ -34,7 +31,7 @@ public:
         }
     }
     
-    void addCommand(std::function<void()> command) {
+    virtual void addCommand(std::function<void()> command) {
         commands.push(command);
     }
 };

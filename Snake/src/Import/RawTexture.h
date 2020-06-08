@@ -21,7 +21,7 @@ public:
 
     void import()
     {
-        stbi_set_flip_vertically_on_load(1);
+        //stbi_set_flip_vertically_on_load(1);
         data = stbi_load(filename.c_str(), &width, &height, &channels, 0);
     }
 

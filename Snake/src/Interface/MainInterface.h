@@ -8,6 +8,8 @@
 #include <ImGuizmo.h>
 #include "Camera.h"
 #include "Graphics/Platform/OpenGL/OpenGLRenderTarget.h"
+#include "Saver.h"
+#include "Model/Import/GltfImporter.h"
 
 class MainInterface {
 private:
@@ -44,6 +46,14 @@ public:
 		ImGui::Begin("Entities");
 		std::string temp = "Entity №";
 		int i = 0;
+		if (ImGui::Button("Create entity")) {
+			isEntitySelected = true;
+			selectedEntity = registry->create();
+		}
+		if (ImGui::Button("Save")) {
+			Saver saver;
+			saver.saveToFile("test.json", registry);
+		}
 		registry->each([&](const entt::entity& entity) {
 			if (ImGui::Selectable(("Entity###" + std::to_string(i)).c_str())) {
 				selectedEntity = entity;
@@ -59,18 +69,27 @@ public:
 		ImGui::Text(("Delta " + std::to_string(dt)).c_str());
 		ImGui::Text("Nodes");
 
-		if (isEntitySelected && registry->has<Render>(selectedEntity)) {
-			const Render& render = registry->get<Render>(selectedEntity);
-			if (render.model != nullptr) {
-				drawNodeHierarchy(render.model->getRootNode(), render.model->getNodes());
-			}
+		if (isEntitySelected) {
+			if (registry->has<Render>(selectedEntity)) {
+				const Render& render = registry->get<Render>(selectedEntity);
+				if (render.model != nullptr) {
+					drawNodeHierarchy(render.model->getRootNode(), render.model->getNodes());
+				}
 
-			Transform& transform = registry->get<Transform>(selectedEntity);
-			ImGui::DragFloat3("Translation###T", (float*)&transform.translation, 0.01f, -10000.0f, 10000.0f);
-			ImGui::DragFloat3("Scale###S", (float*)&transform.scale, 0.01f, -10000.0f, 10000.0f);
-			ImGui::DragFloat3("Rotation###R", (float*)&transform.rotation, 0.01f, -10000.0f, 10000.0f);
-			EditTransform(transform);
-		}
+				Transform& transform = registry->get<Transform>(selectedEntity);
+				ImGui::DragFloat3("Translation###T", (float*)&transform.translation, 0.01f, -10000.0f, 10000.0f);
+				ImGui::DragFloat3("Scale###S", (float*)&transform.scale, 0.01f, -10000.0f, 10000.0f);
+				ImGui::DragFloat3("Rotation###R", (float*)&transform.rotation, 0.01f, -10000.0f, 10000.0f);
+				EditTransform(transform);
+			} else {
+				if (ImGui::Button("Create render component")) {
+					GltfImporter importer;
+					std::shared_ptr<Import::Model> model = importer.import("BoxTextured.gltf");
+					registry->emplace<Render>(selectedEntity, std::make_shared<Model>(model));
+					registry->emplace<Transform>(selectedEntity);
+				}
+			}
+		} 
 		
 		ImGui::End();
 

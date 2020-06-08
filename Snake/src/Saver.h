@@ -1,3 +1,5 @@
+#pragma once
+
 #include <string>
 #include <nlohmann/json.hpp>
 #include <entt/entt.hpp>
@@ -16,11 +18,11 @@ public:
         registry->each([&](const entt::entity& entity) {
 			if (registry->has<Render>(entity)) {
                 const Render& render = registry->get<Render>(entity);
-                data["Entites"][cntr]["Render"]["filename"] = render.model->getImportFilename();
+                data["Entities"][cntr]["Render"]["filename"] = render.model->getImportFilename();
             }
             if (registry->has<Transform>(entity)) {
                 const Transform& transform = registry->get<Transform>(entity);
-                data["Entites"][cntr]["Transform"] = {
+                data["Entities"][cntr]["Transform"] = {
                     { "rotation", { transform.rotation.x, transform.rotation.y, transform.rotation.z }},
                     { "translation", { transform.translation.x, transform.translation.y, transform.translation.z }},
                     { "scale", { transform.scale.x, transform.scale.y, transform.scale.z }}
@@ -28,8 +30,9 @@ public:
             }
             if (registry->has<Script>(entity)) {
                 const Script& script = registry->get<Script>(entity);
-                data["Entites"][cntr]["Script"]["filename"] = script.filename;
+                data["Entities"][cntr]["Script"]["filename"] = script.filename;
             }
+            cntr++;
 		});
 
         std::ofstream fileStream(filename, std::ios::out);

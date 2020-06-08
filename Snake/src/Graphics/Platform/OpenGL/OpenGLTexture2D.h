@@ -17,19 +17,26 @@ public:
     OpenGLTexture2D(int width, int height, int location, void* data, TextureFormat textureFormat = TextureFormat::RGBA8) :
         Texture2D(width, height, location, textureFormat) 
     {
-		glCreateTextures(GL_TEXTURE_2D, 1, &textureId);
-		glTextureStorage2D(textureId, 1, getTextureFormat(textureFormat), width, height);
+		m_InternalFormat = getTextureFormat(textureFormat);
+		m_DataFormat = getInternalTextureFormat(textureFormat);
 
-		glTextureParameteri(textureId, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(textureId, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glCreateTextures(GL_TEXTURE_2D, 1, &textureId);
+		glTextureStorage2D(textureId, 1, m_InternalFormat, width, height);
+
+		glTextureParameteri(textureId, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTextureParameteri(textureId, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 		glTextureParameteri(textureId, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTextureParameteri(textureId, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
         if (data != nullptr) {
-            glTextureSubImage2D(textureId, 0, 0, 0, width, height, getInternalTextureFormat(textureFormat), GL_UNSIGNED_BYTE, data);
+            glTextureSubImage2D(textureId, 0, 0, 0, width, height, m_DataFormat, GL_UNSIGNED_BYTE, data);
         }
     }
+
+	virtual void setData(void* data) override {
+		glTextureSubImage2D(textureId, 0, 0, 0, getWidth(), getHeight(), m_DataFormat, GL_UNSIGNED_BYTE, data);
+	}
 
 	~OpenGLTexture2D() {
 		glDeleteTextures(1, &textureId);
