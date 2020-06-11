@@ -22,16 +22,18 @@ public:
         quadVertexBuffer.reset(VertexBuffer::create(vertexData.size(), sizeof(vertex), vertexData.data()));
 
         std::vector<unsigned int> indexData;
-        indexData.push_back(0);indexData.push_back(1);indexData.push_back(2);
-        indexData.push_back(2);indexData.push_back(1);indexData.push_back(3);
+        indexData.push_back(0);indexData.push_back(2);indexData.push_back(1);
+        indexData.push_back(2);indexData.push_back(3);indexData.push_back(1);
         quadIndexBuffer.reset(IndexBuffer::create(indexData.size(), indexData.data()));
     }
 
-    virtual void addCommand(std::function<void()> command) override {
-        // dont do anything
-    }
-
     virtual void execute(Renderer* renderer) {
+        while (!commands.empty()) {
+            std::function<void()> command = commands.front();
+            commands.pop();
+            command();
+        }
+
         for (auto& it : bindables) {
             it->bind(renderer->getContext());
         }

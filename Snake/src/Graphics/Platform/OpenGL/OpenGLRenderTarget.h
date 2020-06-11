@@ -8,51 +8,41 @@
 #include "Graphics/Renderer/CommonTypes.h"
 #include "Graphics/Renderer/Texture2D.h"
 #include "OpenGLTexture2D.h"
+#include <unordered_map>
 
 class OpenGLRenderTarget : public RenderTarget
 {
 public:
     unsigned int fbo;
-	unsigned int colorTexturesCount = 0;
-	std::vector<std::shared_ptr<Texture2D>> colorTextures;
+	std::unordered_map<int, std::shared_ptr<Texture2D>> colorTexturesMap;
 	std::shared_ptr<Texture2D> depthTexture;
 public:
     OpenGLRenderTarget() {
         glCreateFramebuffers(1, &fbo);
-        //glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-	virtual void addColorTexture(const std::shared_ptr<Texture2D>& texture) override {
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-		
+	virtual void setColorTexture(const std::shared_ptr<Texture2D>& texture, int slot, int level) override {
 		GLuint tex = std::static_pointer_cast<OpenGLTexture2D>(texture)->textureId;
-		glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0 + colorTexturesCount, tex, 0);
+		glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0 + slot, tex, level);
 
-		unsigned int* temp = new unsigned int[colorTexturesCount + 1];
-		for (int i = 0; i < colorTexturesCount + 1; i++) 
-			temp[i] = GL_COLOR_ATTACHMENT0 + i;
-
-		glNamedFramebufferDrawBuffers(fbo, colorTexturesCount + 1, temp);
-
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-			std::cout << "Error occured while creating framebuffer" << std::endl;
-		}
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-		colorTextures.push_back(texture);
-		colorTexturesCount++;
+		colorTexturesMap[slot] = texture;
+		this->activateDrawBuffers();
+		checkErrors();
 	}
 
-	virtual void setDepthTexture(const std::shared_ptr<Texture2D>& texture) override {
-		depthTexture = texture;
-		glNamedFramebufferTexture(fbo, GL_DEPTH_STENCIL_ATTACHMENT, std::static_pointer_cast<OpenGLTexture2D>(texture)->textureId, 0);
+	virtual void removeColorTexture(int slot, int level) override {
+		glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0 + slot, 0, level);
 
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-			std::cout << "Error occured while creating framebuffer" << std::endl;
-		}
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		colorTexturesMap.erase(slot);
+		this->activateDrawBuffers();
+		checkErrors();
+	}
+
+	virtual void setDepthTexture(const std::shared_ptr<Texture2D>& texture, int level) override {
+		depthTexture = texture;
+		glNamedFramebufferTexture(fbo, GL_DEPTH_STENCIL_ATTACHMENT, std::static_pointer_cast<OpenGLTexture2D>(texture)->textureId, level);
+
+		checkErrors();
 	}
 
 	virtual ~OpenGLRenderTarget() {
@@ -67,6 +57,26 @@ public:
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+private:
+	void activateDrawBuffers() {
+		const int totatlDrawBuffersCount = colorTexturesMap.size();
+		std::vector<GLuint> temp;
+		temp.reserve(totatlDrawBuffersCount);
+
+		for (auto& it : colorTexturesMap) {
+			temp.push_back(GL_COLOR_ATTACHMENT0 + it.first);
+		}
+
+		glNamedFramebufferDrawBuffers(fbo, totatlDrawBuffersCount, temp.data());
+	}
+
+	void checkErrors() {
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+			std::cout << "Error occured while creating framebuffer" << std::endl;
+		}
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 };

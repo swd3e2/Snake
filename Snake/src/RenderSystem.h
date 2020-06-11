@@ -61,7 +61,6 @@ public:
     std::unique_ptr<RenderGraph> renderGraph;
 
     std::shared_ptr<ShaderPipeline> shaderPipeline;
-    std::shared_ptr<ShaderPipeline> shaderPipelineTest;
     std::shared_ptr<ShaderInputLayout> shaderInputLayout;
     std::shared_ptr<VertexBuffer> vertexBuffer;
     std::shared_ptr<ConstantBuffer> shaderBuffer;
@@ -69,8 +68,13 @@ public:
     std::shared_ptr<ConstantBuffer> meshShaderBuffer;
     std::shared_ptr<ConstantBuffer> materialShaderBuffer;
     std::shared_ptr<RenderTarget> rt;
-    
+    std::shared_ptr<RenderTarget> rt2;
+    std::shared_ptr<MainRenderTarget> mainRenderTarget;
+    std::shared_ptr<Texture2D> noise;
     entt::registry* registry;
+    std::shared_ptr<Texture2D> positions;
+    std::shared_ptr<Texture2D> normals;
+    std::shared_ptr<Texture2D> diffuse;
     
     float cameraX = -1.5f;
     float cameraY = -1.5f;
@@ -79,6 +83,10 @@ public:
     double cameraRotY = 0.0f;
     std::shared_ptr<Texture2D> tex;
     Camera camera;
+
+    std::shared_ptr<FullscreenPass> lightGBufferPass;
+    std::shared_ptr<FullscreenPass> testRenderPass;
+    std::shared_ptr<Pass> forwardRenderPass;
 public:
 	void init(entt::registry* registry) {
         this->registry = registry;
@@ -89,10 +97,6 @@ public:
 
         shaderPipeline.reset(ShaderPipeline::create(fileVS.getConent(), filePS.getConent()));
 
-        File fileVS1("defaultVScopy.glsl");
-        File filePS1("defaultPScopy.glsl");
-
-        shaderPipelineTest.reset(ShaderPipeline::create(fileVS1.getConent(), filePS1.getConent()));
         shaderInputLayout = std::make_shared<ShaderInputLayout>();
 
         shaderInputLayout->add({ InputDataType::Float3, "pos" });
@@ -121,44 +125,108 @@ public:
 
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
-        camera.setProjectionMatrix(80.0f, 16.0f / 9.0f, 0.2f, 100000.f);
+        camera.setProjectionMatrix(90.0f, 1920.0f / 1080.0f, 0.1f, 1000.f);
 
         glEnable(GL_DEPTH_TEST);
 
-        std::shared_ptr<Texture2D> renderTargetTexture;
-        renderTargetTexture.reset(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA8));
-        std::shared_ptr<Texture2D> renderTargetTexture2;
-        renderTargetTexture2.reset(Texture2D::create(1920, 1080, 1, nullptr, TextureFormat::RGBA32));
-        std::shared_ptr<Texture2D> renderTargetDepthTexture;
-        renderTargetDepthTexture.reset(Texture2D::create(1920, 1080, 2, nullptr, TextureFormat::D24S8));
-        rt.reset(RenderTarget::create());
-        rt->addColorTexture(renderTargetTexture);
-        rt->addColorTexture(renderTargetTexture2);
-        rt->setDepthTexture(renderTargetDepthTexture);
+        mainRenderTarget.reset(Renderer::getMainRenderTarget());
 
         renderGraph = std::make_unique<RenderGraph>(&renderer);
-        std::shared_ptr<Pass> forwardRenderPass = std::make_shared<Pass>("forward");
-        forwardRenderPass->bindables.push_back(rt.get());
-        forwardRenderPass->bindables.push_back(shaderPipelineTest.get());
-        forwardRenderPass->bindables.push_back(tex.get());
-        //forwardRenderPass->bindables.push_back(shaderInputLayout.get());
-        renderGraph->addPass(forwardRenderPass);
 
-        std::shared_ptr<FullscreenPass> testRenderPass = std::make_shared<FullscreenPass>("test");
-        testRenderPass->bindables.push_back(shaderPipeline.get());
-        testRenderPass->bindables.push_back(Renderer::getMainRenderTarget());
-        testRenderPass->bindables.push_back(renderTargetTexture.get());
-        renderGraph->addPass(testRenderPass);
+        size_t width = 100;
+        size_t height = 100;
+        noise.reset(Texture2D::create(width, height, 4, nullptr, TextureFormat::R8, 4));
+
+        char* rawdata = new char[width * height * 4];
+        for (size_t x = 0; x < height; x++) {
+            for (size_t y = 0; y < width; y++) {
+                rawdata[x * width*4 + y*4] = 255;
+                rawdata[x * width*4 + y*4 + 1] = 255;
+                rawdata[x * width*4 + y*4 + 2] = 255;
+                rawdata[x * width*4 + y*4 + 3] = 255;
+            }
+        }
+        noise->setData(rawdata);
+        delete[] rawdata;
+        noise->generateMips();
+        
+    
+        std::shared_ptr<Texture2D> renderTargetDepthTexture;
+        {
+            File fileVS("shaders/gbuffer/vertex.glsl");
+            File filePS("shaders/gbuffer/pixel.glsl");
+
+            std::shared_ptr<ShaderPipeline> defferedShader;
+            defferedShader.reset(ShaderPipeline::create(fileVS.getConent(), filePS.getConent()));
+            
+            positions.reset(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA32, 6));
+            positions->generateMips();
+            normals.reset(Texture2D::create(1920, 1080, 1, nullptr, TextureFormat::RGBA32, 6));
+            normals->generateMips();
+            diffuse.reset(Texture2D::create(1920, 1080, 2, nullptr, TextureFormat::RGBA32, 6));
+            diffuse->generateMips();
+
+            renderTargetDepthTexture.reset(Texture2D::create(1920, 1080, 3, nullptr, TextureFormat::D24S8, 6));
+
+            rt.reset(RenderTarget::create());
+            rt->setColorTexture(positions, 0, 1);
+            rt->setColorTexture(normals, 1, 1);
+            rt->setColorTexture(diffuse, 2, 1);
+            rt->setDepthTexture(renderTargetDepthTexture, 1);
+
+            forwardRenderPass.reset(new Pass("forward"));
+            forwardRenderPass->bindables.push_back(rt);
+            forwardRenderPass->bindables.push_back(defferedShader);
+            forwardRenderPass->bindables.push_back(tex);
+            renderGraph->addPass(forwardRenderPass);
+        }
+        std::shared_ptr<Texture2D> rtt;
+        {
+            File fileVS("shaders/smaa/vertex.glsl");
+            File filePS("shaders/smaa/pixel.glsl");
+
+            std::shared_ptr<ShaderPipeline> smaaShader;
+            smaaShader.reset(ShaderPipeline::create(fileVS.getConent(), filePS.getConent()));
+
+            rtt.reset(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA32));
+            std::shared_ptr<Texture2D> rtdt;
+            rtdt.reset(Texture2D::create(1920, 1080, 2, nullptr, TextureFormat::D24S8));
+            rt2.reset(RenderTarget::create());
+            rt2->setColorTexture(rtt, 0, 0);
+            rt2->setDepthTexture(rtdt, 0);
+
+            lightGBufferPass.reset(new FullscreenPass("test"));
+            lightGBufferPass->bindables.push_back(rt2);
+            lightGBufferPass->bindables.push_back(smaaShader);
+            lightGBufferPass->bindables.push_back(positions);
+            lightGBufferPass->bindables.push_back(normals);
+            lightGBufferPass->bindables.push_back(diffuse);
+            lightGBufferPass->bindables.push_back(renderTargetDepthTexture);
+            lightGBufferPass->bindables.push_back(noise);
+            renderGraph->addPass(lightGBufferPass);
+        }
+        {
+            testRenderPass.reset(new FullscreenPass("test2"));
+            testRenderPass->bindables.push_back(shaderPipeline);
+            testRenderPass->bindables.push_back(mainRenderTarget);
+            testRenderPass->bindables.push_back(rtt);
+            renderGraph->addPass(testRenderPass);
+        }
+        glEnable(GL_CULL_FACE);
+        glFrontFace(GL_CCW);
+        glCullFace(GL_BACK);
 	}
 
 	void update(double dt) {
+        renderer.bindMainRenderTarget();
+
         rt->clear(context);
-        // tex->bind(context);
+        rt2->clear(context);
         shaderInputLayout->bind();
 
 		projectionData.projection = glm::transpose(camera.getPerspectiveMatrix() * camera.getViewMatrix());
 		
-        renderGraph->addCommand(std::bind([&](mvp projectionData) {
+        forwardRenderPass->addCommand(std::bind([&](mvp projectionData) {
             shaderBuffer->update(&projectionData);
             shaderBuffer->bind(context);
         }, projectionData));
@@ -166,6 +234,10 @@ public:
         materialData.color = glm::vec4(0.3f, 0.3f, 0.3f, 1.0f);
         materialShaderBuffer->update(&materialData);
         materialShaderBuffer->bind(context);
+
+        forwardRenderPass->addCommand([&]() {
+            glViewport(0, 0, 960, 540);
+        });
 
         registry->view<Transform, Render>().each([&](Transform& transform, Render& render) {
             modelData.toWorld = glm::mat4(1.0f);
@@ -206,8 +278,15 @@ public:
                     tempRenderer->drawIndexed(submesh->iBuffer->getSize());
                 }, node.get(), render.model.get(), meshShaderBuffer.get());
 
-                renderGraph->addCommand(command);
+                forwardRenderPass->addCommand(command);
             }
+        });
+
+        lightGBufferPass->addCommand([&]() {
+            renderer.bindMainRenderTarget();
+            //positions->generateMips();
+            //diffuse->generateMips();
+            glViewport(0, 0, 1920, 1080);
         });
 
         renderGraph->execute();
@@ -237,6 +316,7 @@ public:
 
         camera.update();
     }
+
     void updateTransform(const int nodeId, Model* renderable, const glm::mat4& parentTransform)
     {
         const std::vector<std::shared_ptr<Model::Node>>& nodes = renderable->getNodes();

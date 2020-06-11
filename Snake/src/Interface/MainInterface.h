@@ -10,6 +10,7 @@
 #include "Graphics/Platform/OpenGL/OpenGLRenderTarget.h"
 #include "Saver.h"
 #include "Model/Import/GltfImporter.h"
+#include "RenderSystem.h"
 
 class MainInterface {
 private:
@@ -18,10 +19,10 @@ private:
 	entt::entity selectedEntity;
 	bool isEntitySelected = false;
 	Camera* camera;
-	RenderTarget* renderTarget;
+	RenderSystem* renderSystem;
 public:
-	MainInterface(GLFWwindow* window, entt::registry* registry, Camera* camera, RenderTarget* renderTarget) :
-		registry(registry), camera(camera), renderTarget(renderTarget)
+	MainInterface(GLFWwindow* window, entt::registry* registry, Camera* camera, RenderSystem* renderSystem) :
+		registry(registry), camera(camera), renderSystem(renderSystem)
 	{
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
@@ -61,8 +62,10 @@ public:
 			}
 			i++;
 		});
-		ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(((OpenGLRenderTarget*)renderTarget)->colorTextures[0])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
-		ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(((OpenGLRenderTarget*)renderTarget)->colorTextures[1])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(((OpenGLRenderTarget*)renderSystem->rt.get())->colorTexturesMap[0])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(((OpenGLRenderTarget*)renderSystem->rt.get())->colorTexturesMap[1])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(((OpenGLRenderTarget*)renderSystem->rt.get())->colorTexturesMap[2])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(renderSystem->noise)->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
 		ImGui::End();
 
 		ImGui::Begin("Entities");

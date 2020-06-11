@@ -82,15 +82,12 @@ public:
         rs.init(&registry);
         scriptSystem.init(&registry);
 
-        interface = std::make_shared<MainInterface>(window, &registry, &rs.camera, rs.rt.get());
+        interface = std::make_shared<MainInterface>(window, &registry, &rs.camera, &rs);
 
         // Saver saver;
         // saver.saveToFile("test.json", &registry);
         Loader loader;
         loader.loadFromFile("test.json", &registry);
-
-        //if (glfwRawMouseMotionSupported())
-            //glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 	}
 
 	void run() {

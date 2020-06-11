@@ -9,13 +9,13 @@
 #include <unordered_map>
 
 class Pass {
-private:
+protected:
     std::queue<std::function<void()>> commands;
     std::string name;
 public:
     std::string source;
     std::string sink;
-    std::vector<Bindable*> bindables;
+    std::vector<std::shared_ptr<Bindable>> bindables;
 public:
     Pass(const std::string& name) : name(name) {}
 
