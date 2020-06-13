@@ -14,11 +14,11 @@ public:
 	int numMips = 1; // Texture slot
 	TextureFormat textureFormat;
 public:
-	Texture2D(int width, int height, int location, TextureFormat textureForma, int numMips) :
-		width(width), height(height), location(location)
+	Texture2D(int width, int height, int location, TextureFormat textureFormat, int numMips) :
+		width(width), height(height), location(location), textureFormat(textureFormat)
 	{}
 
-	static Texture2D* create(int width, int height, int location, void* data, TextureFormat textureFormat = TextureFormat::RGBA8, int numMips = 1);
+	static Texture2D* create(int width, int height, int location, void* data, TextureFormat textureFormat = TextureFormat::RGBA8, int numMips = 0);
 
 	virtual void setData(void* data) = 0;
 	virtual void generateMips() = 0;

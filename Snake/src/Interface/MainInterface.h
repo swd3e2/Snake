@@ -65,7 +65,9 @@ public:
 		ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(((OpenGLRenderTarget*)renderSystem->rt.get())->colorTexturesMap[0])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
 		ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(((OpenGLRenderTarget*)renderSystem->rt.get())->colorTexturesMap[1])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
 		ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(((OpenGLRenderTarget*)renderSystem->rt.get())->colorTexturesMap[2])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
-		ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(renderSystem->noise)->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
+		//ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(renderSystem->noise)->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(renderSystem->shadowColorTexture)->textureId, ImVec2(256, 144));
+		ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(renderSystem->shadowDepthTexture)->textureId, ImVec2(256, 144));
 		ImGui::End();
 
 		ImGui::Begin("Entities");

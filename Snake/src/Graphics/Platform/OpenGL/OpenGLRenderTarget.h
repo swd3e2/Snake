@@ -19,6 +19,8 @@ public:
 public:
     OpenGLRenderTarget() {
         glCreateFramebuffers(1, &fbo);
+		glNamedFramebufferDrawBuffer(fbo, GL_NONE);
+		glNamedFramebufferReadBuffer(fbo, GL_NONE);
     }
 
 	virtual void setColorTexture(const std::shared_ptr<Texture2D>& texture, int slot, int level) override {
@@ -40,7 +42,15 @@ public:
 
 	virtual void setDepthTexture(const std::shared_ptr<Texture2D>& texture, int level) override {
 		depthTexture = texture;
-		glNamedFramebufferTexture(fbo, GL_DEPTH_STENCIL_ATTACHMENT, std::static_pointer_cast<OpenGLTexture2D>(texture)->textureId, level);
+
+		GLuint target = 0;
+		if (texture->getFormat() == TextureFormat::D24S8 || texture->getFormat() == TextureFormat::D32_S8X24) {
+			target = GL_DEPTH_STENCIL_ATTACHMENT;
+		} else {
+			target = GL_DEPTH_ATTACHMENT;
+		}
+
+		glNamedFramebufferTexture(fbo, target, std::static_pointer_cast<OpenGLTexture2D>(texture)->textureId, level);
 
 		checkErrors();
 	}
@@ -54,10 +64,12 @@ public:
     }
 
 	virtual void clear(RenderContext* renderContext) override {
+		GLint prevFbo = 0;
+		glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prevFbo);
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, prevFbo);
 	}
 private:
 	void activateDrawBuffers() {

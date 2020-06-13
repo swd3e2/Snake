@@ -30,6 +30,12 @@ GLuint getTextureFormat(TextureFormat format) {
             return GL_RGBA32F;
         case TextureFormat::D24S8:  
             return GL_DEPTH24_STENCIL8;
+        case TextureFormat::D16:
+			return GL_DEPTH_COMPONENT16;
+		case TextureFormat::D32:
+			return GL_DEPTH_COMPONENT32F;
+        case TextureFormat::D32_S8X24:
+            return GL_DEPTH32F_STENCIL8;
     }
     
     return GL_RGB8;

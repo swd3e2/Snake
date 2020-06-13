@@ -35,6 +35,10 @@ public:
 		m_ProjectionMatrix = glm::perspective(glm::radians(fov), aspectRatio, nearZ, farZ);
 	}
 
+	void setOrthographicMatrix(float left, float right, float top, float bottom, float near, float far) {
+		m_ProjectionMatrix = glm::ortho(left, right, bottom, top, near, far);
+	}
+
 	void update() {
 		glm::mat4 rotation = glm::transpose(glm::eulerAngleYXZ(this->m_Rotation.x, this->m_Rotation.y, 0.0f));
 

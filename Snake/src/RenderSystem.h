@@ -37,6 +37,8 @@ class RenderSystem {
 private:
     struct mvp {
         glm::mat4 projection;
+        glm::mat4 shadowProjection;
+        glm::vec4 shadowCameraPos;
     };
     struct ModelData {
         glm::mat4 toWorld;
@@ -69,24 +71,25 @@ public:
     std::shared_ptr<ConstantBuffer> materialShaderBuffer;
     std::shared_ptr<RenderTarget> rt;
     std::shared_ptr<RenderTarget> rt2;
+    std::shared_ptr<RenderTarget> shadowRt;
     std::shared_ptr<MainRenderTarget> mainRenderTarget;
     std::shared_ptr<Texture2D> noise;
     entt::registry* registry;
     std::shared_ptr<Texture2D> positions;
     std::shared_ptr<Texture2D> normals;
     std::shared_ptr<Texture2D> diffuse;
+    std::shared_ptr<Texture2D> shadowColorTexture;
+    std::shared_ptr<Texture2D> shadowDepthTexture;
     
-    float cameraX = -1.5f;
-    float cameraY = -1.5f;
-
-    double cameraRotX = 0.0f;
-    double cameraRotY = 0.0f;
     std::shared_ptr<Texture2D> tex;
     Camera camera;
+    Camera lightCamera;
 
     std::shared_ptr<FullscreenPass> lightGBufferPass;
     std::shared_ptr<FullscreenPass> testRenderPass;
     std::shared_ptr<Pass> forwardRenderPass;
+    std::shared_ptr<Pass> shadowPass;
+    int mainCamera = 0;
 public:
 	void init(entt::registry* registry) {
         this->registry = registry;
@@ -125,7 +128,10 @@ public:
 
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
-        camera.setProjectionMatrix(90.0f, 1920.0f / 1080.0f, 0.1f, 1000.f);
+        camera.setProjectionMatrix(90.0f, 1920.0f / 1080.0f, 0.1f, 200.f);
+        lightCamera.setOrthographicMatrix(-20, 20, -20, 20, -20, 20);
+        lightCamera.m_Position = glm::vec4(0.0f, 3.0f, 0.0f, 1.0f);
+        lightCamera.m_Rotation = glm::vec4(0.0f, 0.5f, 0.0f, 1.0f);
 
         glEnable(GL_DEPTH_TEST);
 
@@ -159,26 +165,42 @@ public:
             std::shared_ptr<ShaderPipeline> defferedShader;
             defferedShader.reset(ShaderPipeline::create(fileVS.getConent(), filePS.getConent()));
             
-            positions.reset(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA32, 6));
-            positions->generateMips();
-            normals.reset(Texture2D::create(1920, 1080, 1, nullptr, TextureFormat::RGBA32, 6));
-            normals->generateMips();
-            diffuse.reset(Texture2D::create(1920, 1080, 2, nullptr, TextureFormat::RGBA32, 6));
-            diffuse->generateMips();
+            positions.reset(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA32));
+            normals.reset(Texture2D::create(1920, 1080, 1, nullptr, TextureFormat::RGBA32));
+            diffuse.reset(Texture2D::create(1920, 1080, 2, nullptr, TextureFormat::RGBA32));
 
-            renderTargetDepthTexture.reset(Texture2D::create(1920, 1080, 3, nullptr, TextureFormat::D24S8, 6));
+            renderTargetDepthTexture.reset(Texture2D::create(1920, 1080, 3, nullptr, TextureFormat::D24S8));
 
             rt.reset(RenderTarget::create());
-            rt->setColorTexture(positions, 0, 1);
-            rt->setColorTexture(normals, 1, 1);
-            rt->setColorTexture(diffuse, 2, 1);
-            rt->setDepthTexture(renderTargetDepthTexture, 1);
+            rt->setColorTexture(positions, 0, 0);
+            rt->setColorTexture(normals, 1, 0);
+            rt->setColorTexture(diffuse, 2, 0);
+            rt->setDepthTexture(renderTargetDepthTexture, 0);
 
             forwardRenderPass.reset(new Pass("forward"));
             forwardRenderPass->bindables.push_back(rt);
             forwardRenderPass->bindables.push_back(defferedShader);
             forwardRenderPass->bindables.push_back(tex);
             renderGraph->addPass(forwardRenderPass);
+        }
+        {
+            File fileVS("shaders/shadow/vertex.glsl");
+            File filePS("shaders/shadow/pixel.glsl");
+
+            std::shared_ptr<ShaderPipeline> shadowShader;
+            shadowShader.reset(ShaderPipeline::create(fileVS.getConent(), filePS.getConent()));
+            
+            shadowColorTexture.reset(Texture2D::create(2048, 2048, 5, nullptr, TextureFormat::RGB8));
+            shadowDepthTexture.reset(Texture2D::create(2048, 2048, 5, nullptr, TextureFormat::D16));
+
+            shadowRt.reset(RenderTarget::create());
+            //shadowRt->setColorTexture(shadowColorTexture, 0, 0);
+            shadowRt->setDepthTexture(shadowDepthTexture, 0);
+
+            shadowPass.reset(new Pass("forward"));
+            shadowPass->bindables.push_back(shadowRt);
+            shadowPass->bindables.push_back(shadowShader);
+            renderGraph->addPass(shadowPass);
         }
         std::shared_ptr<Texture2D> rtt;
         {
@@ -190,7 +212,7 @@ public:
 
             rtt.reset(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA32));
             std::shared_ptr<Texture2D> rtdt;
-            rtdt.reset(Texture2D::create(1920, 1080, 2, nullptr, TextureFormat::D24S8));
+            rtdt.reset(Texture2D::create(1920, 1080, 2, nullptr, TextureFormat::D32));
             rt2.reset(RenderTarget::create());
             rt2->setColorTexture(rtt, 0, 0);
             rt2->setDepthTexture(rtdt, 0);
@@ -203,6 +225,7 @@ public:
             lightGBufferPass->bindables.push_back(diffuse);
             lightGBufferPass->bindables.push_back(renderTargetDepthTexture);
             lightGBufferPass->bindables.push_back(noise);
+            lightGBufferPass->bindables.push_back(shadowDepthTexture);
             renderGraph->addPass(lightGBufferPass);
         }
         {
@@ -222,23 +245,37 @@ public:
 
         rt->clear(context);
         rt2->clear(context);
+        shadowRt->clear(context);
         shaderInputLayout->bind();
 
 		projectionData.projection = glm::transpose(camera.getPerspectiveMatrix() * camera.getViewMatrix());
+		projectionData.shadowProjection = glm::transpose(lightCamera.getPerspectiveMatrix() * lightCamera.getViewMatrix());
+		projectionData.shadowCameraPos = lightCamera.m_Position;
 		
         forwardRenderPass->addCommand(std::bind([&](mvp projectionData) {
             shaderBuffer->update(&projectionData);
             shaderBuffer->bind(context);
         }, projectionData));
         
+		projectionData.projection = glm::transpose(lightCamera.getPerspectiveMatrix() * lightCamera.getViewMatrix());
+        shadowPass->addCommand(std::bind([&](mvp projectionData) {
+            shaderBuffer->update(&projectionData);
+            shaderBuffer->bind(context);
+        }, projectionData));
+
         materialData.color = glm::vec4(0.3f, 0.3f, 0.3f, 1.0f);
         materialShaderBuffer->update(&materialData);
         materialShaderBuffer->bind(context);
 
-        forwardRenderPass->addCommand([&]() {
-            glViewport(0, 0, 960, 540);
+    
+        shadowPass->addCommand([]() {
+            //glCullFace(GL_FRONT);
+            glViewport(0, 0, 2048, 2048);
         });
-
+        lightGBufferPass->addCommand([&]() {
+            //glCullFace(GL_BACK);
+            glViewport(0, 0, 1920, 1080);
+        });
         registry->view<Transform, Render>().each([&](Transform& transform, Render& render) {
             modelData.toWorld = glm::mat4(1.0f);
             modelData.toWorld = glm::translate(modelData.toWorld, transform.translation);
@@ -279,14 +316,15 @@ public:
                 }, node.get(), render.model.get(), meshShaderBuffer.get());
 
                 forwardRenderPass->addCommand(command);
+                shadowPass->addCommand(command);
             }
         });
-
+        
         lightGBufferPass->addCommand([&]() {
             renderer.bindMainRenderTarget();
             //positions->generateMips();
             //diffuse->generateMips();
-            glViewport(0, 0, 1920, 1080);
+            //glViewport(0, 0, 1920, 1080);
         });
 
         renderGraph->execute();
@@ -297,24 +335,39 @@ public:
 
     void updateCamera()
     {
+        if (InputManager::instance()->isKeyPressed(GLFW_KEY_1)) {
+            mainCamera = 0;
+        } else if (InputManager::instance()->isKeyPressed(GLFW_KEY_2)) {
+            mainCamera = 1;
+        }
+
+        Camera* selectedCamera = nullptr;
+
+        if (mainCamera == 0) {
+            selectedCamera = &camera;
+        } else if (mainCamera = 1) {
+            selectedCamera = &lightCamera;
+        }
+
         if (InputManager::instance()->isKeyPressed(GLFW_KEY_E)) {
-            camera.m_Rotation.x -= (float)InputManager::instance()->mouseMoveX * 0.0045f;
-            camera.m_Rotation.y += (float)InputManager::instance()->mouseMoveY * 0.0045f;
+            selectedCamera->m_Rotation.x -= (float)InputManager::instance()->mouseMoveX * 0.0045f;
+            selectedCamera->m_Rotation.y += (float)InputManager::instance()->mouseMoveY * 0.0045f;
         }
 
         if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_W)) {
-            camera.m_Position += camera.forwardVec * 0.2f;
+            selectedCamera->m_Position += selectedCamera->forwardVec * 0.2f;
         } else if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_S)) {
-            camera.m_Position -= camera.forwardVec * 0.2f;
+            selectedCamera->m_Position -= selectedCamera->forwardVec * 0.2f;
         }
 
         if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_A)) {
-            camera.m_Position += camera.rightVec * 0.2f;
+            selectedCamera->m_Position += selectedCamera->rightVec * 0.2f;
         } else if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_D)) {
-            camera.m_Position -= camera.rightVec * 0.2f;
-        }
+            selectedCamera->m_Position -= selectedCamera->rightVec * 0.2f;
+        }   
 
         camera.update();
+        lightCamera.update();
     }
 
     void updateTransform(const int nodeId, Model* renderable, const glm::mat4& parentTransform)
