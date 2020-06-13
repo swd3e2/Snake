@@ -1,6 +1,6 @@
 #pragma once
 
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #include "RenderSystem.h"
@@ -28,7 +28,7 @@ MessageCallback(GLenum source,
     const GLchar* message,
     const void* userParam)
 {
-    std::cout << message << std::endl;
+//    std::cout << message << std::endl;
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -72,7 +72,11 @@ public:
         }
         /* Make the window's context current */
         glfwMakeContextCurrent(window);
-        glewInit();
+        if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+            std::cout << "Failed to initialize GLAD" << std::endl;
+            // return -1;
+        }
+
         //glfwSwapInterval( 0 );
 
         glDebugMessageCallback(MessageCallback, 0);
@@ -94,9 +98,6 @@ public:
         double dt = 0.0;
         
         while (!glfwWindowShouldClose(window)) {
-            /* Render here */
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-            
             m_Start = std::chrono::high_resolution_clock::now();
 
             rs.update(16.0);

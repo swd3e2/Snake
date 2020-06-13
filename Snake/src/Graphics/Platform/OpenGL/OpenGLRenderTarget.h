@@ -2,7 +2,7 @@
 
 #include "Graphics/Renderer/RenderTarget.h"
 #include "Graphics/Bindable.h"
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <vector>
 #include <iostream>
 #include "Graphics/Renderer/CommonTypes.h"
@@ -67,7 +67,6 @@ public:
 		GLint prevFbo = 0;
 		glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prevFbo);
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-		glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		glBindFramebuffer(GL_FRAMEBUFFER, prevFbo);
 	}
@@ -87,7 +86,7 @@ private:
 	void checkErrors() {
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-			std::cout << "Error occured while creating framebuffer" << std::endl;
+			std::cout << "Error occurred while creating framebuffer" << std::endl;
 		}
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}

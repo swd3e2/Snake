@@ -18,7 +18,7 @@ public:
             entt::entity entity = registry->create();
 
             if (it.find("Transform") != it.end()) {
-                registry->emplace<Transform>(entity,
+                Transform& transform = registry->emplace<Transform>(entity,
                     glm::vec3(
                         it["Transform"]["translation"][0].get<float>(),
                         it["Transform"]["translation"][1].get<float>(),
@@ -35,6 +35,10 @@ public:
                         it["Transform"]["scale"][2].get<float>()
                     )
                 );
+                transform.matrix = glm::mat4(1.0f);
+                transform.matrix = glm::translate(transform.matrix, transform.translation);
+                transform.matrix = transform.matrix * glm::eulerAngleXYZ(transform.rotation.x, transform.rotation.y, transform.rotation.z);
+                transform.matrix = glm::scale(transform.matrix, transform.scale);
             }
 
             if (it.find("Render") != it.end()) {

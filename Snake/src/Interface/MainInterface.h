@@ -62,12 +62,12 @@ public:
 			}
 			i++;
 		});
-		ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(((OpenGLRenderTarget*)renderSystem->rt.get())->colorTexturesMap[0])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
-		ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(((OpenGLRenderTarget*)renderSystem->rt.get())->colorTexturesMap[1])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
-		ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(((OpenGLRenderTarget*)renderSystem->rt.get())->colorTexturesMap[2])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
-		//ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(renderSystem->noise)->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
-		ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(renderSystem->shadowColorTexture)->textureId, ImVec2(256, 144));
-		ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(renderSystem->shadowDepthTexture)->textureId, ImVec2(256, 144));
+		//ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(((OpenGLRenderTarget*)renderSystem->rt.get())->colorTexturesMap[0])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
+		//ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(((OpenGLRenderTarget*)renderSystem->rt.get())->colorTexturesMap[1])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
+		//ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(((OpenGLRenderTarget*)renderSystem->rt.get())->colorTexturesMap[2])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
+		//ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(renderSystem->textures["normals"])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(renderSystem->textures["rtt"])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(renderSystem->textures["shadowDepthTexture"])->textureId, ImVec2(256, 256), ImVec2(0, 1), ImVec2(1, 0));
 		ImGui::End();
 
 		ImGui::Begin("Entities");

@@ -30,4 +30,13 @@ public:
 
 		return content;
 	}
+
+	bool exists() {
+		if (FILE* file = fopen(path.c_str(), "r")) {
+			fclose(file);
+			return true;
+		} else {
+			return false;
+		}
+	}
 };

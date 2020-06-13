@@ -1,9 +1,11 @@
 #pragma once
 
 #include "RenderTarget.h"
-#include "Graphics/Bindable.h"
+#include "Graphics/Renderer/RenderTarget.h"
 
-class MainRenderTarget : public Bindable {
+class MainRenderTarget : public RenderTarget {
 public:
-    virtual void bind(RenderContext* renderContext) = 0;
+	virtual void setColorTexture(const std::shared_ptr<Texture2D>& texture, int slot, int level) override {}
+	virtual void removeColorTexture(int slot, int level) override {}
+	virtual void setDepthTexture(const std::shared_ptr<Texture2D>& texture, int level) override {}
 };

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Input/InputManager.h"
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "Graphics/Renderer/ShaderPipeline.h"
 #include "Graphics/Renderer/ShaderInputLayout.h"
@@ -25,20 +25,13 @@
 #include "Import/RawTexture.h"
 #include "Graphics/RenderGraph/FullscreenPass.h"
 
-struct Drawable {
-    VertexBuffer* vb;
-    IndexBuffer* ib;
-    glm::mat4 transform;
-    glm::mat4 nodeTransform;
-    glm::mat4 normalTransform;
-};
-
 class RenderSystem {
 private:
     struct mvp {
         glm::mat4 projection;
         glm::mat4 shadowProjection;
         glm::vec4 shadowCameraPos;
+        glm::vec4 viewPos;
     };
     struct ModelData {
         glm::mat4 toWorld;
@@ -51,8 +44,6 @@ private:
     struct MaterialData {
         glm::vec4 color;
     };
-    std::queue<std::function<void()>> commands;
-    std::queue<Drawable> drawables;
 public:
     mvp projectionData;
     ModelData modelData;
@@ -69,19 +60,10 @@ public:
     std::shared_ptr<ConstantBuffer> modelShaderBuffer;
     std::shared_ptr<ConstantBuffer> meshShaderBuffer;
     std::shared_ptr<ConstantBuffer> materialShaderBuffer;
-    std::shared_ptr<RenderTarget> rt;
-    std::shared_ptr<RenderTarget> rt2;
-    std::shared_ptr<RenderTarget> shadowRt;
-    std::shared_ptr<MainRenderTarget> mainRenderTarget;
-    std::shared_ptr<Texture2D> noise;
-    entt::registry* registry;
-    std::shared_ptr<Texture2D> positions;
-    std::shared_ptr<Texture2D> normals;
-    std::shared_ptr<Texture2D> diffuse;
-    std::shared_ptr<Texture2D> shadowColorTexture;
-    std::shared_ptr<Texture2D> shadowDepthTexture;
     
-    std::shared_ptr<Texture2D> tex;
+    std::shared_ptr<MainRenderTarget> mainRenderTarget;
+    entt::registry* registry;
+    
     Camera camera;
     Camera lightCamera;
 
@@ -90,6 +72,15 @@ public:
     std::shared_ptr<Pass> forwardRenderPass;
     std::shared_ptr<Pass> shadowPass;
     int mainCamera = 0;
+
+    std::unordered_map<std::string, std::shared_ptr<Texture2D>> textures;
+    std::unordered_map<std::string, std::shared_ptr<RenderTarget>> renderTargets;
+    std::unordered_map<std::string, std::shared_ptr<ConstantBuffer>> constantBuffers;
+    std::unordered_map<std::string, std::shared_ptr<ShaderPipeline>> shaders;
+
+	std::shared_ptr<RenderTarget> rt;
+	std::shared_ptr<RenderTarget> rt2;
+	std::shared_ptr<RenderTarget> shadowRt;
 public:
 	void init(entt::registry* registry) {
         this->registry = registry;
@@ -108,30 +99,23 @@ public:
         shaderInputLayout->add({ InputDataType::Float3, "tangent" });
         shaderInputLayout->add({ InputDataType::Float3, "bitangent" });
         shaderInputLayout->add({ InputDataType::Int4,   "bone" });
-        shaderInputLayout->add({ InputDataType::Float4, "weigth" });
+        shaderInputLayout->add({ InputDataType::Float4, "weight" });
 
-        std::vector<vertex> data;
-        data.push_back(vertex(-0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 1.0f));
-        data.push_back(vertex( 0.0f,  0.5f, 0.0f, 1.0f, 1.0f, 1.0f));
-        data.push_back(vertex( 0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 1.0f));
-
-        vertexBuffer.reset(VertexBuffer::create(data.size(), sizeof(vertex), data.data()));
-
-        shaderBuffer.reset(ConstantBuffer::create(0, sizeof(projectionData), &projectionData));
-        modelShaderBuffer.reset(ConstantBuffer::create(1, sizeof(modelData), &modelData));
-        meshShaderBuffer.reset(ConstantBuffer::create(2, sizeof(meshData), &meshData));
-        materialShaderBuffer.reset(ConstantBuffer::create(3, sizeof(materialData), &materialData));
+        shaderBuffer.reset(ConstantBuffer::create(0, sizeof(projectionData), nullptr));
+        modelShaderBuffer.reset(ConstantBuffer::create(1, sizeof(modelData), nullptr));
+        meshShaderBuffer.reset(ConstantBuffer::create(2, sizeof(meshData), nullptr));
+        materialShaderBuffer.reset(ConstantBuffer::create(3, sizeof(materialData), nullptr));
 
         std::shared_ptr<RawTexture> texture = std::make_shared<RawTexture>("texture_01.png");
         texture->import();
-        tex.reset(Texture2D::create(texture->getWidth(), texture->getHeight(), 0, texture->getData(), texture->getChannels() == 4 ? TextureFormat::RGBA8 : TextureFormat::RGB8));
+        textures["tex"] = std::shared_ptr<Texture2D>(Texture2D::create(texture->getWidth(), texture->getHeight(), 0, texture->getData(), texture->getChannels() == 4 ? TextureFormat::RGBA8 : TextureFormat::RGB8));
 
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
         camera.setProjectionMatrix(90.0f, 1920.0f / 1080.0f, 0.1f, 200.f);
-        lightCamera.setOrthographicMatrix(-20, 20, -20, 20, -20, 20);
-        lightCamera.m_Position = glm::vec4(0.0f, 3.0f, 0.0f, 1.0f);
-        lightCamera.m_Rotation = glm::vec4(0.0f, 0.5f, 0.0f, 1.0f);
+        lightCamera.setOrthographicMatrix(-10, 10, -10, 10, -10, 10);
+        //lightCamera.m_Rotation = glm::vec4(0.0f, 0.5f, 0.0f, 1.0f);
+        lightCamera.m_Position = glm::vec4(7.0f, 4.0f, -2.0f, 1.0f);
 
         glEnable(GL_DEPTH_TEST);
 
@@ -139,125 +123,117 @@ public:
 
         renderGraph = std::make_unique<RenderGraph>(&renderer);
 
-        size_t width = 100;
-        size_t height = 100;
-        noise.reset(Texture2D::create(width, height, 4, nullptr, TextureFormat::R8, 4));
 
-        char* rawdata = new char[width * height * 4];
-        for (size_t x = 0; x < height; x++) {
-            for (size_t y = 0; y < width; y++) {
-                rawdata[x * width*4 + y*4] = 255;
-                rawdata[x * width*4 + y*4 + 1] = 255;
-                rawdata[x * width*4 + y*4 + 2] = 255;
-                rawdata[x * width*4 + y*4 + 3] = 255;
-            }
-        }
-        noise->setData(rawdata);
-        delete[] rawdata;
-        noise->generateMips();
-        
-    
-        std::shared_ptr<Texture2D> renderTargetDepthTexture;
+        // Textures
         {
-            File fileVS("shaders/gbuffer/vertex.glsl");
-            File filePS("shaders/gbuffer/pixel.glsl");
-
-            std::shared_ptr<ShaderPipeline> defferedShader;
-            defferedShader.reset(ShaderPipeline::create(fileVS.getConent(), filePS.getConent()));
-            
-            positions.reset(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA32));
-            normals.reset(Texture2D::create(1920, 1080, 1, nullptr, TextureFormat::RGBA32));
-            diffuse.reset(Texture2D::create(1920, 1080, 2, nullptr, TextureFormat::RGBA32));
-
-            renderTargetDepthTexture.reset(Texture2D::create(1920, 1080, 3, nullptr, TextureFormat::D24S8));
-
-            rt.reset(RenderTarget::create());
-            rt->setColorTexture(positions, 0, 0);
-            rt->setColorTexture(normals, 1, 0);
-            rt->setColorTexture(diffuse, 2, 0);
-            rt->setDepthTexture(renderTargetDepthTexture, 0);
-
+			textures["positions"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA32));
+			textures["normals"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 1, nullptr, TextureFormat::RGBA32));
+			textures["diffuse"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 2, nullptr, TextureFormat::RGBA32));
+			textures["renderTargetDepthTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 3, nullptr, TextureFormat::D24S8));
+			textures["rtt"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA32));
+			textures["shadowDepthTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(2048, 2048, 5, nullptr, TextureFormat::D32));
+        }
+        // Shaders
+        {
+			createShaderFromFolder("shaders/gbuffer", "gbuffer");
+			createShaderFromFolder("shaders/shadow", "shadow");
+			createShaderFromFolder("shaders/smaa", "light");
+        }
+        // Render targets
+        {
+            {
+				std::shared_ptr<RenderTarget> renderTarget = std::shared_ptr<RenderTarget>(RenderTarget::create());
+				renderTarget->setColorTexture(textures["positions"], 0, 0);
+				renderTarget->setColorTexture(textures["normals"], 1, 0);
+				renderTarget->setColorTexture(textures["diffuse"], 2, 0);
+				renderTarget->setDepthTexture(textures["renderTargetDepthTexture"], 0);
+				renderTargets["gBuffer"] = renderTarget;
+			}
+			{
+				std::shared_ptr<RenderTarget> renderTarget = std::shared_ptr<RenderTarget>(RenderTarget::create());
+				renderTarget->setDepthTexture(textures["shadowDepthTexture"], 0);
+				renderTargets["shadow"] = renderTarget;
+			}
+			{
+				std::shared_ptr<RenderTarget> renderTarget = std::shared_ptr<RenderTarget>(RenderTarget::create());
+				renderTarget->setColorTexture(textures["rtt"], 0, 0);
+				renderTargets["light"] = renderTarget;
+			}
+        }
+        // Render passess
+        {
             forwardRenderPass.reset(new Pass("forward"));
-            forwardRenderPass->bindables.push_back(rt);
-            forwardRenderPass->bindables.push_back(defferedShader);
-            forwardRenderPass->bindables.push_back(tex);
+            forwardRenderPass->setRenderTarget(renderTargets["gBuffer"]);
+
+            forwardRenderPass->bindables.push_back(shaders["gbuffer"]);
+            forwardRenderPass->bindables.push_back(textures["tex"]);
             renderGraph->addPass(forwardRenderPass);
         }
         {
-            File fileVS("shaders/shadow/vertex.glsl");
-            File filePS("shaders/shadow/pixel.glsl");
-
-            std::shared_ptr<ShaderPipeline> shadowShader;
-            shadowShader.reset(ShaderPipeline::create(fileVS.getConent(), filePS.getConent()));
-            
-            shadowColorTexture.reset(Texture2D::create(2048, 2048, 5, nullptr, TextureFormat::RGB8));
-            shadowDepthTexture.reset(Texture2D::create(2048, 2048, 5, nullptr, TextureFormat::D16));
-
-            shadowRt.reset(RenderTarget::create());
-            //shadowRt->setColorTexture(shadowColorTexture, 0, 0);
-            shadowRt->setDepthTexture(shadowDepthTexture, 0);
-
             shadowPass.reset(new Pass("forward"));
-            shadowPass->bindables.push_back(shadowRt);
-            shadowPass->bindables.push_back(shadowShader);
+            shadowPass->setRenderTarget(renderTargets["shadow"]);
+
+            shadowPass->bindables.push_back(shaders["shadow"]);
             renderGraph->addPass(shadowPass);
         }
-        std::shared_ptr<Texture2D> rtt;
         {
-            File fileVS("shaders/smaa/vertex.glsl");
-            File filePS("shaders/smaa/pixel.glsl");
-
-            std::shared_ptr<ShaderPipeline> smaaShader;
-            smaaShader.reset(ShaderPipeline::create(fileVS.getConent(), filePS.getConent()));
-
-            rtt.reset(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA32));
-            std::shared_ptr<Texture2D> rtdt;
-            rtdt.reset(Texture2D::create(1920, 1080, 2, nullptr, TextureFormat::D32));
-            rt2.reset(RenderTarget::create());
-            rt2->setColorTexture(rtt, 0, 0);
-            rt2->setDepthTexture(rtdt, 0);
-
-            lightGBufferPass.reset(new FullscreenPass("test"));
-            lightGBufferPass->bindables.push_back(rt2);
-            lightGBufferPass->bindables.push_back(smaaShader);
-            lightGBufferPass->bindables.push_back(positions);
-            lightGBufferPass->bindables.push_back(normals);
-            lightGBufferPass->bindables.push_back(diffuse);
-            lightGBufferPass->bindables.push_back(renderTargetDepthTexture);
-            lightGBufferPass->bindables.push_back(noise);
-            lightGBufferPass->bindables.push_back(shadowDepthTexture);
+            lightGBufferPass.reset(new FullscreenPass("light"));
+            lightGBufferPass->setRenderTarget(renderTargets["light"]);
+            
+            lightGBufferPass->bindables.push_back(shaders["light"]);
+            lightGBufferPass->bindables.push_back(textures["positions"]);
+            lightGBufferPass->bindables.push_back(textures["normals"]);
+            lightGBufferPass->bindables.push_back(textures["diffuse"]);
+            lightGBufferPass->bindables.push_back(textures["renderTargetDepthTexture"]);
+            lightGBufferPass->bindables.push_back(textures["shadowDepthTexture"]);
             renderGraph->addPass(lightGBufferPass);
         }
         {
-            testRenderPass.reset(new FullscreenPass("test2"));
+            testRenderPass.reset(new FullscreenPass("main"));
+            testRenderPass->setRenderTarget(mainRenderTarget);
+
             testRenderPass->bindables.push_back(shaderPipeline);
-            testRenderPass->bindables.push_back(mainRenderTarget);
-            testRenderPass->bindables.push_back(rtt);
+            testRenderPass->bindables.push_back(textures["rtt"]);
             renderGraph->addPass(testRenderPass);
         }
+
         glEnable(GL_CULL_FACE);
         glFrontFace(GL_CCW);
         glCullFace(GL_BACK);
 	}
 
 	void update(double dt) {
-        renderer.bindMainRenderTarget();
-
-        rt->clear(context);
-        rt2->clear(context);
-        shadowRt->clear(context);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		renderer.bindMainRenderTarget();
+            
+        for (auto& it : renderTargets) {
+            it.second->clear(context);
+        }
         shaderInputLayout->bind();
 
+        //lightCamera.m_Position.x = sin(glfwGetTime()) * 3.0f;
+        //lightCamera.m_Position.z = cos(glfwGetTime()) * 2.0f;
+        //lightCamera.m_Position.y = 3.0 + cos(glfwGetTime()) * 1.0f;
+
+        glm::mat4 lightProjection, lightView;
+        glm::mat4 lightSpaceMatrix;
+        float near_plane = -20.0f, far_plane = 20.0f;
+        lightProjection = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, near_plane, far_plane);
+        lightView = glm::lookAt(glm::vec3(lightCamera.m_Position), glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
+        lightSpaceMatrix = glm::transpose(lightProjection * lightView);
+
 		projectionData.projection = glm::transpose(camera.getPerspectiveMatrix() * camera.getViewMatrix());
-		projectionData.shadowProjection = glm::transpose(lightCamera.getPerspectiveMatrix() * lightCamera.getViewMatrix());
-		projectionData.shadowCameraPos = lightCamera.m_Position;
+		projectionData.shadowProjection = lightSpaceMatrix;
+        projectionData.viewPos = camera.m_Position;
+        projectionData.shadowCameraPos = lightCamera.m_Position;
+        //glm::transpose(lightCamera.getPerspectiveMatrix() * lightCamera.getViewMatrix());
 		
         forwardRenderPass->addCommand(std::bind([&](mvp projectionData) {
             shaderBuffer->update(&projectionData);
             shaderBuffer->bind(context);
         }, projectionData));
         
-		projectionData.projection = glm::transpose(lightCamera.getPerspectiveMatrix() * lightCamera.getViewMatrix());
+		projectionData.projection = lightSpaceMatrix;
         shadowPass->addCommand(std::bind([&](mvp projectionData) {
             shaderBuffer->update(&projectionData);
             shaderBuffer->bind(context);
@@ -267,21 +243,22 @@ public:
         materialShaderBuffer->update(&materialData);
         materialShaderBuffer->bind(context);
 
-    
         shadowPass->addCommand([]() {
-            //glCullFace(GL_FRONT);
+            glCullFace(GL_FRONT);
             glViewport(0, 0, 2048, 2048);
         });
+
         lightGBufferPass->addCommand([&]() {
-            //glCullFace(GL_BACK);
+            glCullFace(GL_BACK);
             glViewport(0, 0, 1920, 1080);
         });
+
         registry->view<Transform, Render>().each([&](Transform& transform, Render& render) {
             modelData.toWorld = glm::mat4(1.0f);
             modelData.toWorld = glm::translate(modelData.toWorld, transform.translation);
             modelData.toWorld = modelData.toWorld * glm::eulerAngleXYZ(transform.rotation.x, transform.rotation.y, transform.rotation.z);
             modelData.toWorld = glm::transpose(glm::scale(modelData.toWorld, transform.scale));
-            //modelData.toWorld = glm::transpose(transform.matrix);
+            modelData.toWorld = glm::transpose(transform.matrix);
             modelData.inverseToWorld = glm::inverse(modelData.toWorld);
 
             std::function<void()> command = std::bind([](ModelData modelData, ConstantBuffer* buffer) {
@@ -319,13 +296,6 @@ public:
                 shadowPass->addCommand(command);
             }
         });
-        
-        lightGBufferPass->addCommand([&]() {
-            renderer.bindMainRenderTarget();
-            //positions->generateMips();
-            //diffuse->generateMips();
-            //glViewport(0, 0, 1920, 1080);
-        });
 
         renderGraph->execute();
         renderer.bindMainRenderTarget();
@@ -345,9 +315,11 @@ public:
 
         if (mainCamera == 0) {
             selectedCamera = &camera;
-        } else if (mainCamera = 1) {
+        } else if (mainCamera == 1) {
             selectedCamera = &lightCamera;
         }
+
+        if (selectedCamera == nullptr) return;
 
         if (InputManager::instance()->isKeyPressed(GLFW_KEY_E)) {
             selectedCamera->m_Rotation.x -= (float)InputManager::instance()->mouseMoveX * 0.0045f;
@@ -366,8 +338,22 @@ public:
             selectedCamera->m_Position -= selectedCamera->rightVec * 0.2f;
         }   
 
+        if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_UP)) {
+            lightCamera.m_Position.x +=  0.2f;
+        }
+        else if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_DOWN)) {
+            lightCamera.m_Position.x -= 0.2f;
+        }
+
+        if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_LEFT)) {
+            lightCamera.m_Position.z += 0.2f;
+        }
+        else if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_RIGHT)) {
+            lightCamera.m_Position.z -= 0.2f;
+        }
+
         camera.update();
-        lightCamera.update();
+        //lightCamera.update();
     }
 
     void updateTransform(const int nodeId, Model* renderable, const glm::mat4& parentTransform)
@@ -391,5 +377,18 @@ public:
         for (auto& it : node->childs) {
             updateTransform(it, renderable, node->transform.worldTransform);
         }
+    }
+
+    void createShaderFromFolder(const std::string& folder, const std::string& name) {
+        File filePS(folder + "/pixel.glsl");
+        File fileVS(folder + "/vertex.glsl");
+        File fileGS(folder + "/geometry.glsl");
+
+        if (!filePS.exists() || !fileVS.exists()) {
+            std::cout << "Could not create shader from path " << folder << std::endl;
+            return;
+        }
+
+        shaders[name] = std::shared_ptr<ShaderPipeline>(ShaderPipeline::create(fileVS.getConent(), filePS.getConent()));
     }
 };

@@ -7,11 +7,13 @@
 #include "Graphics/Renderer.h"
 #include "Graphics/Bindable.h"
 #include <unordered_map>
+#include "Graphics/Renderer/RenderTarget.h"
 
 class Pass {
 protected:
     std::queue<std::function<void()>> commands;
     std::string name;
+    std::shared_ptr<RenderTarget> renderTarget;
 public:
     std::string source;
     std::string sink;
@@ -31,6 +33,10 @@ public:
         }
     }
     
+	void setRenderTarget(const std::shared_ptr<RenderTarget>& renderTarget) {
+		this->renderTarget = renderTarget;
+	}
+
     virtual void addCommand(std::function<void()> command) {
         commands.push(command);
     }
