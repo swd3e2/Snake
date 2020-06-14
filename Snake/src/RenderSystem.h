@@ -24,6 +24,7 @@
 #include "Graphics/Renderer/RenderTarget.h"
 #include "Import/RawTexture.h"
 #include "Graphics/RenderGraph/FullscreenPass.h"
+#include "Graphics/Renderer/Sampler.h"
 
 class RenderSystem {
 private:
@@ -37,18 +38,22 @@ private:
         glm::mat4 toWorld;
         glm::mat4 inverseToWorld;
     };
+	struct MaterialData {
+		glm::vec3 ambientColor = glm::vec3(1.0f, 0.0f, 1.0f);
+        float shininess = 64.0f;
+		glm::vec3 diffuseColor = glm::vec3(1.0f);
+        float dummy;
+		glm::vec3 specularColor = glm::vec3(1.0f);
+	};
     struct MeshData {
         glm::mat4 transform;
-        glm::mat4 matrixTransform;
-    };
-    struct MaterialData {
-        glm::vec4 color;
+        glm::mat4 normalTransform;
+        MaterialData materialData;
     };
 public:
     mvp projectionData;
     ModelData modelData;
     MeshData meshData;
-    MaterialData materialData;
     OpenGlRenderer renderer;
     RenderContext* context;
     std::unique_ptr<RenderGraph> renderGraph;
@@ -68,8 +73,9 @@ public:
     Camera lightCamera;
 
     std::shared_ptr<FullscreenPass> lightGBufferPass;
-    std::shared_ptr<FullscreenPass> testRenderPass;
-    std::shared_ptr<Pass> forwardRenderPass;
+	std::shared_ptr<FullscreenPass> testRenderPass;
+	std::shared_ptr<FullscreenPass> blurPass;
+    std::shared_ptr<Pass> gbufferPass;
     std::shared_ptr<Pass> shadowPass;
     int mainCamera = 0;
 
@@ -81,6 +87,7 @@ public:
 	std::shared_ptr<RenderTarget> rt;
 	std::shared_ptr<RenderTarget> rt2;
 	std::shared_ptr<RenderTarget> shadowRt;
+	std::shared_ptr<Sampler> pointSampler;
 public:
 	void init(entt::registry* registry) {
         this->registry = registry;
@@ -102,9 +109,8 @@ public:
         shaderInputLayout->add({ InputDataType::Float4, "weight" });
 
         shaderBuffer.reset(ConstantBuffer::create(0, sizeof(projectionData), nullptr));
-        modelShaderBuffer.reset(ConstantBuffer::create(1, sizeof(modelData), nullptr));
-        meshShaderBuffer.reset(ConstantBuffer::create(2, sizeof(meshData), nullptr));
-        materialShaderBuffer.reset(ConstantBuffer::create(3, sizeof(materialData), nullptr));
+        modelShaderBuffer.reset(ConstantBuffer::create(1, sizeof(ModelData), nullptr));
+        meshShaderBuffer.reset(ConstantBuffer::create(2, sizeof(MeshData), nullptr));
 
         std::shared_ptr<RawTexture> texture = std::make_shared<RawTexture>("texture_01.png");
         texture->import();
@@ -113,7 +119,7 @@ public:
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
         camera.setProjectionMatrix(90.0f, 1920.0f / 1080.0f, 0.1f, 200.f);
-        lightCamera.setOrthographicMatrix(-10, 10, -10, 10, -10, 10);
+        lightCamera.setOrthographicMatrix(-40, 40, -40, 40, -40, 40);
         //lightCamera.m_Rotation = glm::vec4(0.0f, 0.5f, 0.0f, 1.0f);
         lightCamera.m_Position = glm::vec4(7.0f, 4.0f, -2.0f, 1.0f);
 
@@ -124,78 +130,100 @@ public:
         renderGraph = std::make_unique<RenderGraph>(&renderer);
 
 
+		SamplerDesc desc;
+		desc.minFilterModel = FilterMode::LINEAR;
+		desc.magFilterMode = FilterMode::LINEAR;
+		desc.addressingMode = AddressingMode::CLAMP;
+        desc.comparisonFunction = ComparisonFunction::LEQUAL;
+		pointSampler.reset(Sampler::create(desc));
+		pointSampler->setTextureUnit(5);
+		pointSampler->bind(context);
+		pointSampler->setTextureUnit(0);
+		pointSampler->bind(context);
         // Textures
         {
-			textures["positions"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA32));
-			textures["normals"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 1, nullptr, TextureFormat::RGBA32));
-			textures["diffuse"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 2, nullptr, TextureFormat::RGBA32));
-			textures["renderTargetDepthTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 3, nullptr, TextureFormat::D24S8));
-			textures["rtt"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA32));
+			textures["positions"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA32F));
+			textures["normals"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 1, nullptr, TextureFormat::RGBA32F));
+			textures["diffuse"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 2, nullptr, TextureFormat::RGBA32F));
+			textures["rtt"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA32F));
+			textures["shadowColorTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(2048, 2048, 5, nullptr, TextureFormat::RG32F));
+			textures["bluredShadowDepthTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(2048, 2048, 5, nullptr, TextureFormat::RG32F));
 			textures["shadowDepthTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(2048, 2048, 5, nullptr, TextureFormat::D32));
+			textures["renderTargetDepthTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 3, nullptr, TextureFormat::D32));
         }
         // Shaders
         {
-			createShaderFromFolder("shaders/gbuffer", "gbuffer");
+    		createShaderFromFolder("shaders/gbuffer", "gbuffer");
 			createShaderFromFolder("shaders/shadow", "shadow");
-			createShaderFromFolder("shaders/smaa", "light");
+			createShaderFromFolder("shaders/light", "light");
+			createShaderFromFolder("shaders/blur", "blur");
         }
         // Render targets
         {
             {
 				std::shared_ptr<RenderTarget> renderTarget = std::shared_ptr<RenderTarget>(RenderTarget::create());
-				renderTarget->setColorTexture(textures["positions"], 0, 0);
-				renderTarget->setColorTexture(textures["normals"], 1, 0);
-				renderTarget->setColorTexture(textures["diffuse"], 2, 0);
-				renderTarget->setDepthTexture(textures["renderTargetDepthTexture"], 0);
+				renderTarget->setColorTexture(textures["positions"], 0);
+				renderTarget->setColorTexture(textures["normals"], 1);
+				renderTarget->setColorTexture(textures["diffuse"], 2);
+				renderTarget->setDepthTexture(textures["renderTargetDepthTexture"]);
 				renderTargets["gBuffer"] = renderTarget;
 			}
 			{
 				std::shared_ptr<RenderTarget> renderTarget = std::shared_ptr<RenderTarget>(RenderTarget::create());
-				renderTarget->setDepthTexture(textures["shadowDepthTexture"], 0);
+				renderTarget->setColorTexture(textures["shadowColorTexture"], 0);
+				renderTarget->setDepthTexture(textures["shadowDepthTexture"]);
 				renderTargets["shadow"] = renderTarget;
 			}
 			{
 				std::shared_ptr<RenderTarget> renderTarget = std::shared_ptr<RenderTarget>(RenderTarget::create());
-				renderTarget->setColorTexture(textures["rtt"], 0, 0);
+				renderTarget->setColorTexture(textures["rtt"], 0);
 				renderTargets["light"] = renderTarget;
+			}
+			{
+				std::shared_ptr<RenderTarget> renderTarget = std::shared_ptr<RenderTarget>(RenderTarget::create());
+				renderTarget->setColorTexture(textures["bluredShadowDepthTexture"], 0);
+				renderTargets["blur"] = renderTarget;
 			}
         }
         // Render passess
         {
-            forwardRenderPass.reset(new Pass("forward"));
-            forwardRenderPass->setRenderTarget(renderTargets["gBuffer"]);
-
-            forwardRenderPass->bindables.push_back(shaders["gbuffer"]);
-            forwardRenderPass->bindables.push_back(textures["tex"]);
-            renderGraph->addPass(forwardRenderPass);
-        }
+            gbufferPass.reset(new Pass("GBufferPass"));
+            gbufferPass->setRenderTarget(renderTargets["gBuffer"]);
+            gbufferPass->setShader(shaders["gbuffer"]);
+            gbufferPass->setTexture(0, textures["tex"]);
+            renderGraph->addPass(gbufferPass);
+		}
+		{
+			shadowPass.reset(new Pass("ShadowPass"));
+			shadowPass->setRenderTarget(renderTargets["shadow"]);
+			shadowPass->setShader(shaders["shadow"]);
+			renderGraph->addPass(shadowPass);
+		}
+		{
+            blurPass.reset(new FullscreenPass("GaussianBlurPass"));
+            blurPass->setRenderTarget(renderTargets["blur"]);
+            blurPass->setShader(shaders["blur"]);
+            blurPass->setTexture(0, textures["shadowColorTexture"]);
+			renderGraph->addPass(blurPass);
+		}
         {
-            shadowPass.reset(new Pass("forward"));
-            shadowPass->setRenderTarget(renderTargets["shadow"]);
-
-            shadowPass->bindables.push_back(shaders["shadow"]);
-            renderGraph->addPass(shadowPass);
-        }
-        {
-            lightGBufferPass.reset(new FullscreenPass("light"));
+            lightGBufferPass.reset(new FullscreenPass("LightPass"));
             lightGBufferPass->setRenderTarget(renderTargets["light"]);
             
-            lightGBufferPass->bindables.push_back(shaders["light"]);
-            lightGBufferPass->bindables.push_back(textures["positions"]);
-            lightGBufferPass->bindables.push_back(textures["normals"]);
-            lightGBufferPass->bindables.push_back(textures["diffuse"]);
-            lightGBufferPass->bindables.push_back(textures["renderTargetDepthTexture"]);
-            lightGBufferPass->bindables.push_back(textures["shadowDepthTexture"]);
+            lightGBufferPass->setShader(shaders["light"]);
+            lightGBufferPass->setTexture(0, textures["positions"]);
+            lightGBufferPass->setTexture(1, textures["normals"]);
+            lightGBufferPass->setTexture(2, textures["diffuse"]);
+            lightGBufferPass->setTexture(3, textures["bluredShadowDepthTexture"]);
             renderGraph->addPass(lightGBufferPass);
-        }
-        {
-            testRenderPass.reset(new FullscreenPass("main"));
-            testRenderPass->setRenderTarget(mainRenderTarget);
-
-            testRenderPass->bindables.push_back(shaderPipeline);
-            testRenderPass->bindables.push_back(textures["rtt"]);
-            renderGraph->addPass(testRenderPass);
-        }
+		}
+		{
+			testRenderPass.reset(new FullscreenPass("MainPass"));
+			testRenderPass->setRenderTarget(mainRenderTarget);
+			testRenderPass->setShader(shaderPipeline);
+			testRenderPass->setTexture(0, textures["rtt"]);
+			renderGraph->addPass(testRenderPass);
+		}
 
         glEnable(GL_CULL_FACE);
         glFrontFace(GL_CCW);
@@ -203,9 +231,8 @@ public:
 	}
 
 	void update(double dt) {
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-		renderer.bindMainRenderTarget();
-            
+		mainRenderTarget->clear(context);
+
         for (auto& it : renderTargets) {
             it.second->clear(context);
         }
@@ -218,7 +245,7 @@ public:
         glm::mat4 lightProjection, lightView;
         glm::mat4 lightSpaceMatrix;
         float near_plane = -20.0f, far_plane = 20.0f;
-        lightProjection = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, near_plane, far_plane);
+        lightProjection = lightCamera.getPerspectiveMatrix();
         lightView = glm::lookAt(glm::vec3(lightCamera.m_Position), glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
         lightSpaceMatrix = glm::transpose(lightProjection * lightView);
 
@@ -228,7 +255,7 @@ public:
         projectionData.shadowCameraPos = lightCamera.m_Position;
         //glm::transpose(lightCamera.getPerspectiveMatrix() * lightCamera.getViewMatrix());
 		
-        forwardRenderPass->addCommand(std::bind([&](mvp projectionData) {
+        gbufferPass->addCommand(std::bind([&](mvp projectionData) {
             shaderBuffer->update(&projectionData);
             shaderBuffer->bind(context);
         }, projectionData));
@@ -239,17 +266,16 @@ public:
             shaderBuffer->bind(context);
         }, projectionData));
 
-        materialData.color = glm::vec4(0.3f, 0.3f, 0.3f, 1.0f);
-        materialShaderBuffer->update(&materialData);
-        materialShaderBuffer->bind(context);
-
         shadowPass->addCommand([]() {
             glCullFace(GL_FRONT);
             glViewport(0, 0, 2048, 2048);
         });
 
+        blurPass->addCommand([]() {
+			glCullFace(GL_BACK);
+		});
+
         lightGBufferPass->addCommand([&]() {
-            glCullFace(GL_BACK);
             glViewport(0, 0, 1920, 1080);
         });
 
@@ -267,7 +293,9 @@ public:
                 buffer->update(&modelData);
                 buffer->bind(tempRenderer->getContext());
             }, modelData, modelShaderBuffer.get());
-            renderGraph->addCommand(command);
+
+            gbufferPass->addCommand(command);
+            shadowPass->addCommand(command);
 
             this->updateTransform(render.model->getRootNode(), render.model.get(), glm::mat4(1.0f));
 
@@ -281,8 +309,8 @@ public:
                     const std::shared_ptr<Model::SubMesh>& submesh = submeshes[node->mesh];
                     MeshData meshData;
                     meshData.transform = glm::transpose(node->transform.worldTransform);
-                    meshData.matrixTransform = glm::transpose(node->transform.matrixTransform);
-
+					meshData.normalTransform = glm::transpose(node->transform.normalTransform);
+                    
                     buffer->update(&meshData);
                     buffer->bind(tempRenderer->getContext());
                     
@@ -292,11 +320,11 @@ public:
                     tempRenderer->drawIndexed(submesh->iBuffer->getSize());
                 }, node.get(), render.model.get(), meshShaderBuffer.get());
 
-                forwardRenderPass->addCommand(command);
+                gbufferPass->addCommand(command);
                 shadowPass->addCommand(command);
             }
         });
-
+        
         renderGraph->execute();
         renderer.bindMainRenderTarget();
 
@@ -370,7 +398,7 @@ public:
             localTransform = glm::scale(localTransform, node->transform.scale);
 
             node->transform.worldTransform = parentTransform * localTransform;
-            node->transform.matrixTransform = glm::inverse(node->transform.worldTransform);
+            node->transform.normalTransform = glm::inverse(node->transform.worldTransform);
             node->transform.hasChanged = false;
         }
 

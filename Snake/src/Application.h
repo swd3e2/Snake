@@ -28,7 +28,7 @@ MessageCallback(GLenum source,
     const GLchar* message,
     const void* userParam)
 {
-//    std::cout << message << std::endl;
+    std::cout << message << std::endl;
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -104,7 +104,6 @@ public:
             interface->update(dt);
             scriptSystem.update();
             
-            /* Swap front and back buffers */
             glfwSwapBuffers(window);
 
             InputManager::instance()->mouseMoveX = 0.0;

@@ -28,6 +28,7 @@ public:
     }
 
     virtual void execute(Renderer* renderer) {
+        renderTarget->bind(renderer->getContext());
         while (!commands.empty()) {
             std::function<void()> command = commands.front();
             commands.pop();
@@ -37,6 +38,12 @@ public:
         for (auto& it : bindables) {
             it->bind(renderer->getContext());
         }
+
+		for (auto& it : textures) {
+			it.second->bindToUnit(it.first, renderer->getContext());
+		}
+
+		this->shader->bind(renderer->getContext());
 
         quadVertexBuffer->bind(renderer->getContext());
         quadIndexBuffer->bind(renderer->getContext());

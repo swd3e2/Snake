@@ -65,7 +65,8 @@ public:
 		//ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(((OpenGLRenderTarget*)renderSystem->rt.get())->colorTexturesMap[0])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
 		//ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(((OpenGLRenderTarget*)renderSystem->rt.get())->colorTexturesMap[1])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
 		//ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(((OpenGLRenderTarget*)renderSystem->rt.get())->colorTexturesMap[2])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
-		//ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(renderSystem->textures["normals"])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(renderSystem->textures["bluredShadowDepthTexture"])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(renderSystem->textures["shadowColorTexture"])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
 		ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(renderSystem->textures["rtt"])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
 		ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(renderSystem->textures["shadowDepthTexture"])->textureId, ImVec2(256, 256), ImVec2(0, 1), ImVec2(1, 0));
 		ImGui::End();
@@ -123,13 +124,13 @@ public:
 			ImGui::Text(str);
 			
 			ImGui::Text("Normal matrix");
-			sprintf(str, "%f %f %f %f", node->transform.matrixTransform[0][0], node->transform.matrixTransform[0][1], node->transform.matrixTransform[0][2], node->transform.matrixTransform[0][3]);
+			sprintf(str, "%f %f %f %f", node->transform.normalTransform[0][0], node->transform.normalTransform[0][1], node->transform.normalTransform[0][2], node->transform.normalTransform[0][3]);
 			ImGui::Text(str);
-			sprintf(str, "%f %f %f %f", node->transform.matrixTransform[1][0], node->transform.matrixTransform[1][1], node->transform.matrixTransform[1][2], node->transform.matrixTransform[1][3]);
+			sprintf(str, "%f %f %f %f", node->transform.normalTransform[1][0], node->transform.normalTransform[1][1], node->transform.normalTransform[1][2], node->transform.normalTransform[1][3]);
 			ImGui::Text(str);
-			sprintf(str, "%f %f %f %f", node->transform.matrixTransform[2][0], node->transform.matrixTransform[2][1], node->transform.matrixTransform[2][2], node->transform.matrixTransform[2][3]);
+			sprintf(str, "%f %f %f %f", node->transform.normalTransform[2][0], node->transform.normalTransform[2][1], node->transform.normalTransform[2][2], node->transform.normalTransform[2][3]);
 			ImGui::Text(str);
-			sprintf(str, "%f %f %f %f", node->transform.matrixTransform[3][0], node->transform.matrixTransform[3][1], node->transform.matrixTransform[3][2], node->transform.matrixTransform[3][3]);
+			sprintf(str, "%f %f %f %f", node->transform.normalTransform[3][0], node->transform.normalTransform[3][1], node->transform.normalTransform[3][2], node->transform.normalTransform[3][3]);
 			ImGui::Text(str);
 
 			for (auto& it : node->childs) {

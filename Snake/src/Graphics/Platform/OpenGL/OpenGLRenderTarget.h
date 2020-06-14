@@ -23,7 +23,7 @@ public:
 		glNamedFramebufferReadBuffer(fbo, GL_NONE);
     }
 
-	virtual void setColorTexture(const std::shared_ptr<Texture2D>& texture, int slot, int level) override {
+	virtual void setColorTexture(const std::shared_ptr<Texture2D>& texture, int slot, int level = 0) override {
 		GLuint tex = std::static_pointer_cast<OpenGLTexture2D>(texture)->textureId;
 		glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0 + slot, tex, level);
 
@@ -40,7 +40,7 @@ public:
 		checkErrors();
 	}
 
-	virtual void setDepthTexture(const std::shared_ptr<Texture2D>& texture, int level) override {
+	virtual void setDepthTexture(const std::shared_ptr<Texture2D>& texture, int level = 0) override {
 		depthTexture = texture;
 
 		GLuint target = 0;

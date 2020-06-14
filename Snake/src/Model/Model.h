@@ -14,7 +14,7 @@ public:
 		glm::quat rotation;
 		glm::vec3 rotationV;
 		glm::mat4 worldTransform;
-		glm::mat4 matrixTransform;
+		glm::mat4 normalTransform;
 		bool hasChanged = true;
 	};
 

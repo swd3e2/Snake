@@ -35,7 +35,7 @@ public:
 		m_ProjectionMatrix = glm::perspective(glm::radians(fov), aspectRatio, nearZ, farZ);
 	}
 
-	void setOrthographicMatrix(float left, float right, float top, float bottom, float near, float far) {
+	void setOrthographicMatrix(float left, float right, float bottom, float top, float near, float far) {
 		m_ProjectionMatrix = glm::ortho(left, right, bottom, top, near, far);
 	}
 
