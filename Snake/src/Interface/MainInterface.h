@@ -21,13 +21,13 @@ private:
 	Camera* camera;
 	RenderSystem* renderSystem;
 public:
-	MainInterface(GLFWwindow* window, entt::registry* registry, Camera* camera, RenderSystem* renderSystem) :
+	MainInterface(Window* window, entt::registry* registry, Camera* camera, RenderSystem* renderSystem) :
 		registry(registry), camera(camera), renderSystem(renderSystem)
 	{
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
 
-		ImGui_ImplGlfw_InitForOpenGL(window, true);
+		ImGui_ImplGlfw_InitForOpenGL(((OpenGLWindow*)window)->getWindow(), true);
 		ImGui_ImplOpenGL3_Init(glsl_version);
 	}
 
@@ -89,10 +89,10 @@ public:
 				EditTransform(transform);
 			} else {
 				if (ImGui::Button("Create render component")) {
-					GltfImporter importer;
+					/*GltfImporter importer;
 					std::shared_ptr<Import::Model> model = importer.import("BoxTextured.gltf");
 					registry->emplace<Render>(selectedEntity, std::make_shared<Model>(model));
-					registry->emplace<Transform>(selectedEntity);
+					registry->emplace<Transform>(selectedEntity);*/
 				}
 			}
 		} 

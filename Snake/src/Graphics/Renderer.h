@@ -6,6 +6,7 @@
 #include "Renderer/RenderContext.h"
 #include "Bindable.h"
 #include "Renderer/MainRenderTarget.h"
+#include "Window.h"
 
 class Renderer {
 private:
@@ -33,6 +34,10 @@ public:
     void bindMainRenderTarget() {
         _mainRenderTarget->bind(_renderContext);
     }
+
+    virtual Window* createWindow(int width, int height) = 0;
+    virtual void swapBuffers() = 0;
+    static Renderer* create(RendererType type);
 
     static Renderer* instance() { return _instance; }
     static RendererType getType() { return _rendererType; };

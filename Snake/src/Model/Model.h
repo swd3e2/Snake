@@ -4,9 +4,37 @@
 #include "../Graphics/Renderer/VertexBuffer.h"
 #include "../Graphics/Renderer/IndexBuffer.h"
 #include "Material.h"
+#include "Storage.h"
+#include "FileSystem/File.h"
 
 class Model {
 public:
+	friend class ModelLoader;
+	struct MaterialData {
+		glm::vec4 color = glm::vec4(1.0f, 1.0f, 1.0, 1.0f);
+		float metallicFactor;
+		float roughnessFactor;
+		float emissiveFactor;
+		float ao;
+		int hasDiffuseTexture = 0;
+		int hasNormalTexture = 0;
+		int hasSpecularMap = 0;
+		int pad;
+	};
+
+	struct Material {
+		std::string name;
+		MaterialData materialData;
+
+		std::shared_ptr<Texture2D> diffuseTexture;
+		std::shared_ptr<Texture2D> normalTexture;
+		std::shared_ptr<Texture2D> specularTexture;
+		std::shared_ptr<Texture2D> roughnesTexture;
+		std::shared_ptr<Texture2D> emisiveTexture;
+		std::shared_ptr<Texture2D> metallicTexture;
+		std::shared_ptr<Texture2D> occlusionTexture;
+	};
+
 	/** Struct contains all information about current node transform */
 	struct Transform {
 		glm::vec3 translation;
@@ -45,44 +73,6 @@ private:
 	std::string filename;
 	bool skinned = false;
 public:
-	Model() {}
-
-	Model(const std::shared_ptr<Import::Model>& model) {
-		rootNode = model->rootNode;
-		filename = model->filename;
-		skinned = model->skinned;
-
-		for (int i = 0; i < model->nodes.size(); i++) {
-			std::shared_ptr<Node> node = std::make_shared<Node>();
-			node->id = model->nodes[i]->id;
-			node->jointId = model->nodes[i]->jointId;
-			node->mesh = model->nodes[i]->meshId;
-			node->name = model->nodes[i]->name;
-
-			node->childs = model->nodes[i]->childs;
-
-			node->transform.rotation = model->nodes[i]->rotation;
-			node->transform.rotationV = glm::eulerAngles(model->nodes[i]->rotation);
-
-			node->transform.scale = model->nodes[i]->scale;
-			node->transform.translation = model->nodes[i]->translation;
-
-			nodes.push_back(node);
-		}
-
-		for (int i = 0; i < model->meshes.size(); i++) {
-			std::shared_ptr<SubMesh> renderable = std::make_shared<SubMesh>();
-			renderable->id = i;
-			renderable->material = model->meshes[i]->material;
-
-			renderable->vBuffer.reset(VertexBuffer::create(model->meshes[i]->vertices.size(), sizeof(vertex), model->meshes[i]->vertices.data()));
-			renderable->iBuffer.reset(IndexBuffer::create(model->meshes[i]->indices.size(), model->meshes[i]->indices.data()));
-
-			submeshes.push_back(renderable);
-		}
-
-	}
-
 	const std::vector<std::shared_ptr<SubMesh>>& getSubMeshes() const { return submeshes; }
 	const std::vector<std::shared_ptr<Node>>& getNodes() const { return nodes; }
 	const int getRootNode() const { return rootNode; }

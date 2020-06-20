@@ -4,6 +4,7 @@
 #include "Model/Import/GltfImporter.h"
 #include "FileSystem/File.h"
 #include <iostream>
+#include "ModelLoader.h"
 
 class Loader {
 private:
@@ -42,9 +43,7 @@ public:
             }
 
             if (it.find("Render") != it.end()) {
-                GltfImporter importer;
-                std::shared_ptr<Import::Model> model = importer.import(it["Render"]["filename"].get<std::string>().c_str());
-                registry->emplace<Render>(entity, std::make_shared<Model>(model));
+                registry->emplace<Render>(entity, ModelLoader::instance()->loadFromFile(it["Render"]["filename"].get<std::string>()));
             }
 
             if (it.find("Script") != it.end()) {

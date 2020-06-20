@@ -24,8 +24,14 @@ public:
 		glBindTexture(GL_TEXTURE_2D, textureId);
 		glTexImage2D(GL_TEXTURE_2D, 0, m_InternalFormat, width, height, 0, m_DataFormat, getInternalType(textureFormat), nullptr);*/
 
-		glCreateTextures(GL_TEXTURE_2D, 1, &textureId);
-		glTextureStorage2D(textureId, numMips + 1, m_InternalFormat, width, height);
+		if (textureFormat == TextureFormat::D32) {
+			glGenTextures(1, &textureId);
+			glBindTexture(GL_TEXTURE_2D, textureId);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+		} else {
+			glCreateTextures(GL_TEXTURE_2D, 1, &textureId);
+			glTextureStorage2D(textureId, numMips + 1, m_InternalFormat, width, height);
+		}
 
 		glTextureParameteri(textureId, GL_TEXTURE_BASE_LEVEL, 0);
 		glTextureParameteri(textureId, GL_TEXTURE_MAX_LEVEL, numMips);

@@ -16,7 +16,6 @@ private:
 	glm::vec4 m_CamTarget;
 	glm::mat4 m_ViewMatrix;
 	glm::mat4 m_ProjectionMatrix;
-	glm::vec4 upVec;
 public:
 	Camera() {
 		m_Position = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -49,6 +48,5 @@ public:
 
 		forwardVec = glm::vec4(0.0f, 0.0f, 1.0f, 0.0f) * temp;
 		rightVec = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) * temp;
-		upVec = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f) * temp;
 	}
 };

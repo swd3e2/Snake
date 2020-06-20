@@ -21,7 +21,7 @@ private:
 	int meshCounter = 0;
 	int nodeCounter = 0;
 public:
-	std::shared_ptr<Import::Model> import(const char* filename);
+	std::shared_ptr<Import::Model> import(const std::string& filename);
 private:
 	void calculateTangent(Import::Model* model);
 	void processHierarchy(Import::Model* model, const tinygltf::Model& gltfModel);

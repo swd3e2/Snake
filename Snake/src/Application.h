@@ -18,99 +18,100 @@
 #include "ScriptSystem.h"
 #include "Saver.h"
 #include "Loader.h"
+#include "Physics/PhysicsSystem.h"
+#include "PhysicsDebugDraw.h"
+#include "CameraSystem.h"
+#include "PlayerSystem.h"
+#include "Storage.h"
+#include "TextureLoader.h"
+#include "ModelLoader.h"
 
-void GLAPIENTRY
-MessageCallback(GLenum source,
-    GLenum type,
-    GLuint id,
-    GLenum severity,
-    GLsizei length,
-    const GLchar* message,
-    const void* userParam)
-{
-    std::cout << message << std::endl;
-}
-
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-    if (action == GLFW_RELEASE) {
-        InputManager::instance()->setKeyPressed(key, false);
-    } else {
-        InputManager::instance()->setKeyPressed(key, true);
-    }
-}
-
-void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
-{
-    InputManager::instance()->setCursorPosition(xpos, ypos);
-}
 
 class Application {
 private:
+    Window* window;
     entt::registry registry;
-    RenderSystem rs;
-    GLFWwindow* window;
-    std::chrono::time_point<std::chrono::steady_clock> m_Start;
 
     std::shared_ptr<MainInterface> interface;
-    ScriptSystem scriptSystem;
+	std::unique_ptr<RenderSystem> renderSystem;
+    std::unique_ptr<ScriptSystem> scriptSystem;
+    std::unique_ptr<PhysicsSystem> physicsSystem;
+	std::unique_ptr<CameraSystem> cameraSystem;
+	std::unique_ptr<PlayerSystem> playerSystem;
+	std::shared_ptr<Renderer> renderer;
+
+	std::chrono::time_point<std::chrono::steady_clock> m_Start;
+
+	TextureLoader textureLoader;
+    ModelLoader modelLoader;
 public:
     ~Application() {
         glfwTerminate();
     }
 
 	void init() {
-        /* Initialize the library */
-        if (!glfwInit()) {
-            return;
-        }
-        
-        window = glfwCreateWindow(1920, 1080, "Snake", NULL, NULL);
-        if (!window) {
-            glfwTerminate();
-            return;
-        }
-        /* Make the window's context current */
-        glfwMakeContextCurrent(window);
-        if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-            std::cout << "Failed to initialize GLAD" << std::endl;
-            // return -1;
-        }
+		textureLoader.startUp();
+		modelLoader.startUp();
 
-        //glfwSwapInterval( 0 );
+        renderer.reset(Renderer::create(RendererType::OpenGL));
+        window = renderer->createWindow(1920, 1080);
 
-        glDebugMessageCallback(MessageCallback, 0);
-        glfwSetKeyCallback(window, key_callback);
-        glfwSetCursorPosCallback(window, cursor_position_callback);
+		physicsSystem = std::make_unique<PhysicsSystem>(&registry);
+        renderSystem = std::make_unique<RenderSystem>(&registry, physicsSystem.get());
+        scriptSystem = std::make_unique<ScriptSystem>(&registry);
+		cameraSystem = std::make_unique<CameraSystem>(&registry);
+		playerSystem = std::make_unique<PlayerSystem>(&registry);
 
-        rs.init(&registry);
-        scriptSystem.init(&registry);
+        interface = std::make_shared<MainInterface>(window, &registry, &renderSystem->camera, renderSystem.get());
 
-        interface = std::make_shared<MainInterface>(window, &registry, &rs.camera, &rs);
-
-        // Saver saver;
-        // saver.saveToFile("test.json", &registry);
         Loader loader;
         loader.loadFromFile("test.json", &registry);
+
+        entt::entity player = registry.create();
+        CameraComponent& component = registry.emplace<CameraComponent>(player);
+        component.projectionMatrix = glm::perspective(glm::radians(90.0f), 1920.0f / 1080.0f, 0.01f, 200.0f);
+		registry.emplace<PlayerComponent>(player);
+		registry.emplace<Transform>(player);
+
+		std::shared_ptr<btCollisionShape> shape = std::make_shared<btCapsuleShape>(0.3f, 2.6f);
+		physicsSystem->createPhysicsBody(player, shape, 3.0f, glm::vec3(0.0, 20.0f, 0.0f), true);
+
+		/*for (int i = 0; i < 100; i++) {
+			entt::entity entity = registry.create();
+			std::shared_ptr<btCollisionShape> shape = std::make_shared<btBoxShape>(btVector3(0.5, 0.5, 0.5));
+			physicsSystem->createPhysicsBody(entity, shape, 1.0f, glm::vec3(0.0, 20.0f + i, 0.0f), true);
+
+			registry.emplace<Transform>(entity);
+			GltfImporter importer;
+			std::shared_ptr<Import::Model> model = importer.import("BoxTextured.gltf");
+			registry.emplace<Render>(entity, std::make_shared<Model>(model));
+		}*/
+		{
+			entt::entity entity = registry.create();
+			std::shared_ptr<btCollisionShape> shape = std::make_shared<btStaticPlaneShape>(btVector3(0, 1, 0), 0);
+			physicsSystem->createPhysicsBody(entity, shape, 0.0f, glm::vec3(0.0, -0.63f, 0.0f), false);
+		}
 	}
 
 	void run() {
         double dt = 0.0;
         
-        while (!glfwWindowShouldClose(window)) {
+        while (!window->isOpen()) {
             m_Start = std::chrono::high_resolution_clock::now();
 
-            rs.update(16.0);
+            renderSystem->update(16.0);
             interface->update(dt);
-            scriptSystem.update();
-            
-            glfwSwapBuffers(window);
+            scriptSystem->update();
+            physicsSystem->update(dt);
+            cameraSystem->update(dt);
+			playerSystem->update(dt);
+
+			renderer->swapBuffers();
 
             InputManager::instance()->mouseMoveX = 0.0;
             InputManager::instance()->mouseMoveY = 0.0;
 
-            /* Poll for and process events */
-            glfwPollEvents();
+			window->pollEvents();
 
             dt = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - m_Start).count();
         }

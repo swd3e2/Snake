@@ -29,7 +29,7 @@ private:
 
     lua_State* L;
 public:
-    void init(entt::registry* registry) {
+    ScriptSystem(entt::registry* registry) {
         this->registry = registry;
         // create a Lua state
         L = luaL_newstate();

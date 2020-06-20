@@ -11,8 +11,7 @@
 
 
 namespace Import {
-	struct Node
-	{
+	struct Node {
 		int id;
 		int jointId;
 		int meshId = -1;
@@ -25,22 +24,19 @@ namespace Import {
 		std::vector<int> childs;
 	};
 
-	struct AnimationData
-	{
+	struct AnimationData {
 		std::map<double, glm::quat> rotations;
 		std::map<double, glm::vec3> positions;
 		std::map<double, glm::vec3> scale;
 	};
 
-	struct Animation
-	{
+	struct Animation {
 		std::map<int, std::shared_ptr<AnimationData>> data;
 		double duration = 0.0;
 		std::string name;
 	};
 
-	struct Material
-	{
+	struct Material {
 		int id;
 
 		std::string name;
@@ -57,8 +53,7 @@ namespace Import {
 		std::string occlusionTexture;
 	};
 
-	struct Mesh
-	{
+	struct Mesh {
 		int id;
 		int material;
 		bool hasTangent = false;
@@ -67,8 +62,7 @@ namespace Import {
 		std::vector<unsigned int> indices;
 	};
 
-	struct Model
-	{
+	struct Model {
 		std::string filename;
 		std::vector <std::shared_ptr<Mesh >> meshes;
 		std::vector<Material> materials;

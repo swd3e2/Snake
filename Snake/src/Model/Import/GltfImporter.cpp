@@ -1,6 +1,6 @@
 #include "GltfImporter.h"
 
-std::shared_ptr<Import::Model> GltfImporter::import(const char* filename)
+std::shared_ptr<Import::Model> GltfImporter::import(const std::string& filename)
 {
 	meshCounter = nodeCounter = animationNodeCounter = 0;
 
@@ -322,10 +322,10 @@ void GltfImporter::calculateTangent(Import::Model* model)
 				vertex& third = it->vertices[it->indices[i + 2]];
 
 				glm::vec3 edge1 = second.pos - first.pos;
-				glm::vec3 edge2 = third.pos - first.pos;
+				glm::vec3 edge2 = third.pos  - first.pos;
 
 				glm::vec2 uv1 = second.texCoord - first.texCoord;
-				glm::vec2 uv2 = third.texCoord - first.texCoord;
+				glm::vec2 uv2 = third.texCoord  - first.texCoord;
 
 				float f = 1.0f / uv1.x * uv2.y - uv2.x * uv1.y;
 

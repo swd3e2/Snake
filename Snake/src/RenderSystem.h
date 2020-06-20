@@ -25,6 +25,7 @@
 #include "Import/RawTexture.h"
 #include "Graphics/RenderGraph/FullscreenPass.h"
 #include "Graphics/Renderer/Sampler.h"
+#include "Physics/PhysicsSystem.h"
 
 class RenderSystem {
 private:
@@ -54,7 +55,7 @@ public:
     mvp projectionData;
     ModelData modelData;
     MeshData meshData;
-    OpenGlRenderer renderer;
+    Renderer* renderer;
     RenderContext* context;
     std::unique_ptr<RenderGraph> renderGraph;
 
@@ -88,10 +89,16 @@ public:
 	std::shared_ptr<RenderTarget> rt2;
 	std::shared_ptr<RenderTarget> shadowRt;
 	std::shared_ptr<Sampler> pointSampler;
+
+    GLuint voxelTexture;
+    PhysicsSystem* physicsSystem;
+    bool useDebugCamera = true;
 public:
-	void init(entt::registry* registry) {
+	RenderSystem(entt::registry* registry, PhysicsSystem* physics) {
         this->registry = registry;
-        context = renderer.getContext();
+        this->physicsSystem = physics;
+        renderer = Renderer::instance();
+        context = renderer->getContext();
 
         File fileVS("defaultVS.glsl");
         File filePS("defaultPS.glsl");
@@ -127,14 +134,13 @@ public:
 
         mainRenderTarget.reset(Renderer::getMainRenderTarget());
 
-        renderGraph = std::make_unique<RenderGraph>(&renderer);
-
+        renderGraph = std::make_unique<RenderGraph>(renderer);
 
 		SamplerDesc desc;
 		desc.minFilterModel = FilterMode::LINEAR;
 		desc.magFilterMode = FilterMode::LINEAR;
+		desc.mipFilterMode = FilterMode::NONE;
 		desc.addressingMode = AddressingMode::CLAMP;
-        desc.comparisonFunction = ComparisonFunction::LEQUAL;
 		pointSampler.reset(Sampler::create(desc));
 		pointSampler->setTextureUnit(5);
 		pointSampler->bind(context);
@@ -146,9 +152,9 @@ public:
 			textures["normals"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 1, nullptr, TextureFormat::RGBA32F));
 			textures["diffuse"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 2, nullptr, TextureFormat::RGBA32F));
 			textures["rtt"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA32F));
-			textures["shadowColorTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(2048, 2048, 5, nullptr, TextureFormat::RG32F));
-			textures["bluredShadowDepthTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(2048, 2048, 5, nullptr, TextureFormat::RG32F));
-			textures["shadowDepthTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(2048, 2048, 5, nullptr, TextureFormat::D32));
+			textures["shadowColorTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(1024, 1024, 5, nullptr, TextureFormat::RG32F));
+			textures["bluredShadowDepthTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(1024, 1024, 5, nullptr, TextureFormat::RG32F));
+			textures["shadowDepthTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(1024, 1024, 5, nullptr, TextureFormat::D32));
 			textures["renderTargetDepthTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 3, nullptr, TextureFormat::D32));
         }
         // Shaders
@@ -157,6 +163,7 @@ public:
 			createShaderFromFolder("shaders/shadow", "shadow");
 			createShaderFromFolder("shaders/light", "light");
 			createShaderFromFolder("shaders/blur", "blur");
+			createShaderFromFolder("shaders/physdebug", "physdebug");
         }
         // Render targets
         {
@@ -214,7 +221,8 @@ public:
             lightGBufferPass->setTexture(0, textures["positions"]);
             lightGBufferPass->setTexture(1, textures["normals"]);
             lightGBufferPass->setTexture(2, textures["diffuse"]);
-            lightGBufferPass->setTexture(3, textures["bluredShadowDepthTexture"]);
+			lightGBufferPass->setTexture(3, textures["bluredShadowDepthTexture"]);
+			lightGBufferPass->setTexture(4, textures["renderTargetDepthTexture"]);
             renderGraph->addPass(lightGBufferPass);
 		}
 		{
@@ -249,7 +257,14 @@ public:
         lightView = glm::lookAt(glm::vec3(lightCamera.m_Position), glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
         lightSpaceMatrix = glm::transpose(lightProjection * lightView);
 
-		projectionData.projection = glm::transpose(camera.getPerspectiveMatrix() * camera.getViewMatrix());
+        if (!useDebugCamera) {
+			registry->view<CameraComponent, PlayerComponent>().each([&](CameraComponent& camera, PlayerComponent& player) {
+				projectionData.projection = glm::transpose(camera.projectionMatrix * camera.viewMatrix);
+				});
+        } else {
+			projectionData.projection = glm::transpose(camera.getPerspectiveMatrix() * camera.getViewMatrix());
+        }
+        
 		projectionData.shadowProjection = lightSpaceMatrix;
         projectionData.viewPos = camera.m_Position;
         projectionData.shadowCameraPos = lightCamera.m_Position;
@@ -267,12 +282,12 @@ public:
         }, projectionData));
 
         shadowPass->addCommand([]() {
-            glCullFace(GL_FRONT);
-            glViewport(0, 0, 2048, 2048);
+            //glCullFace(GL_FRONT);
+            glViewport(0, 0, 1024, 1024);
         });
 
         blurPass->addCommand([]() {
-			glCullFace(GL_BACK);
+			//glCullFace(GL_BACK);
 		});
 
         lightGBufferPass->addCommand([&]() {
@@ -280,108 +295,101 @@ public:
         });
 
         registry->view<Transform, Render>().each([&](Transform& transform, Render& render) {
-            modelData.toWorld = glm::mat4(1.0f);
-            modelData.toWorld = glm::translate(modelData.toWorld, transform.translation);
-            modelData.toWorld = modelData.toWorld * glm::eulerAngleXYZ(transform.rotation.x, transform.rotation.y, transform.rotation.z);
-            modelData.toWorld = glm::transpose(glm::scale(modelData.toWorld, transform.scale));
-            modelData.toWorld = glm::transpose(transform.matrix);
-            modelData.inverseToWorld = glm::inverse(modelData.toWorld);
+			modelData.toWorld = glm::mat4(1.0f);
+			modelData.toWorld = glm::translate(modelData.toWorld, transform.translation);
+			//modelData.toWorld = modelData.toWorld * glm::eulerAngleXYZ(transform.rotation.x, transform.rotation.y, transform.rotation.z);
+			modelData.toWorld = modelData.toWorld * glm::toMat4(transform.rotationq);
+			modelData.toWorld = glm::transpose(glm::scale(modelData.toWorld, transform.scale));
+			//modelData.toWorld = glm::transpose(transform.matrix);
+			modelData.inverseToWorld = glm::inverse(modelData.toWorld);
 
-            std::function<void()> command = std::bind([](ModelData modelData, ConstantBuffer* buffer) {
-                Renderer* tempRenderer = Renderer::instance();
+			std::function<void()> command = std::bind([](ModelData modelData, ConstantBuffer* buffer) {
+				Renderer* tempRenderer = Renderer::instance();
 
-                buffer->update(&modelData);
-                buffer->bind(tempRenderer->getContext());
-            }, modelData, modelShaderBuffer.get());
+				buffer->update(&modelData);
+				buffer->bind(tempRenderer->getContext());
+				}, modelData, modelShaderBuffer.get());
 
-            gbufferPass->addCommand(command);
-            shadowPass->addCommand(command);
+			gbufferPass->addCommand(command);
+			shadowPass->addCommand(command);
 
-            this->updateTransform(render.model->getRootNode(), render.model.get(), glm::mat4(1.0f));
+			this->updateTransform(render.model->getRootNode(), render.model.get(), glm::mat4(1.0f));
 
-            for (auto& node : render.model->getNodes()) {
-                if (node->mesh == -1) continue;
-          
-                std::function<void()> command = std::bind([](Model::Node* node, Model* model, ConstantBuffer* buffer) {
-                    Renderer* tempRenderer = Renderer::instance();
-                    std::vector<std::shared_ptr<Model::SubMesh>> submeshes = model->getSubMeshes();
+			for (auto& node : render.model->getNodes()) {
+				if (node->mesh == -1) continue;
 
-                    const std::shared_ptr<Model::SubMesh>& submesh = submeshes[node->mesh];
-                    MeshData meshData;
-                    meshData.transform = glm::transpose(node->transform.worldTransform);
+				std::function<void()> command = std::bind([](Model::Node* node, Model* model, ConstantBuffer* buffer) {
+					Renderer* tempRenderer = Renderer::instance();
+					std::vector<std::shared_ptr<Model::SubMesh>> submeshes = model->getSubMeshes();
+
+					const std::shared_ptr<Model::SubMesh>& submesh = submeshes[node->mesh];
+					MeshData meshData;
+					meshData.transform = glm::transpose(node->transform.worldTransform);
 					meshData.normalTransform = glm::transpose(node->transform.normalTransform);
-                    
-                    buffer->update(&meshData);
-                    buffer->bind(tempRenderer->getContext());
-                    
-                    submesh->vBuffer->bind(tempRenderer->getContext());
-                    submesh->iBuffer->bind(tempRenderer->getContext());
 
-                    tempRenderer->drawIndexed(submesh->iBuffer->getSize());
-                }, node.get(), render.model.get(), meshShaderBuffer.get());
+					buffer->update(&meshData);
+					buffer->bind(tempRenderer->getContext());
 
-                gbufferPass->addCommand(command);
-                shadowPass->addCommand(command);
-            }
+					submesh->vBuffer->bind(tempRenderer->getContext());
+					submesh->iBuffer->bind(tempRenderer->getContext());
+
+					tempRenderer->drawIndexed(submesh->iBuffer->getSize());
+					}, node.get(), render.model.get(), meshShaderBuffer.get());
+
+				gbufferPass->addCommand(command);
+				shadowPass->addCommand(command);
+			}
         });
         
+        gbufferPass->addCommand(std::bind([&](PhysicsSystem* physicsSystem, std::shared_ptr<ShaderPipeline>& shader) {
+            shader->bind(Renderer::instance()->getContext());
+            physicsSystem->dynamicsWorld->debugDrawWorld();
+		}, physicsSystem, shaders["physdebug"]));
+
         renderGraph->execute();
-        renderer.bindMainRenderTarget();
+        renderer->bindMainRenderTarget();
 
         updateCamera();
 	}
 
-    void updateCamera()
-    {
+    void updateCamera() {
+		if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_UP)) {
+			lightCamera.m_Position.x += 0.2f;
+		} else if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_DOWN)) {
+			lightCamera.m_Position.x -= 0.2f;
+		}
+
+		if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_LEFT)) {
+			lightCamera.m_Position.z += 0.2f;
+		} else if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_RIGHT)) {
+			lightCamera.m_Position.z -= 0.2f;
+		}
+
+        if (!useDebugCamera) return;
         if (InputManager::instance()->isKeyPressed(GLFW_KEY_1)) {
             mainCamera = 0;
         } else if (InputManager::instance()->isKeyPressed(GLFW_KEY_2)) {
             mainCamera = 1;
         }
 
-        Camera* selectedCamera = nullptr;
-
-        if (mainCamera == 0) {
-            selectedCamera = &camera;
-        } else if (mainCamera == 1) {
-            selectedCamera = &lightCamera;
-        }
-
-        if (selectedCamera == nullptr) return;
-
         if (InputManager::instance()->isKeyPressed(GLFW_KEY_E)) {
-            selectedCamera->m_Rotation.x -= (float)InputManager::instance()->mouseMoveX * 0.0045f;
-            selectedCamera->m_Rotation.y += (float)InputManager::instance()->mouseMoveY * 0.0045f;
+            camera.m_Rotation.x -= (float)InputManager::instance()->mouseMoveX * 0.0045f;
+            camera.m_Rotation.y += (float)InputManager::instance()->mouseMoveY * 0.0045f;
         }
 
         if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_W)) {
-            selectedCamera->m_Position += selectedCamera->forwardVec * 0.2f;
+            camera.m_Position += camera.forwardVec * 0.2f;
         } else if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_S)) {
-            selectedCamera->m_Position -= selectedCamera->forwardVec * 0.2f;
+            camera.m_Position -= camera.forwardVec * 0.2f;
         }
 
         if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_A)) {
-            selectedCamera->m_Position += selectedCamera->rightVec * 0.2f;
+            camera.m_Position += camera.rightVec * 0.2f;
         } else if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_D)) {
-            selectedCamera->m_Position -= selectedCamera->rightVec * 0.2f;
+            camera.m_Position -= camera.rightVec * 0.2f;
         }   
 
-        if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_UP)) {
-            lightCamera.m_Position.x +=  0.2f;
-        }
-        else if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_DOWN)) {
-            lightCamera.m_Position.x -= 0.2f;
-        }
-
-        if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_LEFT)) {
-            lightCamera.m_Position.z += 0.2f;
-        }
-        else if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_RIGHT)) {
-            lightCamera.m_Position.z -= 0.2f;
-        }
-
         camera.update();
-        //lightCamera.update();
     }
 
     void updateTransform(const int nodeId, Model* renderable, const glm::mat4& parentTransform)

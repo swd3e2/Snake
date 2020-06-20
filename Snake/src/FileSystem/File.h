@@ -39,4 +39,8 @@ public:
 			return false;
 		}
 	}
+
+	operator bool() {
+		return exists();
+	}
 };
