@@ -9,14 +9,12 @@ file(GLOB_RECURSE HEADERS "Snake/src/*.h")
 
 set(INCLUDE_DIRS 
     Snake/src
-    Snake/vendor/glad/include
     Snake/vendor/lua
     Snake/vendor/stb
     Snake/vendor/tinygltf
     Snake/vendor/glm
     Snake/vendor/entt/src
     Snake/vendor/json/include
-    Snake/vendor/glfw/include
     Snake/vendor/lua-bridge/Source
     Snake/vendor/ImGuizmo
     Snake/vendor/bullet/src
@@ -26,8 +24,6 @@ add_executable(Snake ${SOURCES} ${HEADERS})
 
 target_include_directories(Snake PRIVATE ${INCLUDE_DIRS})
 target_link_libraries(Snake 
-    opengl32 
-    Snake/vendor/libs/glfw/glfw3 
     Snake/vendor/libs/Lua52
     Snake/vendor/libs/Bullet3Collision_Debug
     Snake/vendor/libs/Bullet3Common_Debug
@@ -36,6 +32,8 @@ target_link_libraries(Snake
     Snake/vendor/libs/BulletCollision_Debug
     Snake/vendor/libs/BulletDynamics_Debug
     Snake/vendor/libs/LinearMath_Debug
+    d3d11.lib
+    D3DCompiler.lib
 )
 
 message(STATUS ${CMAKE_CURRENT_SOURCE_DIR})

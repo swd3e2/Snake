@@ -1,5 +1,6 @@
 #include "Renderer.h"
 #include "Platform/OpenGL/OpenGLRenderer.h"
+#include "Platform/DirectX/DirectXRenderer.h"
 
 Renderer* Renderer::_instance = nullptr;
 RenderContext* Renderer::_renderContext = nullptr;
@@ -8,7 +9,8 @@ RendererType Renderer::_rendererType = RendererType::None;
 
 Renderer* Renderer::create(RendererType type) {
 	switch (type) {
-		case RendererType::OpenGL: return new OpenGlRenderer();
+	case RendererType::OpenGL: return new OpenGlRenderer();
+	case RendererType::DirectX: return new DirectXRenderer();
 	}
 	return nullptr;
 }

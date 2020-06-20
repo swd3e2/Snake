@@ -10,8 +10,8 @@ private:
 	int size = 0;
 public:
 	VertexBuffer(int size, int stride) : stride(stride), size(size) {}
-	int getSize() const { return size; }
-	int getStride() const { return stride; }
+	const int getSize() const { return size; }
+	const int getStride() const { return stride; }
 
 	static VertexBuffer* create(int size, int stride, void* data);
 };

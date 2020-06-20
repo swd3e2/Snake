@@ -1,16 +1,7 @@
 #pragma once
 
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
 #include "RenderSystem.h"
 #include "Components.h"
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-
-#include <iostream>
-#include <fstream>
-#include <string>
 #include <chrono>
 #include "Interface/MainInterface.h"
 #include "Model/Import/GltfImporter.h"
@@ -25,7 +16,6 @@
 #include "Storage.h"
 #include "TextureLoader.h"
 #include "ModelLoader.h"
-
 
 class Application {
 private:
@@ -99,7 +89,7 @@ public:
         while (!window->isOpen()) {
             m_Start = std::chrono::high_resolution_clock::now();
 
-            renderSystem->update(16.0);
+            renderSystem->update(dt);
             interface->update(dt);
             scriptSystem->update();
             physicsSystem->update(dt);

@@ -2,7 +2,6 @@
 
 #include <string>
 #include <stb_image.h>
-#include <glad/glad.h>
 #include "Graphics/Bindable.h"
 #include "CommonTypes.h"
 
@@ -22,13 +21,13 @@ public:
 
 	static Texture2D* create(int width, int height, int location, void* data, TextureFormat textureFormat = TextureFormat::RGBA8, int numMips = 0);
 
-	virtual void setData(void* data) = 0;
-	virtual void generateMips() = 0;
 	const TextureFormat getFormat() const { return textureFormat; }
 	const int getWidth() const { return width; }
 	const int getHeight() const { return height; }
 	const int getLocation() const { return location; }
 	void setLocation(const int location) { this->location = location; }
 
+	virtual void setData(void* data) = 0;
+	virtual void generateMips() = 0;
 	virtual void bindToUnit(const int location, RenderContext* renderContext) = 0;
 };

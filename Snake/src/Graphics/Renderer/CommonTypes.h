@@ -70,3 +70,24 @@ enum class FillMode
 	SOLID,
 	WIREFRAME
 };
+
+enum InputDataType {
+	Float,
+	Float2,
+	Float3,
+	Float4,
+	Int,
+	Int2,
+	Int3,
+	Int4,
+	Bool
+};
+
+enum class ShaderType {
+	VERTEX,
+	PIXEL,
+	GEOMERTY,
+	COMPUTE,
+	HULL,
+	DOMAINS
+};

@@ -105,15 +105,29 @@ public:
 
         shaderPipeline.reset(ShaderPipeline::create(fileVS.getConent(), filePS.getConent()));
 
-        shaderInputLayout = std::make_shared<ShaderInputLayout>();
+		{
+			ShaderInputLayoutDesc desc;
+			desc.elements.push_back({ InputDataType::Float3, "pos" });
+			desc.elements.push_back({ InputDataType::Float2, "texCoords" });
+			desc.elements.push_back({ InputDataType::Float3, "normal" });
+			desc.elements.push_back({ InputDataType::Float3, "tangent" });
+			desc.elements.push_back({ InputDataType::Float3, "bitangent" });
+			desc.elements.push_back({ InputDataType::Int4,   "bone" });
+			desc.elements.push_back({ InputDataType::Float4, "weight" });
 
-        shaderInputLayout->add({ InputDataType::Float3, "pos" });
-        shaderInputLayout->add({ InputDataType::Float2, "texCoords" });
-        shaderInputLayout->add({ InputDataType::Float3, "normal" });
-        shaderInputLayout->add({ InputDataType::Float3, "tangent" });
-        shaderInputLayout->add({ InputDataType::Float3, "bitangent" });
-        shaderInputLayout->add({ InputDataType::Int4,   "bone" });
-        shaderInputLayout->add({ InputDataType::Float4, "weight" });
+			shaderInputLayout.reset(ShaderInputLayout::create(desc));
+		}
+        /*{
+			shaderInputLayout = std::make_shared<ShaderInputLayout>();
+
+			shaderInputLayout->add({ InputDataType::Float3, "pos" });
+			shaderInputLayout->add({ InputDataType::Float2, "texCoords" });
+			shaderInputLayout->add({ InputDataType::Float3, "normal" });
+			shaderInputLayout->add({ InputDataType::Float3, "tangent" });
+			shaderInputLayout->add({ InputDataType::Float3, "bitangent" });
+			shaderInputLayout->add({ InputDataType::Int4,   "bone" });
+			shaderInputLayout->add({ InputDataType::Float4, "weight" });
+        }*/
 
         shaderBuffer.reset(ConstantBuffer::create(0, sizeof(projectionData), nullptr));
         modelShaderBuffer.reset(ConstantBuffer::create(1, sizeof(ModelData), nullptr));
@@ -123,29 +137,28 @@ public:
         texture->import();
         textures["tex"] = std::shared_ptr<Texture2D>(Texture2D::create(texture->getWidth(), texture->getHeight(), 0, texture->getData(), texture->getChannels() == 4 ? TextureFormat::RGBA8 : TextureFormat::RGB8));
 
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
         camera.setProjectionMatrix(90.0f, 1920.0f / 1080.0f, 0.1f, 200.f);
         lightCamera.setOrthographicMatrix(-40, 40, -40, 40, -40, 40);
         //lightCamera.m_Rotation = glm::vec4(0.0f, 0.5f, 0.0f, 1.0f);
         lightCamera.m_Position = glm::vec4(7.0f, 4.0f, -2.0f, 1.0f);
 
-        glEnable(GL_DEPTH_TEST);
-
         mainRenderTarget.reset(Renderer::getMainRenderTarget());
 
         renderGraph = std::make_unique<RenderGraph>(renderer);
 
-		SamplerDesc desc;
-		desc.minFilterModel = FilterMode::LINEAR;
-		desc.magFilterMode = FilterMode::LINEAR;
-		desc.mipFilterMode = FilterMode::NONE;
-		desc.addressingMode = AddressingMode::CLAMP;
-		pointSampler.reset(Sampler::create(desc));
-		pointSampler->setTextureUnit(5);
-		pointSampler->bind(context);
-		pointSampler->setTextureUnit(0);
-		pointSampler->bind(context);
+        {
+			SamplerDesc desc;
+			desc.minFilterModel = FilterMode::LINEAR;
+			desc.magFilterMode = FilterMode::LINEAR;
+			desc.mipFilterMode = FilterMode::NONE;
+			desc.addressingMode = AddressingMode::CLAMP;
+			pointSampler.reset(Sampler::create(desc));
+			pointSampler->setTextureUnit(5);
+			pointSampler->bind(context);
+			pointSampler->setTextureUnit(0);
+			pointSampler->bind(context);
+        }
         // Textures
         {
 			textures["positions"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA32F));
@@ -233,6 +246,8 @@ public:
 			renderGraph->addPass(testRenderPass);
 		}
 
+		glEnable(GL_DEPTH_TEST);
+		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glEnable(GL_CULL_FACE);
         glFrontFace(GL_CCW);
         glCullFace(GL_BACK);
@@ -244,7 +259,8 @@ public:
         for (auto& it : renderTargets) {
             it.second->clear(context);
         }
-        shaderInputLayout->bind();
+		shaderInputLayout->bind(context);
+		//shaderInputLayout->bind();
 
         //lightCamera.m_Position.x = sin(glfwGetTime()) * 3.0f;
         //lightCamera.m_Position.z = cos(glfwGetTime()) * 2.0f;
@@ -260,7 +276,7 @@ public:
         if (!useDebugCamera) {
 			registry->view<CameraComponent, PlayerComponent>().each([&](CameraComponent& camera, PlayerComponent& player) {
 				projectionData.projection = glm::transpose(camera.projectionMatrix * camera.viewMatrix);
-				});
+			});
         } else {
 			projectionData.projection = glm::transpose(camera.getPerspectiveMatrix() * camera.getViewMatrix());
         }
@@ -320,9 +336,9 @@ public:
 
 				std::function<void()> command = std::bind([](Model::Node* node, Model* model, ConstantBuffer* buffer) {
 					Renderer* tempRenderer = Renderer::instance();
-					std::vector<std::shared_ptr<Model::SubMesh>> submeshes = model->getSubMeshes();
-
+					const std::vector<std::shared_ptr<Model::SubMesh>>& submeshes = model->getSubMeshes();
 					const std::shared_ptr<Model::SubMesh>& submesh = submeshes[node->mesh];
+
 					MeshData meshData;
 					meshData.transform = glm::transpose(node->transform.worldTransform);
 					meshData.normalTransform = glm::transpose(node->transform.normalTransform);
@@ -334,7 +350,7 @@ public:
 					submesh->iBuffer->bind(tempRenderer->getContext());
 
 					tempRenderer->drawIndexed(submesh->iBuffer->getSize());
-					}, node.get(), render.model.get(), meshShaderBuffer.get());
+				}, node.get(), render.model.get(), meshShaderBuffer.get());
 
 				gbufferPass->addCommand(command);
 				shadowPass->addCommand(command);
@@ -416,9 +432,23 @@ public:
     }
 
     void createShaderFromFolder(const std::string& folder, const std::string& name) {
-        File filePS(folder + "/pixel.glsl");
-        File fileVS(folder + "/vertex.glsl");
-        File fileGS(folder + "/geometry.glsl");
+		std::string vertexShaderFilename;
+		std::string pixelShaderFilename;
+		std::string geometryShaderFilename;
+
+        if (Renderer::getType() == RendererType::OpenGL) {
+            vertexShaderFilename = "/pixel.glsl";
+            pixelShaderFilename = "/vertex.glsl";
+            geometryShaderFilename = "/geometry.glsl";
+        } else {
+			vertexShaderFilename = "/pixel.hlsl";
+			pixelShaderFilename = "/vertex.hlsl";
+			geometryShaderFilename = "/geometry.hlsl";
+        }
+
+		File filePS(folder + pixelShaderFilename);
+		File fileVS(folder + vertexShaderFilename);
+		File fileGS(folder + geometryShaderFilename);
 
         if (!filePS.exists() || !fileVS.exists()) {
             std::cout << "Could not create shader from path " << folder << std::endl;
