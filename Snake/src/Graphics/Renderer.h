@@ -30,6 +30,7 @@ public:
     }
 
     virtual void drawIndexed(int cnt) = 0;
+    virtual void draw(int cnt) = 0;
     
     void bindMainRenderTarget() {
         _mainRenderTarget->bind(_renderContext);

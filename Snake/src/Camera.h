@@ -42,7 +42,7 @@ public:
 		glm::mat4 rotation = glm::transpose(glm::eulerAngleYXZ(this->m_Rotation.x, this->m_Rotation.y, 0.0f));
 
 		m_CamTarget = glm::normalize(glm::vec4(0.0f, 0.0f, 1.0f, 0.0f) * rotation) + m_Position;
-		m_ViewMatrix = glm::lookAt(glm::vec3(m_Position), glm::vec3(m_CamTarget), glm::vec3(0.0f, 1.0f, 0.0f));
+		m_ViewMatrix = glm::lookAtLH(glm::vec3(m_Position), glm::vec3(m_CamTarget), glm::vec3(0.0f, 1.0f, 0.0f));
 
 		glm::mat4 temp = glm::transpose(glm::eulerAngleYXZ(this->m_Rotation.x, this->m_Rotation.y, this->m_Rotation.z));
 

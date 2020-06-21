@@ -18,12 +18,16 @@ set(INCLUDE_DIRS
     Snake/vendor/lua-bridge/Source
     Snake/vendor/ImGuizmo
     Snake/vendor/bullet/src
+    Snake/vendor/glfw/include
+    Snake/vendor/glad/include
 )
 
 add_executable(Snake ${SOURCES} ${HEADERS})
 
 target_include_directories(Snake PRIVATE ${INCLUDE_DIRS})
 target_link_libraries(Snake 
+    opengl32 	
+    Snake/vendor/libs/glfw/glfw3 
     Snake/vendor/libs/Lua52
     Snake/vendor/libs/Bullet3Collision_Debug
     Snake/vendor/libs/Bullet3Common_Debug

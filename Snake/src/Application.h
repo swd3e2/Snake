@@ -3,14 +3,13 @@
 #include "RenderSystem.h"
 #include "Components.h"
 #include <chrono>
-#include "Interface/MainInterface.h"
+//#include "Interface/MainInterface.h"
 #include "Model/Import/GltfImporter.h"
 #include "Model/Model.h"
 #include "ScriptSystem.h"
 #include "Saver.h"
 #include "Loader.h"
 #include "Physics/PhysicsSystem.h"
-#include "PhysicsDebugDraw.h"
 #include "CameraSystem.h"
 #include "PlayerSystem.h"
 #include "Storage.h"
@@ -22,7 +21,7 @@ private:
     Window* window;
     entt::registry registry;
 
-    std::shared_ptr<MainInterface> interface;
+    //std::shared_ptr<MainInterface> interface;
 	std::unique_ptr<RenderSystem> renderSystem;
     std::unique_ptr<ScriptSystem> scriptSystem;
     std::unique_ptr<PhysicsSystem> physicsSystem;
@@ -36,14 +35,14 @@ private:
     ModelLoader modelLoader;
 public:
     ~Application() {
-        glfwTerminate();
+
     }
 
 	void init() {
 		textureLoader.startUp();
 		modelLoader.startUp();
 
-        renderer.reset(Renderer::create(RendererType::OpenGL));
+        renderer.reset(Renderer::create(RendererType::DirectX));
         window = renderer->createWindow(1920, 1080);
 
 		physicsSystem = std::make_unique<PhysicsSystem>(&registry);
@@ -52,7 +51,7 @@ public:
 		cameraSystem = std::make_unique<CameraSystem>(&registry);
 		playerSystem = std::make_unique<PlayerSystem>(&registry);
 
-        interface = std::make_shared<MainInterface>(window, &registry, &renderSystem->camera, renderSystem.get());
+        //interface = std::make_shared<MainInterface>(window, &registry, &renderSystem->camera, renderSystem.get());
 
         Loader loader;
         loader.loadFromFile("test.json", &registry);
@@ -86,17 +85,17 @@ public:
 	void run() {
         double dt = 0.0;
         
-        while (!window->isOpen()) {
+        while (window->isOpen()) {
             m_Start = std::chrono::high_resolution_clock::now();
 
             renderSystem->update(dt);
-            interface->update(dt);
+            //interface->update(dt);
             scriptSystem->update();
             physicsSystem->update(dt);
             cameraSystem->update(dt);
 			playerSystem->update(dt);
 
-			renderer->swapBuffers();
+			
 
             InputManager::instance()->mouseMoveX = 0.0;
             InputManager::instance()->mouseMoveY = 0.0;

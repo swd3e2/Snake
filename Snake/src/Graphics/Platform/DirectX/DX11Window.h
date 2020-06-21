@@ -11,12 +11,12 @@
 
 LRESULT  ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-class DirectXWindow : public Window {
+class DX11Window : public Window {
 private:
 	HINSTANCE hInst;
 	HWND hWnd;
 public:
-	DirectXWindow(int width, int height) :
+	DX11Window(int width, int height) :
 		Window(width, height) 
 	{
 		hInst = GetModuleHandle(NULL);
@@ -70,7 +70,7 @@ public:
 	static LRESULT __stdcall _HandleMsgThunk(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
 		// retrieve ptr to window class
-		DirectXWindow* const pWnd = reinterpret_cast<DirectXWindow*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+		DX11Window* const pWnd = reinterpret_cast<DX11Window*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
 		// forward message to window class handler
 		return pWnd->HandleMsg(hWnd, msg, wParam, lParam);
 	}
@@ -82,11 +82,11 @@ public:
 		{
 			// extract ptr to window class from creation data
 			const CREATESTRUCTW* const pCreate = reinterpret_cast<CREATESTRUCTW*>(lParam);
-			DirectXWindow* const pWnd = reinterpret_cast<DirectXWindow*>(pCreate->lpCreateParams);
+			DX11Window* const pWnd = reinterpret_cast<DX11Window*>(pCreate->lpCreateParams);
 			// set WinAPI-managed user data to store ptr to window class
 			SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pWnd));
 			// set message proc to normal (non-setup) handler now that setup is finished
-			SetWindowLongPtr(hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&DirectXWindow::_HandleMsgThunk));
+			SetWindowLongPtr(hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&DX11Window::_HandleMsgThunk));
 			// forward message to window class handler
 			return pWnd->HandleMsg(hWnd, msg, wParam, lParam);
 		}

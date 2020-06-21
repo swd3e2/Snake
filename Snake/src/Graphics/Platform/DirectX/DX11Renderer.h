@@ -2,32 +2,35 @@
 
 #include "Graphics/Renderer.h"
 #include <d3d11.h>
-#include "DirectXWindow.h"
-#include "DirectXRenderContext.h"
+#include "DX11Window.h"
+#include "DX11RenderContext.h"
+#include "DX11MainRenderTarget.h"
 
-class DirectXRenderer : public Renderer {
+class DX11Renderer : public Renderer {
 private:
 	ID3D11Device* device;
 	ID3D11DeviceContext* deviceContext;
 	IDXGISwapChain* swapChain;
 
-	DirectXWindow* window;
-	DirectXRenderContext* context;
+	DX11Window* window;
 	D3D11_VIEWPORT vp;
-
-	ID3D11RenderTargetView* m_RenderTarget;
-	ID3D11DepthStencilView* m_DepthStencilView;
-
-	ID3D11Texture2D* m_BackBuffer;
-	ID3D11Texture2D* m_DepthStencilBuffer;
-	ID3D11ShaderResourceView* m_DepthResourceView;
+	ID3D11RasterizerState* m_RasterizerState;
 public:
-	DirectXRenderer() {
-		
+	DX11Renderer() {
+		_rendererType = RendererType::DirectX;
 	}
 
 	virtual Window* createWindow(int width, int height) override {
-		window = new DirectXWindow(width, height);
+		vp.Width = (float)width;
+		vp.Height = (float)height;
+		vp.MinDepth = 0.0f;
+		vp.MaxDepth = 1.0f;
+		vp.TopLeftX = 0;
+		vp.TopLeftY = 0;
+
+		window = new DX11Window(width, height);
+		DX11MainRenderTarget* mainRenderTarget = new DX11MainRenderTarget();
+		_mainRenderTarget = mainRenderTarget;
 
 		DXGI_SWAP_CHAIN_DESC swapChainDesc = { 0 };
 		swapChainDesc.BufferCount = 2;
@@ -58,10 +61,10 @@ public:
 			featureLevels, ARRAYSIZE(featureLevels), D3D11_SDK_VERSION, &swapChainDesc, &swapChain,
 			&device, &m_featureLevel, &deviceContext);
 
-		context = new DirectXRenderContext(device, deviceContext, swapChain);
+		_renderContext = new DX11RenderContext(device, deviceContext, swapChain);
 
-		swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&m_BackBuffer);
-		hr = device->CreateRenderTargetView(m_BackBuffer, NULL, &m_RenderTarget);
+		swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&mainRenderTarget->m_BackBuffer);
+		hr = device->CreateRenderTargetView(mainRenderTarget->m_BackBuffer, NULL, &mainRenderTarget->m_RenderTarget);
 
 		D3D11_TEXTURE2D_DESC desc;
 		desc.ArraySize = 1;
@@ -76,14 +79,14 @@ public:
 		desc.Usage = D3D11_USAGE::D3D11_USAGE_DEFAULT;
 		desc.Width = width;
 
-		hr = device->CreateTexture2D(&desc, NULL, &m_DepthStencilBuffer);
+		hr = device->CreateTexture2D(&desc, NULL, &mainRenderTarget->m_DepthStencilBuffer);
 
 		D3D11_DEPTH_STENCIL_VIEW_DESC ddesc = {};
 		ddesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 		ddesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 		ddesc.Texture2D.MipSlice = 0;
 
-		hr = device->CreateDepthStencilView(m_DepthStencilBuffer, &ddesc, &m_DepthStencilView);
+		hr = device->CreateDepthStencilView(mainRenderTarget->m_DepthStencilBuffer, &ddesc, &mainRenderTarget->m_DepthStencilView);
 
 		D3D11_SHADER_RESOURCE_VIEW_DESC srvd = {};
 		srvd.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
@@ -91,19 +94,31 @@ public:
 		srvd.Texture2D.MipLevels = 1;
 		srvd.Texture2D.MostDetailedMip = 0;
 
-		hr = device->CreateShaderResourceView(m_DepthStencilBuffer, &srvd, &m_DepthResourceView);
+		hr = device->CreateShaderResourceView(mainRenderTarget->m_DepthStencilBuffer, &srvd, &mainRenderTarget->m_DepthResourceView);
 
 		deviceContext->RSSetViewports(1, &vp);
 		deviceContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+		D3D11_RASTERIZER_DESC rasterizerDesc { };
+		rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
+		rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
+		device->CreateRasterizerState(&rasterizerDesc, &m_RasterizerState);
+
+		//deviceContext->RSSetState(m_RasterizerState);
 
 		return window;
 	}
 	
 	virtual void swapBuffers() override {
+		
 		swapChain->Present(false, 0);
 	}
 
 	virtual void drawIndexed(int cnt) override {
 		deviceContext->DrawIndexed(cnt, 0, 0);
+	}
+
+	virtual void draw(int cnt) override {
+		deviceContext->Draw(cnt, 0);
 	}
 };

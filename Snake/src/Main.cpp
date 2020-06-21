@@ -6,7 +6,5 @@ int main(char* args)
     application.init();
     application.run();
 
-    glfwTerminate();
-
     return 0;
 }

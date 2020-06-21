@@ -1,7 +1,7 @@
 #pragma once
 
 #include <btBulletDynamicsCommon.h>
-#include "PhysicsDebugDraw.h"
+//#include "PhysicsDebugDraw.h"
 
 class PhysicsSystem {
 private:
@@ -26,7 +26,7 @@ public:
 
 		dynamicsWorld = std::make_shared<btDiscreteDynamicsWorld>(dispatcher.get(), overlappingPairCache.get(), solver.get(), collisionConfiguration.get());
 		dynamicsWorld->setGravity(btVector3(0, -10.0f, 0));
-		dynamicsWorld->setDebugDrawer(new PhysicsDebugDraw());
+		//dynamicsWorld->setDebugDrawer(new PhysicsDebugDraw());
 	}
 
 	void createPhysicsBody(const entt::entity& entity, std::shared_ptr<btCollisionShape> shape, float mass = 0.0f, glm::vec3 originalPos = glm::vec3(0.0), bool isDynamic = false) {

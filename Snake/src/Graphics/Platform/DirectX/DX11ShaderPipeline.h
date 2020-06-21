@@ -1,36 +1,36 @@
 #pragma once
 
 #include "Graphics/Renderer/ShaderPipeline.h"
-#include "DirectXRenderer.h"
+#include "DX11Renderer.h"
 #include <d3dcompiler.h>
-#include "DirectXUtils.h"
+#include "DX11Utils.h"
 #include "Graphics/Renderer/CommonTypes.h"
 
-class DirectXShaderPipeline : public ShaderPipeline {
+class DX11ShaderPipeline : public ShaderPipeline {
 private:
 	ID3D11VertexShader* vertexShader = nullptr;
 	ID3D11PixelShader* pixelShader = nullptr;
 public:
-	DirectXShaderPipeline(const std::string& vertexShaderCode, const std::string& pixelShaderCode) :
+	DX11ShaderPipeline(const std::string& vertexShaderCode, const std::string& pixelShaderCode) :
 		ShaderPipeline(vertexShaderCode, pixelShaderCode)
 	{
-		DirectXRenderer* renderer = (DirectXRenderer*)Renderer::instance();
-		ID3D11Device* device = ((DirectXRenderContext*)renderer->getContext())->getDevice();
+		DX11Renderer* renderer = (DX11Renderer*)Renderer::instance();
+		ID3D11Device* device = ((DX11RenderContext*)renderer->getContext())->getDevice();
 		ID3DBlob* shaderBlob = nullptr;
 
-		if (!compileShaderInternal(vertexShaderCode, ShaderType::VERTEX, &shaderBlob)) {
+		if (compileShaderInternal(vertexShaderCode, ShaderType::VERTEX, &shaderBlob)) {
 			device->CreateVertexShader(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), NULL, &vertexShader);
+			shaderBlob->Release();
 		} else {
 			std::cout << "Failed to compile vertex shader" << std::endl;
 		}
-		shaderBlob->Release();
 
-		if (!compileShaderInternal(pixelShaderCode, ShaderType::PIXEL, &shaderBlob)) {
+		if (compileShaderInternal(pixelShaderCode, ShaderType::PIXEL, &shaderBlob)) {
 			device->CreatePixelShader(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), NULL, &pixelShader);
+			shaderBlob->Release();
 		} else {
 			std::cout << "Failed to compile pixel shader" << std::endl;
 		}
-		shaderBlob->Release();
 	}
 
 	bool compileShaderInternal(const std::string& code, ShaderType type, ID3DBlob** blob) {
@@ -48,7 +48,7 @@ public:
 
 		if (FAILED(hr)) {
 			if (errorBlob) {
-				std::cout << errorBlob->GetBufferPointer() << std::endl;
+				std::cout << ((const char*)errorBlob->GetBufferPointer()) << std::endl;
 				errorBlob->Release();
 			}
 			if (shaderBlob) {
@@ -63,7 +63,7 @@ public:
 	}
 
 	virtual void bind(RenderContext* renderContext) override {
-		ID3D11DeviceContext* context = ((DirectXRenderContext*)renderContext)->getDeviceContext();
+		ID3D11DeviceContext* context = ((DX11RenderContext*)renderContext)->getDeviceContext();
 		context->VSSetShader(vertexShader, NULL, 0);
 		context->PSSetShader(pixelShader, NULL, 0);
 	}

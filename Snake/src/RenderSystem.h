@@ -1,8 +1,6 @@
 #pragma once
 
 #include "Input/InputManager.h"
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
 #include "Graphics/Renderer/ShaderPipeline.h"
 #include "Graphics/Renderer/ShaderInputLayout.h"
 #include "Graphics/Renderer/VertexBuffer.h"
@@ -18,7 +16,6 @@
 #include "Camera.h"
 #include "Model/Model.h"
 #include <queue>
-#include "Graphics/Platform/OpenGL/OpenGLRenderer.h"
 #include "FileSystem/File.h"
 #include "Graphics/RenderGraph/RenderGraph.h"
 #include "Graphics/Renderer/RenderTarget.h"
@@ -61,7 +58,8 @@ public:
 
     std::shared_ptr<ShaderPipeline> shaderPipeline;
     std::shared_ptr<ShaderInputLayout> shaderInputLayout;
-    std::shared_ptr<VertexBuffer> vertexBuffer;
+	std::shared_ptr<VertexBuffer> vertexBuffer;
+	std::shared_ptr<IndexBuffer> indexBuffer;
     std::shared_ptr<ConstantBuffer> shaderBuffer;
     std::shared_ptr<ConstantBuffer> modelShaderBuffer;
     std::shared_ptr<ConstantBuffer> meshShaderBuffer;
@@ -90,97 +88,81 @@ public:
 	std::shared_ptr<RenderTarget> shadowRt;
 	std::shared_ptr<Sampler> pointSampler;
 
-    GLuint voxelTexture;
     PhysicsSystem* physicsSystem;
     bool useDebugCamera = true;
 public:
 	RenderSystem(entt::registry* registry, PhysicsSystem* physics) {
-        this->registry = registry;
-        this->physicsSystem = physics;
-        renderer = Renderer::instance();
-        context = renderer->getContext();
+        if (0) {
+			temp(registry, physics);
+        }
+		renderer = Renderer::instance();
+		context = renderer->getContext();
+		mainRenderTarget = std::shared_ptr<MainRenderTarget>(renderer->getMainRenderTarget());
 
-        File fileVS("defaultVS.glsl");
-        File filePS("defaultPS.glsl");
+		File fileVS("shaders/dx/default/vertex.hlsl");
+		File filePS("shaders/dx/default/pixel.hlsl");
 
-        shaderPipeline.reset(ShaderPipeline::create(fileVS.getConent(), filePS.getConent()));
+		shaders["default"] = std::shared_ptr<ShaderPipeline>(ShaderPipeline::create(fileVS.getConent(), filePS.getConent()));
+
+		std::vector<vertex> vertexData;
+		vertexData.push_back(vertex(1.0f, 1.0f, 0.1f, 1.0f, 1.0f));
+		vertexData.push_back(vertex(1.0f, -1.0f, 0.1f, 1.0f, 0.0f));
+		vertexData.push_back(vertex(-1.0f, 1.0f, 0.1f, 0.0f, 1.0f));
+		vertexData.push_back(vertex(-1.0f, -1.0f, 0.1f, 0.0f, 0.0f));
+		vertexBuffer.reset(VertexBuffer::create(vertexData.size(), sizeof(vertex), vertexData.data()));
+
+		std::vector<unsigned int> indexData;
+		indexData.push_back(0);  indexData.push_back(1); indexData.push_back(2);
+		indexData.push_back(2);  indexData.push_back(1); indexData.push_back(3);
+		indexBuffer.reset(IndexBuffer::create(indexData.size(), indexData.data()));
 
 		{
 			ShaderInputLayoutDesc desc;
-			desc.elements.push_back({ InputDataType::Float3, "pos" });
-			desc.elements.push_back({ InputDataType::Float2, "texCoords" });
-			desc.elements.push_back({ InputDataType::Float3, "normal" });
-			desc.elements.push_back({ InputDataType::Float3, "tangent" });
-			desc.elements.push_back({ InputDataType::Float3, "bitangent" });
-			desc.elements.push_back({ InputDataType::Int4,   "bone" });
-			desc.elements.push_back({ InputDataType::Float4, "weight" });
+			desc.elements.push_back({ InputDataType::Float3, "POSITION" });
+			desc.elements.push_back({ InputDataType::Float2, "TEXCOORD" });
+			desc.elements.push_back({ InputDataType::Float3, "NORMAL" });
+			desc.elements.push_back({ InputDataType::Float3, "TANGENT" });
+			desc.elements.push_back({ InputDataType::Float3, "BITANGENT" });
+			desc.elements.push_back({ InputDataType::Int4,   "BONE" });
+			desc.elements.push_back({ InputDataType::Float4, "WEIGHT" });
 
 			shaderInputLayout.reset(ShaderInputLayout::create(desc));
 		}
-        /*{
-			shaderInputLayout = std::make_shared<ShaderInputLayout>();
-
-			shaderInputLayout->add({ InputDataType::Float3, "pos" });
-			shaderInputLayout->add({ InputDataType::Float2, "texCoords" });
-			shaderInputLayout->add({ InputDataType::Float3, "normal" });
-			shaderInputLayout->add({ InputDataType::Float3, "tangent" });
-			shaderInputLayout->add({ InputDataType::Float3, "bitangent" });
-			shaderInputLayout->add({ InputDataType::Int4,   "bone" });
-			shaderInputLayout->add({ InputDataType::Float4, "weight" });
-        }*/
-
-        shaderBuffer.reset(ConstantBuffer::create(0, sizeof(projectionData), nullptr));
-        modelShaderBuffer.reset(ConstantBuffer::create(1, sizeof(ModelData), nullptr));
-        meshShaderBuffer.reset(ConstantBuffer::create(2, sizeof(MeshData), nullptr));
-
-        std::shared_ptr<RawTexture> texture = std::make_shared<RawTexture>("texture_01.png");
-        texture->import();
-        textures["tex"] = std::shared_ptr<Texture2D>(Texture2D::create(texture->getWidth(), texture->getHeight(), 0, texture->getData(), texture->getChannels() == 4 ? TextureFormat::RGBA8 : TextureFormat::RGB8));
 
 
-        camera.setProjectionMatrix(90.0f, 1920.0f / 1080.0f, 0.1f, 200.f);
-        lightCamera.setOrthographicMatrix(-40, 40, -40, 40, -40, 40);
-        //lightCamera.m_Rotation = glm::vec4(0.0f, 0.5f, 0.0f, 1.0f);
-        lightCamera.m_Position = glm::vec4(7.0f, 4.0f, -2.0f, 1.0f);
+		shaderBuffer.reset(ConstantBuffer::create(0, sizeof(projectionData), nullptr));
+		modelShaderBuffer.reset(ConstantBuffer::create(1, sizeof(ModelData), nullptr));
+		meshShaderBuffer.reset(ConstantBuffer::create(2, sizeof(MeshData), nullptr));
 
-        mainRenderTarget.reset(Renderer::getMainRenderTarget());
+		camera.setProjectionMatrix(90.0f, 1920.0f / 1080.0f, 0.1f, 200.f);
 
-        renderGraph = std::make_unique<RenderGraph>(renderer);
+		std::shared_ptr<RawTexture> texture = std::make_shared<RawTexture>("texture_01.png");
+		texture->import();
+		textures["tex"] = std::shared_ptr<Texture2D>(Texture2D::create(texture->getWidth(), texture->getHeight(), 0, texture->getData(), texture->getChannels() == 4 ? TextureFormat::RGBA8 : TextureFormat::RGB8));
 
-        {
+		{
 			SamplerDesc desc;
 			desc.minFilterModel = FilterMode::LINEAR;
 			desc.magFilterMode = FilterMode::LINEAR;
 			desc.mipFilterMode = FilterMode::NONE;
 			desc.addressingMode = AddressingMode::CLAMP;
 			pointSampler.reset(Sampler::create(desc));
-			pointSampler->setTextureUnit(5);
+			pointSampler->setSamplerUnit(0);
 			pointSampler->bind(context);
-			pointSampler->setTextureUnit(0);
-			pointSampler->bind(context);
-        }
-        // Textures
-        {
+		}
+		{
 			textures["positions"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA32F));
 			textures["normals"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 1, nullptr, TextureFormat::RGBA32F));
 			textures["diffuse"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 2, nullptr, TextureFormat::RGBA32F));
 			textures["rtt"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA32F));
-			textures["shadowColorTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(1024, 1024, 5, nullptr, TextureFormat::RG32F));
+			textures["shadowColorTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(1024, 1024, 5, nullptr, TextureFormat::RGBA32F));
 			textures["bluredShadowDepthTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(1024, 1024, 5, nullptr, TextureFormat::RG32F));
-			textures["shadowDepthTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(1024, 1024, 5, nullptr, TextureFormat::D32));
+			textures["shadowDepthTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(1024, 1024, 5, nullptr, TextureFormat::D24S8));
 			textures["renderTargetDepthTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 3, nullptr, TextureFormat::D32));
-        }
-        // Shaders
-        {
-    		createShaderFromFolder("shaders/gbuffer", "gbuffer");
-			createShaderFromFolder("shaders/shadow", "shadow");
-			createShaderFromFolder("shaders/light", "light");
-			createShaderFromFolder("shaders/blur", "blur");
-			createShaderFromFolder("shaders/physdebug", "physdebug");
-        }
-        // Render targets
-        {
-            {
+		}
+		// Render targets
+		{
+			{
 				std::shared_ptr<RenderTarget> renderTarget = std::shared_ptr<RenderTarget>(RenderTarget::create());
 				renderTarget->setColorTexture(textures["positions"], 0);
 				renderTarget->setColorTexture(textures["normals"], 1);
@@ -204,172 +186,150 @@ public:
 				renderTarget->setColorTexture(textures["bluredShadowDepthTexture"], 0);
 				renderTargets["blur"] = renderTarget;
 			}
-        }
-        // Render passess
-        {
-            gbufferPass.reset(new Pass("GBufferPass"));
-            gbufferPass->setRenderTarget(renderTargets["gBuffer"]);
-            gbufferPass->setShader(shaders["gbuffer"]);
-            gbufferPass->setTexture(0, textures["tex"]);
-            renderGraph->addPass(gbufferPass);
 		}
-		{
-			shadowPass.reset(new Pass("ShadowPass"));
-			shadowPass->setRenderTarget(renderTargets["shadow"]);
-			shadowPass->setShader(shaders["shadow"]);
-			renderGraph->addPass(shadowPass);
-		}
-		{
-            blurPass.reset(new FullscreenPass("GaussianBlurPass"));
-            blurPass->setRenderTarget(renderTargets["blur"]);
-            blurPass->setShader(shaders["blur"]);
-            blurPass->setTexture(0, textures["shadowColorTexture"]);
-			renderGraph->addPass(blurPass);
-		}
-        {
-            lightGBufferPass.reset(new FullscreenPass("LightPass"));
-            lightGBufferPass->setRenderTarget(renderTargets["light"]);
-            
-            lightGBufferPass->setShader(shaders["light"]);
-            lightGBufferPass->setTexture(0, textures["positions"]);
-            lightGBufferPass->setTexture(1, textures["normals"]);
-            lightGBufferPass->setTexture(2, textures["diffuse"]);
-			lightGBufferPass->setTexture(3, textures["bluredShadowDepthTexture"]);
-			lightGBufferPass->setTexture(4, textures["renderTargetDepthTexture"]);
-            renderGraph->addPass(lightGBufferPass);
-		}
-		{
-			testRenderPass.reset(new FullscreenPass("MainPass"));
-			testRenderPass->setRenderTarget(mainRenderTarget);
-			testRenderPass->setShader(shaderPipeline);
-			testRenderPass->setTexture(0, textures["rtt"]);
-			renderGraph->addPass(testRenderPass);
-		}
-
-		glEnable(GL_DEPTH_TEST);
-		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glEnable(GL_CULL_FACE);
-        glFrontFace(GL_CCW);
-        glCullFace(GL_BACK);
 	}
 
 	void update(double dt) {
 		mainRenderTarget->clear(context);
+		renderTargets["shadow"]->clear(context);
 
-        for (auto& it : renderTargets) {
-            it.second->clear(context);
-        }
+		shaders["default"]->bind(context);
+
 		shaderInputLayout->bind(context);
-		//shaderInputLayout->bind();
+		vertexBuffer->bind(context);
+		indexBuffer->bind(context);
 
-        //lightCamera.m_Position.x = sin(glfwGetTime()) * 3.0f;
-        //lightCamera.m_Position.z = cos(glfwGetTime()) * 2.0f;
-        //lightCamera.m_Position.y = 3.0 + cos(glfwGetTime()) * 1.0f;
+		textures["tex"]->bindToUnit(0, context);
 
-        glm::mat4 lightProjection, lightView;
-        glm::mat4 lightSpaceMatrix;
-        float near_plane = -20.0f, far_plane = 20.0f;
-        lightProjection = lightCamera.getPerspectiveMatrix();
-        lightView = glm::lookAt(glm::vec3(lightCamera.m_Position), glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
-        lightSpaceMatrix = glm::transpose(lightProjection * lightView);
+		//projectionData.projection = glm::transpose(camera.getPerspectiveMatrix() * glm::translate(glm::mat4(1.0f), glm::vec3(camera.m_Position)));
+ 		projectionData.projection = glm::transpose(camera.getPerspectiveMatrix() * camera.getViewMatrix());
+		shaderBuffer->update(&projectionData);
+		shaderBuffer->bind(context);
 
-        if (!useDebugCamera) {
-			registry->view<CameraComponent, PlayerComponent>().each([&](CameraComponent& camera, PlayerComponent& player) {
-				projectionData.projection = glm::transpose(camera.projectionMatrix * camera.viewMatrix);
-			});
-        } else {
-			projectionData.projection = glm::transpose(camera.getPerspectiveMatrix() * camera.getViewMatrix());
-        }
-        
-		projectionData.shadowProjection = lightSpaceMatrix;
-        projectionData.viewPos = camera.m_Position;
-        projectionData.shadowCameraPos = lightCamera.m_Position;
-        //glm::transpose(lightCamera.getPerspectiveMatrix() * lightCamera.getViewMatrix());
-		
-        gbufferPass->addCommand(std::bind([&](mvp projectionData) {
-            shaderBuffer->update(&projectionData);
-            shaderBuffer->bind(context);
-        }, projectionData));
-        
-		projectionData.projection = lightSpaceMatrix;
-        shadowPass->addCommand(std::bind([&](mvp projectionData) {
-            shaderBuffer->update(&projectionData);
-            shaderBuffer->bind(context);
-        }, projectionData));
+		renderTargets["shadow"]->bind(context);
+		renderer->drawIndexed(6);
 
-        shadowPass->addCommand([]() {
-            //glCullFace(GL_FRONT);
-            glViewport(0, 0, 1024, 1024);
-        });
+		mainRenderTarget->bind(context);
+		textures["shadowColorTexture"]->bindToUnit(0, context);
 
-        blurPass->addCommand([]() {
-			//glCullFace(GL_BACK);
-		});
+		renderer->drawIndexed(6);
+		renderer->swapBuffers();
 
-        lightGBufferPass->addCommand([&]() {
-            glViewport(0, 0, 1920, 1080);
-        });
+		updateCamera();
 
-        registry->view<Transform, Render>().each([&](Transform& transform, Render& render) {
-			modelData.toWorld = glm::mat4(1.0f);
-			modelData.toWorld = glm::translate(modelData.toWorld, transform.translation);
-			//modelData.toWorld = modelData.toWorld * glm::eulerAngleXYZ(transform.rotation.x, transform.rotation.y, transform.rotation.z);
-			modelData.toWorld = modelData.toWorld * glm::toMat4(transform.rotationq);
-			modelData.toWorld = glm::transpose(glm::scale(modelData.toWorld, transform.scale));
-			//modelData.toWorld = glm::transpose(transform.matrix);
-			modelData.inverseToWorld = glm::inverse(modelData.toWorld);
+  //      for (auto& it : renderTargets) {
+  //          it.second->clear(context);
+  //      }
+		//shaderInputLayout->bind(context);
+		////shaderInputLayout->bind();
 
-			std::function<void()> command = std::bind([](ModelData modelData, ConstantBuffer* buffer) {
-				Renderer* tempRenderer = Renderer::instance();
+  //      //lightCamera.m_Position.x = sin(glfwGetTime()) * 3.0f;
+  //      //lightCamera.m_Position.z = cos(glfwGetTime()) * 2.0f;
+  //      //lightCamera.m_Position.y = 3.0 + cos(glfwGetTime()) * 1.0f;
 
-				buffer->update(&modelData);
-				buffer->bind(tempRenderer->getContext());
-				}, modelData, modelShaderBuffer.get());
+  //      glm::mat4 lightProjection, lightView;
+  //      glm::mat4 lightSpaceMatrix;
+  //      float near_plane = -20.0f, far_plane = 20.0f;
+  //      lightProjection = lightCamera.getPerspectiveMatrix();
+  //      lightView = glm::lookAt(glm::vec3(lightCamera.m_Position), glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
+  //      lightSpaceMatrix = glm::transpose(lightProjection * lightView);
 
-			gbufferPass->addCommand(command);
-			shadowPass->addCommand(command);
+  //      if (!useDebugCamera) {
+		//	registry->view<CameraComponent, PlayerComponent>().each([&](CameraComponent& camera, PlayerComponent& player) {
+		//		projectionData.projection = glm::transpose(camera.projectionMatrix * camera.viewMatrix);
+		//	});
+  //      } else {
+		//	projectionData.projection = glm::transpose(camera.getPerspectiveMatrix() * camera.getViewMatrix());
+  //      }
+  //      
+		//projectionData.shadowProjection = lightSpaceMatrix;
+  //      projectionData.viewPos = camera.m_Position;
+  //      projectionData.shadowCameraPos = lightCamera.m_Position;
+  //      //glm::transpose(lightCamera.getPerspectiveMatrix() * lightCamera.getViewMatrix());
+		//
+  //      gbufferPass->addCommand(std::bind([&](mvp projectionData) {
+  //          shaderBuffer->update(&projectionData);
+  //          shaderBuffer->bind(context);
+  //      }, projectionData));
+  //      
+		//projectionData.projection = lightSpaceMatrix;
+  //      shadowPass->addCommand(std::bind([&](mvp projectionData) {
+  //          shaderBuffer->update(&projectionData);
+  //          shaderBuffer->bind(context);
+  //      }, projectionData));
 
-			this->updateTransform(render.model->getRootNode(), render.model.get(), glm::mat4(1.0f));
+  //      shadowPass->addCommand([]() {
+  //          //glCullFace(GL_FRONT);
+  //          //glViewport(0, 0, 1024, 1024);
+  //      });
 
-			for (auto& node : render.model->getNodes()) {
-				if (node->mesh == -1) continue;
+  //      blurPass->addCommand([]() {
+		//	//glCullFace(GL_BACK);
+		//});
 
-				std::function<void()> command = std::bind([](Model::Node* node, Model* model, ConstantBuffer* buffer) {
-					Renderer* tempRenderer = Renderer::instance();
-					const std::vector<std::shared_ptr<Model::SubMesh>>& submeshes = model->getSubMeshes();
-					const std::shared_ptr<Model::SubMesh>& submesh = submeshes[node->mesh];
+  //      lightGBufferPass->addCommand([&]() {
+  //          //glViewport(0, 0, 1920, 1080);
+  //      });
 
-					MeshData meshData;
-					meshData.transform = glm::transpose(node->transform.worldTransform);
-					meshData.normalTransform = glm::transpose(node->transform.normalTransform);
+  //      registry->view<Transform, Render>().each([&](Transform& transform, Render& render) {
+		//	modelData.toWorld = glm::mat4(1.0f);
+		//	modelData.toWorld = glm::translate(modelData.toWorld, transform.translation);
+		//	//modelData.toWorld = modelData.toWorld * glm::eulerAngleXYZ(transform.rotation.x, transform.rotation.y, transform.rotation.z);
+		//	modelData.toWorld = modelData.toWorld * glm::toMat4(transform.rotationq);
+		//	modelData.toWorld = glm::transpose(glm::scale(modelData.toWorld, transform.scale));
+		//	//modelData.toWorld = glm::transpose(transform.matrix);
+		//	modelData.inverseToWorld = glm::inverse(modelData.toWorld);
 
-					buffer->update(&meshData);
-					buffer->bind(tempRenderer->getContext());
+		//	std::function<void()> command = std::bind([](ModelData modelData, ConstantBuffer* buffer) {
+		//		Renderer* tempRenderer = Renderer::instance();
 
-					submesh->vBuffer->bind(tempRenderer->getContext());
-					submesh->iBuffer->bind(tempRenderer->getContext());
+		//		buffer->update(&modelData);
+		//		buffer->bind(tempRenderer->getContext());
+		//		}, modelData, modelShaderBuffer.get());
 
-					tempRenderer->drawIndexed(submesh->iBuffer->getSize());
-				}, node.get(), render.model.get(), meshShaderBuffer.get());
+		//	gbufferPass->addCommand(command);
+		//	shadowPass->addCommand(command);
 
-				gbufferPass->addCommand(command);
-				shadowPass->addCommand(command);
-			}
-        });
-        
-        gbufferPass->addCommand(std::bind([&](PhysicsSystem* physicsSystem, std::shared_ptr<ShaderPipeline>& shader) {
-            shader->bind(Renderer::instance()->getContext());
-            physicsSystem->dynamicsWorld->debugDrawWorld();
-		}, physicsSystem, shaders["physdebug"]));
+		//	this->updateTransform(render.model->getRootNode(), render.model.get(), glm::mat4(1.0f));
 
-        renderGraph->execute();
-        renderer->bindMainRenderTarget();
+		//	for (auto& node : render.model->getNodes()) {
+		//		if (node->mesh == -1) continue;
 
-        updateCamera();
+		//		std::function<void()> command = std::bind([](Model::Node* node, Model* model, ConstantBuffer* buffer) {
+		//			Renderer* tempRenderer = Renderer::instance();
+		//			const std::vector<std::shared_ptr<Model::SubMesh>>& submeshes = model->getSubMeshes();
+		//			const std::shared_ptr<Model::SubMesh>& submesh = submeshes[node->mesh];
+
+		//			MeshData meshData;
+		//			meshData.transform = glm::transpose(node->transform.worldTransform);
+		//			meshData.normalTransform = glm::transpose(node->transform.normalTransform);
+
+		//			buffer->update(&meshData);
+		//			buffer->bind(tempRenderer->getContext());
+
+		//			submesh->vBuffer->bind(tempRenderer->getContext());
+		//			submesh->iBuffer->bind(tempRenderer->getContext());
+
+		//			tempRenderer->drawIndexed(submesh->iBuffer->getSize());
+		//		}, node.get(), render.model.get(), meshShaderBuffer.get());
+
+		//		gbufferPass->addCommand(command);
+		//		shadowPass->addCommand(command);
+		//	}
+  //      });
+  //      
+  //      gbufferPass->addCommand(std::bind([&](PhysicsSystem* physicsSystem, std::shared_ptr<ShaderPipeline>& shader) {
+  //          shader->bind(Renderer::instance()->getContext());
+  //          physicsSystem->dynamicsWorld->debugDrawWorld();
+		//}, physicsSystem, shaders["physdebug"]));
+
+  //      renderGraph->execute();
+  //      renderer->bindMainRenderTarget();
+
 	}
 
     void updateCamera() {
-		if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_UP)) {
+		/*if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_UP)) {
 			lightCamera.m_Position.x += 0.2f;
 		} else if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_DOWN)) {
 			lightCamera.m_Position.x -= 0.2f;
@@ -387,24 +347,24 @@ public:
         } else if (InputManager::instance()->isKeyPressed(GLFW_KEY_2)) {
             mainCamera = 1;
         }
-
-        if (InputManager::instance()->isKeyPressed(GLFW_KEY_E)) {
+		*/
+        if (InputManager::instance()->isKeyPressed(69)) {
             camera.m_Rotation.x -= (float)InputManager::instance()->mouseMoveX * 0.0045f;
-            camera.m_Rotation.y += (float)InputManager::instance()->mouseMoveY * 0.0045f;
+            camera.m_Rotation.y -= (float)InputManager::instance()->mouseMoveY * 0.0045f;
         }
 
-        if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_W)) {
-            camera.m_Position += camera.forwardVec * 0.2f;
-        } else if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_S)) {
-            camera.m_Position -= camera.forwardVec * 0.2f;
+        if (InputManager::instance()->instance()->isKeyPressed(87)) {
+            camera.m_Position -= camera.forwardVec * 0.002f;
+        } else if (InputManager::instance()->instance()->isKeyPressed(83)) {
+            camera.m_Position += camera.forwardVec * 0.002f;
         }
 
-        if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_A)) {
-            camera.m_Position += camera.rightVec * 0.2f;
-        } else if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_D)) {
-            camera.m_Position -= camera.rightVec * 0.2f;
-        }   
-
+        if (InputManager::instance()->instance()->isKeyPressed(65)) {
+            camera.m_Position -= camera.rightVec * 0.002f;
+        } else if (InputManager::instance()->instance()->isKeyPressed(68)) {
+            camera.m_Position += camera.rightVec * 0.002f;
+        }
+		
         camera.update();
     }
 
@@ -456,5 +416,164 @@ public:
         }
 
         shaders[name] = std::shared_ptr<ShaderPipeline>(ShaderPipeline::create(fileVS.getConent(), filePS.getConent()));
+    }
+
+    void temp(entt::registry* registry, PhysicsSystem* physics) {
+		this->registry = registry;
+		this->physicsSystem = physics;
+		renderer = Renderer::instance();
+		context = renderer->getContext();
+
+		File fileVS("defaultVS.glsl");
+		File filePS("defaultPS.glsl");
+
+		shaderPipeline.reset(ShaderPipeline::create(fileVS.getConent(), filePS.getConent()));
+
+		{
+			ShaderInputLayoutDesc desc;
+			desc.elements.push_back({ InputDataType::Float3, "pos" });
+			desc.elements.push_back({ InputDataType::Float2, "texCoords" });
+			desc.elements.push_back({ InputDataType::Float3, "normal" });
+			desc.elements.push_back({ InputDataType::Float3, "tangent" });
+			desc.elements.push_back({ InputDataType::Float3, "bitangent" });
+			desc.elements.push_back({ InputDataType::Int4,   "bone" });
+			desc.elements.push_back({ InputDataType::Float4, "weight" });
+
+			shaderInputLayout.reset(ShaderInputLayout::create(desc));
+		}
+		/*{
+			shaderInputLayout = std::make_shared<ShaderInputLayout>();
+
+			shaderInputLayout->add({ InputDataType::Float3, "pos" });
+			shaderInputLayout->add({ InputDataType::Float2, "texCoords" });
+			shaderInputLayout->add({ InputDataType::Float3, "normal" });
+			shaderInputLayout->add({ InputDataType::Float3, "tangent" });
+			shaderInputLayout->add({ InputDataType::Float3, "bitangent" });
+			shaderInputLayout->add({ InputDataType::Int4,   "bone" });
+			shaderInputLayout->add({ InputDataType::Float4, "weight" });
+		}*/
+
+		shaderBuffer.reset(ConstantBuffer::create(0, sizeof(projectionData), nullptr));
+		modelShaderBuffer.reset(ConstantBuffer::create(1, sizeof(ModelData), nullptr));
+		meshShaderBuffer.reset(ConstantBuffer::create(2, sizeof(MeshData), nullptr));
+
+		std::shared_ptr<RawTexture> texture = std::make_shared<RawTexture>("texture_01.png");
+		texture->import();
+		textures["tex"] = std::shared_ptr<Texture2D>(Texture2D::create(texture->getWidth(), texture->getHeight(), 0, texture->getData(), texture->getChannels() == 4 ? TextureFormat::RGBA8 : TextureFormat::RGB8));
+
+
+		camera.setProjectionMatrix(90.0f, 1920.0f / 1080.0f, 0.1f, 200.f);
+		lightCamera.setOrthographicMatrix(-40, 40, -40, 40, -40, 40);
+		//lightCamera.m_Rotation = glm::vec4(0.0f, 0.5f, 0.0f, 1.0f);
+		lightCamera.m_Position = glm::vec4(7.0f, 4.0f, -2.0f, 1.0f);
+
+		mainRenderTarget.reset(Renderer::getMainRenderTarget());
+
+		renderGraph = std::make_unique<RenderGraph>(renderer);
+
+		{
+			SamplerDesc desc;
+			desc.minFilterModel = FilterMode::LINEAR;
+			desc.magFilterMode = FilterMode::LINEAR;
+			desc.mipFilterMode = FilterMode::NONE;
+			desc.addressingMode = AddressingMode::CLAMP;
+			pointSampler.reset(Sampler::create(desc));
+			pointSampler->setTextureUnit(5);
+			pointSampler->bind(context);
+			pointSampler->setTextureUnit(0);
+			pointSampler->bind(context);
+		}
+		// Textures
+		{
+			textures["positions"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA32F));
+			textures["normals"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 1, nullptr, TextureFormat::RGBA32F));
+			textures["diffuse"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 2, nullptr, TextureFormat::RGBA32F));
+			textures["rtt"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA32F));
+			textures["shadowColorTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(1024, 1024, 5, nullptr, TextureFormat::RG32F));
+			textures["bluredShadowDepthTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(1024, 1024, 5, nullptr, TextureFormat::RG32F));
+			textures["shadowDepthTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(1024, 1024, 5, nullptr, TextureFormat::D32));
+			textures["renderTargetDepthTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 3, nullptr, TextureFormat::D32));
+		}
+		// Shaders
+		{
+			createShaderFromFolder("shaders/gbuffer", "gbuffer");
+			createShaderFromFolder("shaders/shadow", "shadow");
+			createShaderFromFolder("shaders/light", "light");
+			createShaderFromFolder("shaders/blur", "blur");
+			createShaderFromFolder("shaders/physdebug", "physdebug");
+		}
+		// Render targets
+		{
+			{
+				std::shared_ptr<RenderTarget> renderTarget = std::shared_ptr<RenderTarget>(RenderTarget::create());
+				renderTarget->setColorTexture(textures["positions"], 0);
+				renderTarget->setColorTexture(textures["normals"], 1);
+				renderTarget->setColorTexture(textures["diffuse"], 2);
+				renderTarget->setDepthTexture(textures["renderTargetDepthTexture"]);
+				renderTargets["gBuffer"] = renderTarget;
+			}
+			{
+				std::shared_ptr<RenderTarget> renderTarget = std::shared_ptr<RenderTarget>(RenderTarget::create());
+				renderTarget->setColorTexture(textures["shadowColorTexture"], 0);
+				renderTarget->setDepthTexture(textures["shadowDepthTexture"]);
+				renderTargets["shadow"] = renderTarget;
+			}
+			{
+				std::shared_ptr<RenderTarget> renderTarget = std::shared_ptr<RenderTarget>(RenderTarget::create());
+				renderTarget->setColorTexture(textures["rtt"], 0);
+				renderTargets["light"] = renderTarget;
+			}
+			{
+				std::shared_ptr<RenderTarget> renderTarget = std::shared_ptr<RenderTarget>(RenderTarget::create());
+				renderTarget->setColorTexture(textures["bluredShadowDepthTexture"], 0);
+				renderTargets["blur"] = renderTarget;
+			}
+		}
+		// Render passess
+		{
+			gbufferPass.reset(new Pass("GBufferPass"));
+			gbufferPass->setRenderTarget(renderTargets["gBuffer"]);
+			gbufferPass->setShader(shaders["gbuffer"]);
+			gbufferPass->setTexture(0, textures["tex"]);
+			renderGraph->addPass(gbufferPass);
+		}
+		{
+			shadowPass.reset(new Pass("ShadowPass"));
+			shadowPass->setRenderTarget(renderTargets["shadow"]);
+			shadowPass->setShader(shaders["shadow"]);
+			renderGraph->addPass(shadowPass);
+		}
+		{
+			blurPass.reset(new FullscreenPass("GaussianBlurPass"));
+			blurPass->setRenderTarget(renderTargets["blur"]);
+			blurPass->setShader(shaders["blur"]);
+			blurPass->setTexture(0, textures["shadowColorTexture"]);
+			renderGraph->addPass(blurPass);
+		}
+		{
+			lightGBufferPass.reset(new FullscreenPass("LightPass"));
+			lightGBufferPass->setRenderTarget(renderTargets["light"]);
+
+			lightGBufferPass->setShader(shaders["light"]);
+			lightGBufferPass->setTexture(0, textures["positions"]);
+			lightGBufferPass->setTexture(1, textures["normals"]);
+			lightGBufferPass->setTexture(2, textures["diffuse"]);
+			lightGBufferPass->setTexture(3, textures["bluredShadowDepthTexture"]);
+			lightGBufferPass->setTexture(4, textures["renderTargetDepthTexture"]);
+			renderGraph->addPass(lightGBufferPass);
+		}
+		{
+			testRenderPass.reset(new FullscreenPass("MainPass"));
+			testRenderPass->setRenderTarget(mainRenderTarget);
+			testRenderPass->setShader(shaderPipeline);
+			testRenderPass->setTexture(0, textures["rtt"]);
+			renderGraph->addPass(testRenderPass);
+		}
+
+		/*	glEnable(GL_DEPTH_TEST);
+			glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+			glEnable(GL_CULL_FACE);
+			glFrontFace(GL_CCW);
+			glCullFace(GL_BACK);*/
     }
 };

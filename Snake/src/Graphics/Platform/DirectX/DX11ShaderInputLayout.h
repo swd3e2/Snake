@@ -1,18 +1,18 @@
 #pragma once
 
 #include "Graphics/Renderer/ShaderInputLayout.h"
-#include "DirectXRenderer.h"
-#include "DirectXUtils.h"
+#include "DX11Renderer.h"
+#include "DX11Utils.h"
 #include <d3dcompiler.h>
 
-class DirectXShaderInputLayout : public ShaderInputLayout {
+class DX11ShaderInputLayout : public ShaderInputLayout {
 private:
 	ID3D11InputLayout* m_InputLayout = nullptr;
 public:
-	DirectXShaderInputLayout(const ShaderInputLayoutDesc& desc) {
-		DirectXRenderer* renderer = (DirectXRenderer*)Renderer::instance();
-		ID3D11Device* device = ((DirectXRenderContext*)renderer->getContext())->getDevice();
-		ID3D11DeviceContext* deviceContext = ((DirectXRenderContext*)renderer->getContext())->getDeviceContext();
+	DX11ShaderInputLayout(const ShaderInputLayoutDesc& desc) {
+		DX11Renderer* renderer = (DX11Renderer*)Renderer::instance();
+		ID3D11Device* device = ((DX11RenderContext*)renderer->getContext())->getDevice();
+		ID3D11DeviceContext* deviceContext = ((DX11RenderContext*)renderer->getContext())->getDeviceContext();
 
 		ID3DBlob* shaderBlob = nullptr;
 		ID3DBlob* errorBlob = nullptr;
@@ -49,7 +49,7 @@ public:
 
 		device->CreateInputLayout(layout, desc.elements.size(), shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), &m_InputLayout);
 
-		errorBlob->Release();
+		if (errorBlob) errorBlob->Release();
 		vertexTempShader->Release();
 		shaderBlob->Release();
 
@@ -57,7 +57,7 @@ public:
 	}
 
 	virtual void bind(RenderContext* renderContext) override {
-		ID3D11DeviceContext* context = ((DirectXRenderContext*)renderContext)->getDeviceContext();
+		ID3D11DeviceContext* context = ((DX11RenderContext*)renderContext)->getDeviceContext();
 		context->IASetInputLayout(m_InputLayout);
 	}
 };

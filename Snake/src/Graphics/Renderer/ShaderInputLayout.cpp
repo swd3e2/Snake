@@ -1,12 +1,10 @@
 #include "ShaderInputLayout.h"
 #include "Graphics/Renderer.h"
-#include "Graphics/Platform/OpenGL/OpenGLShaderInputLayout.h"
-#include "Graphics/Platform/DirectX/DirectXShaderInputLayout.h"
+#include "Graphics/Platform/DirectX/DX11ShaderInputLayout.h"
 
 ShaderInputLayout* ShaderInputLayout::create(const ShaderInputLayoutDesc& desc) {
 	switch (Renderer::getType()) {
-		case RendererType::OpenGL:		return new OpenGLShaderInputLayout(desc);
-		case RendererType::DirectX:		return new DirectXShaderInputLayout(desc);
+		case RendererType::DirectX:		return new DX11ShaderInputLayout(desc);
 	}
 	return nullptr;
 }

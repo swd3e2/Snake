@@ -1,13 +1,10 @@
 #include "VertexBuffer.h"
 #include "Graphics/Renderer.h"
-#include "Graphics/Platform/OpenGL/OpenGLVertexBuffer.h"
+#include "Graphics/Platform/DirectX/DX11VertexBuffer.h"
 
 VertexBuffer* VertexBuffer::create(int size, int stride, void* data) {
-    switch (Renderer::getType())
-    {
-    case RendererType::OpenGL:
-        return new OpenGLVertexBuffer(size, stride, data);
-        break;
+    switch (Renderer::getType()) {
+    case RendererType::DirectX: return new DX11VertexBuffer(size, stride, data);
     }
 
     return nullptr;

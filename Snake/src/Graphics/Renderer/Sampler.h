@@ -36,6 +36,7 @@ private:
 	float mipLODBias = 0;
 protected:
 	unsigned int textureUnit = 0;
+	unsigned int samplerUnit = 0;
 public:
 	Sampler(AddressingMode addressingMode, FilterMode minFilterModel, FilterMode magFilterMode, FilterMode mipFilterMode, int maxAnisotropy, ComparisonFunction comparisonFunction, float minLOD, float maxLOD, float mipLODBias) :
 		addressingMode(addressingMode), minFilterModel(minFilterModel), magFilterMode(magFilterMode), mipFilterMode(mipFilterMode), maxAnisotropy(maxAnisotropy), comparisonFunction(comparisonFunction), minLOD(minLOD), maxLOD(maxLOD), mipLODBias(mipLODBias)
@@ -46,5 +47,9 @@ public:
 
 	void setTextureUnit(unsigned int textureUnit) {
 		this->textureUnit = textureUnit;
+	}
+
+	virtual void setSamplerUnit(unsigned int samplerUnit) {
+		this->samplerUnit = samplerUnit;
 	}
 };

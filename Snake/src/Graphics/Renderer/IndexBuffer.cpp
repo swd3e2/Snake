@@ -1,10 +1,10 @@
 #include "IndexBuffer.h"
 #include "Graphics/Renderer.h"
-#include "Graphics/Platform/OpenGL/OpenGLIndexBuffer.h"
+#include "Graphics/Platform/DirectX/DX11IndexBuffer.h"
 
 IndexBuffer* IndexBuffer::create(int size, void* data) {
     switch (Renderer::getType()) {
-        case RendererType::OpenGL: return new OpenGLIndexBuffer(size, data);
+        case RendererType::DirectX: return new DX11IndexBuffer(size, data);
     }
     return nullptr;
 }

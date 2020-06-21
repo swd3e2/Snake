@@ -1,13 +1,13 @@
 #pragma once
 
-#include "DirectXRenderer.h"
+#include "DX11Renderer.h"
 #include "Graphics/Renderer/VertexBuffer.h"
 
-class DirectXVertexBuffer : public VertexBuffer {
+class DX11VertexBuffer : public VertexBuffer {
 private:
 	ID3D11Buffer* m_Buffer;
 public:
-	DirectXVertexBuffer(int size, int stride, void* data) :
+	DX11VertexBuffer(int size, int stride, void* data) :
 		VertexBuffer(size, stride)
 	{
 		D3D11_BUFFER_DESC bufferDesc = { 0 };
@@ -28,16 +28,17 @@ public:
 		bufferData.SysMemPitch = 0;
 		bufferData.SysMemSlicePitch = 0;
 
-		DirectXRenderer* renderer = (DirectXRenderer*)Renderer::instance();
-		ID3D11Device* device = ((DirectXRenderContext*)renderer->getContext())->getDevice();
-		ID3D11DeviceContext* deviceContext = ((DirectXRenderContext*)renderer->getContext())->getDeviceContext();
+		DX11Renderer* renderer = (DX11Renderer*)Renderer::instance();
+		ID3D11Device* device = ((DX11RenderContext*)renderer->getContext())->getDevice();
+		ID3D11DeviceContext* deviceContext = ((DX11RenderContext*)renderer->getContext())->getDeviceContext();
 
 		device->CreateBuffer(&bufferDesc, &bufferData, &m_Buffer);
 	}
 
 	virtual void bind(RenderContext* renderContext) {
-		ID3D11DeviceContext* context = ((DirectXRenderContext*)renderContext)->getDeviceContext();
+		ID3D11DeviceContext* context = ((DX11RenderContext*)renderContext)->getDeviceContext();
 		const unsigned int stride = getStride();
-		context->IASetVertexBuffers(0, 1, &m_Buffer, &stride, NULL);
+		const unsigned int offset = 0;
+		context->IASetVertexBuffers(0, 1, &m_Buffer, &stride, &offset);
 	}
 };

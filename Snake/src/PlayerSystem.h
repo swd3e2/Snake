@@ -15,7 +15,7 @@ public:
 		registry->view<Physics, CameraComponent, Transform, PlayerComponent>().each([&](Physics& physics, CameraComponent& camera, Transform& transform, PlayerComponent& player) {
 			if (!player.active) return;
 
-			if (InputManager::instance()->isKeyPressed(GLFW_KEY_E)) {
+			/*if (InputManager::instance()->isKeyPressed(GLFW_KEY_E)) {
 				transform.rotation.x -= (float)InputManager::instance()->mouseMoveX * 0.0045f;
 				transform.rotation.y += (float)InputManager::instance()->mouseMoveY * 0.0045f;
 			}
@@ -30,7 +30,7 @@ public:
 				transform.translation += glm::vec3(camera.rightVec) * player.speed;
 			} else if (InputManager::instance()->instance()->isKeyPressed(GLFW_KEY_D)) {
 				transform.translation -= glm::vec3(camera.rightVec) * player.speed;
-			}
+			}*/
 
 			btTransform btTransform;
 			btTransform.setIdentity();
