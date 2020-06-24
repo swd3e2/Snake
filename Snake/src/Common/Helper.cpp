@@ -37,3 +37,12 @@ std::vector<std::string> split(std::string str, char ch) {
     
 	return lines;
 }
+
+std::string replace(const std::string& str, const std::string& find, const std::string& replace) {
+    std::string copy(str);
+	std::string::size_type position = 0;
+	while ((position = copy.find(find)) != copy.npos) {
+        copy.replace(position, 1, replace);
+	}
+    return copy;
+}

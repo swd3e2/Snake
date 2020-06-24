@@ -13,8 +13,9 @@
 #include "Systems/PlayerSystem.h"
 #include "Import/TextureLoader.h"
 #include "Import/ModelLoader.h"
-#include "Registry.h"
+#include "Configuration.h"
 #include <Windows.h>
+#include "Common/Helper.h"
 
 class Application {
 private:
@@ -31,18 +32,27 @@ private:
 
 	std::chrono::time_point<std::chrono::steady_clock> m_Start;
 
-	TextureLoader textureLoader;
-    ModelLoader modelLoader;
-	Registry applicationRegistry;
+	TextureLoader* textureLoader;
+    ModelLoader* modelLoader;
+	Configuration* applicationRegistry;
 public:
     ~Application() {
 
     }
 
 	void init() {
-		applicationRegistry.startUp();
-		textureLoader.startUp();
-		modelLoader.startUp();
+		applicationRegistry = Singleton<Configuration>::startUp();
+		textureLoader = Singleton<TextureLoader>::startUp();
+		modelLoader = Singleton<ModelLoader>::startUp();
+
+		//Save runtime directory	
+		char buffer[1000];
+		GetModuleFileName(NULL, buffer, 1000);
+		std::string::size_type pos = std::string(buffer).find_last_of("\\/");
+		std::string temp = replace(std::string(buffer).substr(0, pos), "\\", "/");
+
+		applicationRegistry->set("runtime_dir", temp);
+		applicationRegistry->set("assets_dir", temp);
 
         renderer.reset(Renderer::create(RendererType::DirectX));
         window = renderer->createWindow(1920, 1080);
@@ -82,13 +92,6 @@ public:
 			std::shared_ptr<btCollisionShape> shape = std::make_shared<btStaticPlaneShape>(btVector3(0, 1, 0), 0);
 			physicsSystem->createPhysicsBody(entity, shape, 0.0f, glm::vec3(0.0, -0.63f, 0.0f), false);
 		}
-
-		//Save runtime directory	
-		char buffer[1000];
-		GetModuleFileName(NULL, buffer, 1000);
-		std::string::size_type pos = std::string(buffer).find_last_of("\\/");
-		applicationRegistry.set("runtime_dir", std::string(buffer).substr(0, pos));
-		applicationRegistry.set("assets_dir", applicationRegistry.get("runtime_dir"));
 	}
 
 	void run() {

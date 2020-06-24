@@ -26,7 +26,7 @@ public:
 		return nullptr;
 	}
 
-	void put(const std::string& name, T* object) {
+	void set(const std::string& name, const std::shared_ptr<T>& object) {
 		storage[name] = object;
 	}
 };

@@ -1,5 +1,9 @@
 #include "GltfImporter.h"
 
+bool GltfImporter::canParseFile(const std::string& filename) {
+	return filename.substr(filename.size() - 4, 4).compare("gltf") == 0;
+}
+
 std::shared_ptr<Import::Model> GltfImporter::import(const std::string& filename)
 {
 	meshCounter = nodeCounter = animationNodeCounter = 0;

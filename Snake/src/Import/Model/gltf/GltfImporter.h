@@ -23,6 +23,7 @@ private:
 	int nodeCounter = 0;
 public:
 	virtual std::shared_ptr<Import::Model> import(const std::string& filename) override;
+	virtual bool canParseFile(const std::string& filename) override;
 private:
 	void calculateTangent(Import::Model* model);
 	void processHierarchy(Import::Model* model, const tinygltf::Model& gltfModel);

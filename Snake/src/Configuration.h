@@ -7,7 +7,7 @@
 /**
  * Container for application settings
  */
-class Registry : public Singleton<Registry> {
+class Configuration : public Singleton<Configuration> {
 private:
 	std::unordered_map<std::string, std::string> values;
 public:

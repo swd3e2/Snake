@@ -1,11 +1,25 @@
 #include "ModelLoader.h"
+#include "Model/gltf/GltfImporter.h"
 
 ModelLoader::ModelLoader() {
-	storage.startUp();
+	auto ptr = std::make_shared<GltfImporter>();
+	importers.push_back(ptr);
 }
 
-std::shared_ptr<Model> ModelLoader::loadFromFile(const std::string name) {
-	std::shared_ptr<Import::Model> importModel = gltfImporter.import(name);
+std::shared_ptr<Model> ModelLoader::loadFromFile(const std::string filename) {
+	const std::string assetFolder = getAssetFolder();
+	const std::string fullFilePath = assetFolder + "/" + filename;
+
+	if (storage.has(fullFilePath)) {
+		return storage.get(fullFilePath);
+	}
+
+	if (!canImport(fullFilePath)) {
+		return nullptr;
+	}
+
+	const std::shared_ptr<ModelImporter>& impoter = getSuitableImporter(fullFilePath);
+	std::shared_ptr<Import::Model> importModel = impoter->import(fullFilePath);
 	std::shared_ptr<Model> model = std::make_shared<Model>();
 
 	model->rootNode = importModel->rootNode;
@@ -15,6 +29,8 @@ std::shared_ptr<Model> ModelLoader::loadFromFile(const std::string name) {
 	processNodes(model, importModel);
 	processVertexArrays(model, importModel);
 	processMaterials(model, importModel);
+
+	storage.set(fullFilePath, model);
 
 	return model;
 }
@@ -54,7 +70,7 @@ void ModelLoader::processVertexArrays(const std::shared_ptr<Model>& model, const
 
 void ModelLoader::processMaterials(std::shared_ptr<Model>& model, const std::shared_ptr<Import::Model>& importModel) {
 	for (auto& it : importModel->materials) {
-		std::shared_ptr<Model::Material> material = std::make_shared<Model::Material>();
+		std::shared_ptr<Material> material = std::make_shared<Material>();
 		material->name = it.name;
 		material->materialData.color = it.baseColorFactor;
 
@@ -67,4 +83,30 @@ void ModelLoader::processMaterials(std::shared_ptr<Model>& model, const std::sha
 
 		model->materials.push_back(material);
 	}
+}
+
+const std::string ModelLoader::getAssetFolder() {
+	if (Configuration::instance()->has("assets_dir") && assetFolder.size() == 0) {
+		assetFolder = Configuration::instance()->get("assets_dir");
+	}
+
+	return assetFolder;
+}
+
+bool ModelLoader::canImport(const std::string& filename) {
+	for (auto& it : importers) {
+		if (it->canParseFile(filename)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+const std::shared_ptr<ModelImporter>& ModelLoader::getSuitableImporter(const std::string& filename) {
+	for (auto& it : importers) {
+		if (it->canParseFile(filename)) {
+			return it;
+		}
+	}
+	return nullptr;
 }
