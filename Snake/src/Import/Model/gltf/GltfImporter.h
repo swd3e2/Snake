@@ -1,7 +1,8 @@
 #pragma once
 
 #include <memory>
-#include "../ImportData.h"
+#include "Import/Model/ImportData.h"
+#include "Import/Model/ModelImporter.h"
 
 #define TINYGLTF_NO_EXTERNAL_IMAGE
 #define TINYGLTF_NO_INCLUDE_JSON
@@ -12,16 +13,16 @@
 
 #include <glm/gtx/matrix_decompose.hpp>
 #include <fstream>
-#include "../../Common/Helper.h"
+#include "Common/Helper.h"
 
-class GltfImporter
+class GltfImporter : public ModelImporter
 {
 private:
 	int animationNodeCounter = 0;
 	int meshCounter = 0;
 	int nodeCounter = 0;
 public:
-	std::shared_ptr<Import::Model> import(const std::string& filename);
+	virtual std::shared_ptr<Import::Model> import(const std::string& filename) override;
 private:
 	void calculateTangent(Import::Model* model);
 	void processHierarchy(Import::Model* model, const tinygltf::Model& gltfModel);

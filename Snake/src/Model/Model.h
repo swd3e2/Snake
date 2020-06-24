@@ -1,11 +1,15 @@
 #pragma once
 
-#include "ImportData.h"
-#include "../Graphics/Renderer/VertexBuffer.h"
-#include "../Graphics/Renderer/IndexBuffer.h"
+#include "Graphics/Renderer/VertexBuffer.h"
+#include "Graphics/Renderer/IndexBuffer.h"
 #include "Material.h"
-#include "Storage.h"
-#include "FileSystem/File.h"
+#include <glm/glm.hpp>
+#include <glm/gtx/quaternion.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <vector>
+#include <string>
+#include <memory>
+#include "Graphics/Renderer/Texture2D.h"
 
 class Model {
 public:

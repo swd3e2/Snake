@@ -15,15 +15,15 @@ public:
         Pass(name) 
     {
         std::vector<vertex> vertexData;
-        vertexData.push_back(vertex( 1.0f,  1.0f,  0.1f, 1.0f, 1.0f));
-        vertexData.push_back(vertex( 1.0f, -1.0f,  0.1f, 1.0f, 0.0f));
-        vertexData.push_back(vertex(-1.0f,  1.0f,  0.1f, 0.0f, 1.0f));
-        vertexData.push_back(vertex(-1.0f, -1.0f,  0.1f, 0.0f, 0.0f));
+        vertexData.push_back(vertex( 1.0f,  1.0f,  0.1f, 1.0f, 0.0f));
+        vertexData.push_back(vertex( 1.0f, -1.0f,  0.1f, 1.0f, 1.0f));
+        vertexData.push_back(vertex(-1.0f,  1.0f,  0.1f, 0.0f, 0.0f));
+        vertexData.push_back(vertex(-1.0f, -1.0f,  0.1f, 0.0f, 1.0f));
         quadVertexBuffer.reset(VertexBuffer::create(vertexData.size(), sizeof(vertex), vertexData.data()));
 
         std::vector<unsigned int> indexData;
-        indexData.push_back(0);indexData.push_back(2);indexData.push_back(1);
-        indexData.push_back(2);indexData.push_back(3);indexData.push_back(1);
+		indexData.push_back(0); indexData.push_back(2); indexData.push_back(1);
+		indexData.push_back(2); indexData.push_back(3); indexData.push_back(1);
         quadIndexBuffer.reset(IndexBuffer::create(indexData.size(), indexData.data()));
     }
 

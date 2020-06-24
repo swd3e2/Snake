@@ -22,7 +22,7 @@ public:
     void import()
     {
         //stbi_set_flip_vertically_on_load(1);
-        data = stbi_load(filename.c_str(), &width, &height, &channels, 0);
+        data = stbi_load(filename.c_str(), &width, &height, &channels, 4);
     }
 
     const int getWidth() const { return width; }

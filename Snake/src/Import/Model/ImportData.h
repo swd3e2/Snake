@@ -7,8 +7,7 @@
 #include <vector>
 #include <map>
 #include <memory>
-#include "../Graphics/vertex.h"
-
+#include "Graphics/vertex.h"
 
 namespace Import {
 	struct Node {

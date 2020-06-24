@@ -1,9 +1,10 @@
 #pragma once
 
-#include "Singleton.h"
-#include "Storage.h"
-#include "Import/RawTexture.h"
+#include "Common/Singleton.h"
+#include "Common/Storage.h"
+#include "Texture/RawTexture.h"
 #include "Graphics/Renderer/Texture2D.h"
+#include "FileSystem/File.h"
 
 class TextureLoader : public Singleton<TextureLoader> {
 private:
@@ -24,7 +25,7 @@ public:
 		}
 
 		if (storage.has(filename)) {
-			return std::shared_ptr<Texture2D>(storage.get(filename));
+			return storage.get(filename);
 		} else {
 			return this->loadTexture(filename);
 		}

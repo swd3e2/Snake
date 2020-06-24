@@ -10,6 +10,8 @@ class DX11RenderTarget : public RenderTarget {
 private:
 	std::vector<ID3D11RenderTargetView*> renderTargets;
 	ID3D11DepthStencilView* m_DepthStencilView = nullptr;
+	ID3D11RenderTargetView* nullRenderTargets[4] = { NULL };
+	std::vector<Texture2D*> renderTargetTextures;
 public:
 	virtual void clear(RenderContext* renderContext) override {
 		DX11Renderer* renderer = (DX11Renderer*)Renderer::instance();
@@ -37,6 +39,7 @@ public:
 		ID3D11RenderTargetView* renderTarget = nullptr;
 		device->CreateRenderTargetView(std::static_pointer_cast<DX11Texture2D>(texture)->m_Texture, &renderTargetViewDesc, &renderTarget);
 		renderTargets.push_back(renderTarget);
+		renderTargetTextures.push_back(texture.get());
 	}
 
 	virtual void removeColorTexture(int slot, int level) override {
@@ -56,10 +59,23 @@ public:
 		ddesc.Flags = 0;
 
 		device->CreateDepthStencilView(std::static_pointer_cast<DX11Texture2D>(texture)->m_Texture, &ddesc, &m_DepthStencilView);
+		renderTargetTextures.push_back(texture.get());
 	}
 
 	virtual void bind(RenderContext* renderContext) override {
-		ID3D11DeviceContext* deviceContext = ((DX11RenderContext*)renderContext)->getDeviceContext();
+		DX11RenderContext* context = (DX11RenderContext*)renderContext;
+		ID3D11DeviceContext* deviceContext = context->getDeviceContext();
+
+		for (int i = 0; i < context->boundTextures.size(); i++) {
+			for (auto& it : renderTargetTextures) {
+				if (context->boundTextures[i] != nullptr && context->boundTextures[i] == it) {
+					Renderer::instance()->unbindResource(i);
+				}
+			}
+		}
+
+		deviceContext->OMSetRenderTargets(4, nullRenderTargets, nullptr);
 		deviceContext->OMSetRenderTargets(renderTargets.size(), renderTargets.data(), m_DepthStencilView);
+		context->boundRenderTarget = this;
 	}
 };

@@ -14,12 +14,13 @@ public:
 	int numMips = 1;
 	int samples = 0;
 	TextureFormat textureFormat;
+	int flags;
 public:
-	Texture2D(int width, int height, int location, TextureFormat textureFormat, int numMips) :
-		width(width), height(height), location(location), textureFormat(textureFormat)
+	Texture2D(int width, int height, int location, TextureFormat textureFormat, int flags, int numMips) :
+		width(width), height(height), location(location), flags(flags), textureFormat(textureFormat), numMips(numMips)
 	{}
 
-	static Texture2D* create(int width, int height, int location, void* data, TextureFormat textureFormat = TextureFormat::RGBA8, int numMips = 0);
+	static Texture2D* create(int width, int height, int location, void* data, TextureFormat textureFormat = TextureFormat::RGBA8, int flags = 0, int numMips = 0);
 
 	const TextureFormat getFormat() const { return textureFormat; }
 	const int getWidth() const { return width; }

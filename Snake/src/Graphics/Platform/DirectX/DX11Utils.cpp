@@ -46,7 +46,7 @@ namespace DirectX {
 		switch (textureFormat) {
 			case TextureFormat::R8:				return DXGI_FORMAT_R8_UNORM;
 			case TextureFormat::RG8:			return DXGI_FORMAT_R8G8_UNORM;
-			case TextureFormat::RGB8:
+			case TextureFormat::RGB8:			
 			case TextureFormat::RGBA8:			return DXGI_FORMAT_R8G8B8A8_UNORM;
 			case TextureFormat::BGR8:			return DXGI_FORMAT_B8G8R8X8_UNORM;
 			case TextureFormat::BGRA8:			return DXGI_FORMAT_B8G8R8A8_UNORM;

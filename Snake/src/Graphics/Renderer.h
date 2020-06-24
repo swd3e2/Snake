@@ -36,8 +36,11 @@ public:
         _mainRenderTarget->bind(_renderContext);
     }
 
-    virtual Window* createWindow(int width, int height) = 0;
+	virtual Window* createWindow(int width, int height) = 0;
+	virtual void setViewport(int x0, int y0, int x1, int y1) = 0;
     virtual void swapBuffers() = 0;
+    virtual void unbindResource(int slot) = 0;
+
     static Renderer* create(RendererType type);
 
     static Renderer* instance() { return _instance; }

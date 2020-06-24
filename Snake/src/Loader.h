@@ -1,10 +1,9 @@
 #include <string>
 #include <nlohmann/json.hpp>
 #include "Components.h"
-#include "Model/Import/GltfImporter.h"
 #include "FileSystem/File.h"
 #include <iostream>
-#include "ModelLoader.h"
+#include "Import/ModelLoader.h"
 
 class Loader {
 private:

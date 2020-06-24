@@ -91,3 +91,11 @@ enum class ShaderType {
 	HULL,
 	DOMAINS
 };
+
+enum TextureFlags {
+	TF_None = 0,
+	TF_RenderTarget = 1,
+	TF_DepthBuffer = 2,
+	TF_ShaderResource = 4,
+	TF_GenerateMips = 16
+};

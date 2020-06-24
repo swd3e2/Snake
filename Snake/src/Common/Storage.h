@@ -19,8 +19,11 @@ public:
 		return false;
 	}
 
-	std::weak_ptr<T> get(const std::string& name) {
-		return storage[name];
+	std::shared_ptr<T> get(const std::string& name) {
+		if (storage.find(name) != storage.end()) {
+			return storage[name].lock();
+		}
+		return nullptr;
 	}
 
 	void put(const std::string& name, T* object) {

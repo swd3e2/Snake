@@ -10,11 +10,9 @@ public:
 	ID3D11ShaderResourceView* m_TextureShaderResource = nullptr;
 	ID3D11Texture2D* m_Texture = nullptr;
 public:
-	DX11Texture2D(int width, int height, int location, void* data, TextureFormat textureFormat, int numMips) :
-		Texture2D(width, height, location, textureFormat, numMips)
+	DX11Texture2D(int width, int height, int location, void* data, TextureFormat textureFormat, int flags, int numMips) :
+		Texture2D(width, height, location, textureFormat, flags, numMips)
 	{
-		UINT32 numFaces = 1;
-
 		DX11Renderer* renderer = (DX11Renderer*)Renderer::instance();
 		ID3D11Device* device = ((DX11RenderContext*)renderer->getContext())->getDevice();
 		ID3D11DeviceContext* deviceContext = ((DX11RenderContext*)renderer->getContext())->getDeviceContext();
@@ -23,18 +21,26 @@ public:
 		textureDesc.Height = height;
 		textureDesc.Width = width;
 		textureDesc.MipLevels = numMips + 1;
-		textureDesc.ArraySize = numFaces == 0 ? 1 : numFaces;
+		textureDesc.ArraySize = 1;
 		textureDesc.SampleDesc.Count = 1;
 		textureDesc.SampleDesc.Quality = 0;
 		textureDesc.Format = DirectX::getTextureFormat(textureFormat);
 		textureDesc.Usage = D3D11_USAGE_DEFAULT;
-		textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+		textureDesc.BindFlags = 0;
 
-		if (textureFormat == TextureFormat::D32 || textureFormat == TextureFormat::D16 || textureFormat == TextureFormat::D24S8 || textureFormat == TextureFormat::D32_S8X24) {
-			textureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+		if (flags & TextureFlags::TF_RenderTarget) {
+			textureDesc.BindFlags |= D3D11_BIND_RENDER_TARGET;
+		}
+		if (flags & TextureFlags::TF_ShaderResource) {
+			textureDesc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
+		}
+		if (flags & TextureFlags::TF_DepthBuffer) {
+			textureDesc.BindFlags |= D3D11_BIND_DEPTH_STENCIL;
+		}
+		if (flags & TextureFlags::TF_GenerateMips) {
+			textureDesc.BindFlags |= D3D11_RESOURCE_MISC_GENERATE_MIPS;
 		}
 
-		//textureDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
 		textureDesc.CPUAccessFlags = 0;
 
 		if (device->CreateTexture2D(&textureDesc, nullptr, &m_Texture) != S_OK) {
@@ -53,6 +59,7 @@ public:
 		} else if (textureFormat == TextureFormat::D24S8) {
 			srvDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 		}
+
 
 		// Create the shader resource view for the texture.
 		if (device->CreateShaderResourceView(m_Texture, &srvDesc, &m_TextureShaderResource) != S_OK) {
@@ -74,8 +81,11 @@ public:
 	}
 
 	virtual void bind(RenderContext* renderContext) override {
+		DX11RenderContext* context = (DX11RenderContext*)renderContext;
 		ID3D11DeviceContext* deviceContext = ((DX11RenderContext*)renderContext)->getDeviceContext();
 		deviceContext->PSSetShaderResources(getLocation(), 1, &m_TextureShaderResource);
+
+		context->boundTextures[getLocation()] = this;
 	}
 
 	virtual void setData(void* data) override {
@@ -99,7 +109,10 @@ public:
 	}
 
 	virtual void bindToUnit(const int location, RenderContext* renderContext) override {
+		DX11RenderContext* context = (DX11RenderContext*)renderContext;
 		ID3D11DeviceContext* deviceContext = ((DX11RenderContext*)renderContext)->getDeviceContext();
 		deviceContext->PSSetShaderResources(location, 1, &m_TextureShaderResource);
+
+		context->boundTextures[location] = this;
 	}
 };

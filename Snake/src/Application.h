@@ -1,20 +1,20 @@
 #pragma once
 
-#include "RenderSystem.h"
+#include "Systems/RenderSystem.h"
 #include "Components.h"
 #include <chrono>
 //#include "Interface/MainInterface.h"
-#include "Model/Import/GltfImporter.h"
 #include "Model/Model.h"
-#include "ScriptSystem.h"
+#include "Systems/ScriptSystem.h"
 #include "Saver.h"
 #include "Loader.h"
 #include "Physics/PhysicsSystem.h"
-#include "CameraSystem.h"
-#include "PlayerSystem.h"
-#include "Storage.h"
-#include "TextureLoader.h"
-#include "ModelLoader.h"
+#include "Systems/CameraSystem.h"
+#include "Systems/PlayerSystem.h"
+#include "Import/TextureLoader.h"
+#include "Import/ModelLoader.h"
+#include "Registry.h"
+#include <Windows.h>
 
 class Application {
 private:
@@ -33,12 +33,14 @@ private:
 
 	TextureLoader textureLoader;
     ModelLoader modelLoader;
+	Registry applicationRegistry;
 public:
     ~Application() {
 
     }
 
 	void init() {
+		applicationRegistry.startUp();
 		textureLoader.startUp();
 		modelLoader.startUp();
 
@@ -80,6 +82,13 @@ public:
 			std::shared_ptr<btCollisionShape> shape = std::make_shared<btStaticPlaneShape>(btVector3(0, 1, 0), 0);
 			physicsSystem->createPhysicsBody(entity, shape, 0.0f, glm::vec3(0.0, -0.63f, 0.0f), false);
 		}
+
+		//Save runtime directory	
+		char buffer[1000];
+		GetModuleFileName(NULL, buffer, 1000);
+		std::string::size_type pos = std::string(buffer).find_last_of("\\/");
+		applicationRegistry.set("runtime_dir", std::string(buffer).substr(0, pos));
+		applicationRegistry.set("assets_dir", applicationRegistry.get("runtime_dir"));
 	}
 
 	void run() {
@@ -95,7 +104,7 @@ public:
             cameraSystem->update(dt);
 			playerSystem->update(dt);
 
-			
+			renderer->swapBuffers();
 
             InputManager::instance()->mouseMoveX = 0.0;
             InputManager::instance()->mouseMoveY = 0.0;

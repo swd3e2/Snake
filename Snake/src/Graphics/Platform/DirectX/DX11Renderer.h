@@ -15,6 +15,8 @@ private:
 	DX11Window* window;
 	D3D11_VIEWPORT vp;
 	ID3D11RasterizerState* m_RasterizerState;
+	ID3D11RenderTargetView* nullRenderTargets[4] = { NULL };
+	ID3D11ShaderResourceView* const nullShaderResourceView[1] = { NULL };
 public:
 	DX11Renderer() {
 		_rendererType = RendererType::DirectX;
@@ -101,10 +103,11 @@ public:
 
 		D3D11_RASTERIZER_DESC rasterizerDesc { };
 		rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
-		rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
+		rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
+		rasterizerDesc.FrontCounterClockwise = true;
 		device->CreateRasterizerState(&rasterizerDesc, &m_RasterizerState);
 
-		//deviceContext->RSSetState(m_RasterizerState);
+		deviceContext->RSSetState(m_RasterizerState);
 
 		return window;
 	}
@@ -120,5 +123,16 @@ public:
 
 	virtual void draw(int cnt) override {
 		deviceContext->Draw(cnt, 0);
+	}
+
+	virtual void setViewport(int x0, int y0, int x1, int y1) override {
+		vp.Width = (float)x1;
+		vp.Height = (float)y1;
+		vp.TopLeftX = x0;
+		vp.TopLeftY = y0;
+	}
+
+	virtual void unbindResource(int slot) override {
+		deviceContext->PSSetShaderResources(slot, 1, nullShaderResourceView);
 	}
 };

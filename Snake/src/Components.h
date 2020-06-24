@@ -5,6 +5,8 @@
 #include <string>
 #include "Model/Model.h"
 #include <btBulletDynamicsCommon.h>
+#include <glm/gtx/quaternion.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 struct Transform {
 	glm::vec3 translation;

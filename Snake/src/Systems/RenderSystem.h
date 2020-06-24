@@ -13,16 +13,19 @@
 #include <entt/entt.hpp>
 #include "Components.h"
 #include "Graphics/vertex.h"
-#include "Camera.h"
+#include "Graphics/Camera.h"
 #include "Model/Model.h"
 #include <queue>
 #include "FileSystem/File.h"
 #include "Graphics/RenderGraph/RenderGraph.h"
 #include "Graphics/Renderer/RenderTarget.h"
-#include "Import/RawTexture.h"
+#include "Import/Texture/RawTexture.h"
 #include "Graphics/RenderGraph/FullscreenPass.h"
 #include "Graphics/Renderer/Sampler.h"
 #include "Physics/PhysicsSystem.h"
+#include <glm/glm.hpp>
+#include <glm/gtx/quaternion.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 class RenderSystem {
 private:
@@ -95,14 +98,10 @@ public:
         if (0) {
 			temp(registry, physics);
         }
+		this->registry = registry;
 		renderer = Renderer::instance();
 		context = renderer->getContext();
 		mainRenderTarget = std::shared_ptr<MainRenderTarget>(renderer->getMainRenderTarget());
-
-		File fileVS("shaders/dx/default/vertex.hlsl");
-		File filePS("shaders/dx/default/pixel.hlsl");
-
-		shaders["default"] = std::shared_ptr<ShaderPipeline>(ShaderPipeline::create(fileVS.getConent(), filePS.getConent()));
 
 		std::vector<vertex> vertexData;
 		vertexData.push_back(vertex(1.0f, 1.0f, 0.1f, 1.0f, 1.0f));
@@ -138,27 +137,34 @@ public:
 
 		std::shared_ptr<RawTexture> texture = std::make_shared<RawTexture>("texture_01.png");
 		texture->import();
-		textures["tex"] = std::shared_ptr<Texture2D>(Texture2D::create(texture->getWidth(), texture->getHeight(), 0, texture->getData(), texture->getChannels() == 4 ? TextureFormat::RGBA8 : TextureFormat::RGB8));
+		textures["tex"] = std::shared_ptr<Texture2D>(Texture2D::create(
+			texture->getWidth(), 
+			texture->getHeight(), 
+			0, 
+			texture->getData(), 
+			TextureFormat::RGBA8,
+			TextureFlags::TF_ShaderResource
+		));
 
 		{
 			SamplerDesc desc;
 			desc.minFilterModel = FilterMode::LINEAR;
 			desc.magFilterMode = FilterMode::LINEAR;
 			desc.mipFilterMode = FilterMode::NONE;
-			desc.addressingMode = AddressingMode::CLAMP;
+			desc.addressingMode = AddressingMode::WRAP;
 			pointSampler.reset(Sampler::create(desc));
 			pointSampler->setSamplerUnit(0);
 			pointSampler->bind(context);
 		}
 		{
-			textures["positions"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA32F));
-			textures["normals"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 1, nullptr, TextureFormat::RGBA32F));
-			textures["diffuse"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 2, nullptr, TextureFormat::RGBA32F));
-			textures["rtt"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA32F));
-			textures["shadowColorTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(1024, 1024, 5, nullptr, TextureFormat::RGBA32F));
-			textures["bluredShadowDepthTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(1024, 1024, 5, nullptr, TextureFormat::RG32F));
-			textures["shadowDepthTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(1024, 1024, 5, nullptr, TextureFormat::D24S8));
-			textures["renderTargetDepthTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 3, nullptr, TextureFormat::D32));
+ 			textures["positions"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA32F, TextureFlags::TF_RenderTarget | TextureFlags::TF_ShaderResource));
+			textures["normals"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 1, nullptr, TextureFormat::RGBA32F, TextureFlags::TF_RenderTarget | TextureFlags::TF_ShaderResource));
+			textures["diffuse"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 2, nullptr, TextureFormat::RGBA32F, TextureFlags::TF_RenderTarget | TextureFlags::TF_ShaderResource));
+			textures["rtt"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA32F, TextureFlags::TF_RenderTarget | TextureFlags::TF_ShaderResource));
+			textures["shadowColorTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(1024, 1024, 5, nullptr, TextureFormat::RGBA32F, TextureFlags::TF_RenderTarget | TextureFlags::TF_ShaderResource));
+			textures["bluredShadowDepthTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(1024, 1024, 5, nullptr, TextureFormat::RG32F, TextureFlags::TF_RenderTarget | TextureFlags::TF_ShaderResource));
+			textures["shadowDepthTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(1024, 1024, 5, nullptr, TextureFormat::D24S8, TextureFlags::TF_DepthBuffer | TextureFlags::TF_ShaderResource));
+			textures["renderTargetDepthTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 3, nullptr, TextureFormat::D32, TextureFlags::TF_DepthBuffer | TextureFlags::TF_ShaderResource));
 		}
 		// Render targets
 		{
@@ -187,145 +193,164 @@ public:
 				renderTargets["blur"] = renderTarget;
 			}
 		}
+		// Shaders
+		{
+			createShaderFromFolder("shaders/dx/default", "default");
+			createShaderFromFolder("shaders/dx/gbuffer", "gbuffer");
+			createShaderFromFolder("shaders/dx/shadow", "shadow");
+			createShaderFromFolder("shaders/dx/light", "light");
+			createShaderFromFolder("shaders/dx/blur", "blur");
+			createShaderFromFolder("shaders/dx/physdebug", "physdebug");
+		}
+		// Render passess
+		renderGraph = std::make_unique<RenderGraph>(renderer);
+		{
+			gbufferPass.reset(new Pass("GBufferPass"));
+			gbufferPass->setRenderTarget(renderTargets["gBuffer"]);
+			gbufferPass->setShader(shaders["gbuffer"]);
+			gbufferPass->setTexture(0, textures["tex"]);
+			renderGraph->addPass(gbufferPass);
+		}
+		{
+			shadowPass.reset(new Pass("ShadowPass"));
+			shadowPass->setRenderTarget(renderTargets["shadow"]);
+			shadowPass->setShader(shaders["shadow"]);
+			renderGraph->addPass(shadowPass);
+		}
+		{
+			blurPass.reset(new FullscreenPass("GaussianBlurPass"));
+			blurPass->setRenderTarget(renderTargets["blur"]);
+			blurPass->setShader(shaders["blur"]);
+			blurPass->setTexture(0, textures["shadowColorTexture"]);
+			renderGraph->addPass(blurPass);
+		}
+		{
+			lightGBufferPass.reset(new FullscreenPass("LightPass"));
+			lightGBufferPass->setRenderTarget(renderTargets["light"]);
+
+			lightGBufferPass->setShader(shaders["light"]);
+			lightGBufferPass->setTexture(0, textures["positions"]);
+			lightGBufferPass->setTexture(1, textures["normals"]);
+			lightGBufferPass->setTexture(2, textures["diffuse"]);
+			lightGBufferPass->setTexture(3, textures["bluredShadowDepthTexture"]);
+			lightGBufferPass->setTexture(4, textures["renderTargetDepthTexture"]);
+			renderGraph->addPass(lightGBufferPass);
+		}
+		{
+			testRenderPass.reset(new FullscreenPass("MainPass"));
+			testRenderPass->setRenderTarget(mainRenderTarget);
+			testRenderPass->setShader(shaders["default"]);
+			testRenderPass->setTexture(2, textures["diffuse"]);
+			renderGraph->addPass(testRenderPass);
+		}
 	}
 
 	void update(double dt) {
+        for (auto& it : renderTargets) {
+            it.second->clear(context);
+        }
 		mainRenderTarget->clear(context);
-		renderTargets["shadow"]->clear(context);
-
-		shaders["default"]->bind(context);
-
 		shaderInputLayout->bind(context);
-		vertexBuffer->bind(context);
-		indexBuffer->bind(context);
+		//shaderInputLayout->bind();
 
-		textures["tex"]->bindToUnit(0, context);
+        //lightCamera.m_Position.x = sin(glfwGetTime()) * 3.0f;
+        //lightCamera.m_Position.z = cos(glfwGetTime()) * 2.0f;
+        //lightCamera.m_Position.y = 3.0 + cos(glfwGetTime()) * 1.0f;
 
-		//projectionData.projection = glm::transpose(camera.getPerspectiveMatrix() * glm::translate(glm::mat4(1.0f), glm::vec3(camera.m_Position)));
- 		projectionData.projection = glm::transpose(camera.getPerspectiveMatrix() * camera.getViewMatrix());
-		shaderBuffer->update(&projectionData);
-		shaderBuffer->bind(context);
+        glm::mat4 lightProjection, lightView;
+        glm::mat4 lightSpaceMatrix;
+        float near_plane = -20.0f, far_plane = 20.0f;
+        lightProjection = lightCamera.getPerspectiveMatrix();
+        lightView = glm::lookAt(glm::vec3(lightCamera.m_Position), glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
+        lightSpaceMatrix = glm::transpose(lightProjection * lightView);
 
-		renderTargets["shadow"]->bind(context);
-		renderer->drawIndexed(6);
+        if (!useDebugCamera) {
+			registry->view<CameraComponent, PlayerComponent>().each([&](CameraComponent& camera, PlayerComponent& player) {
+				projectionData.projection = glm::transpose(camera.projectionMatrix * camera.viewMatrix);
+			});
+        } else {
+			projectionData.projection = glm::transpose(camera.getPerspectiveMatrix() * camera.getViewMatrix());
+        }
+        
+		projectionData.shadowProjection = lightSpaceMatrix;
+        projectionData.viewPos = camera.m_Position;
+        projectionData.shadowCameraPos = lightCamera.m_Position;
+        //glm::transpose(lightCamera.getPerspectiveMatrix() * lightCamera.getViewMatrix());
+		
+        gbufferPass->addCommand(std::bind([&](mvp projectionData) {
+            shaderBuffer->update(&projectionData);
+            shaderBuffer->bind(context);
+        }, projectionData));
+        
+		projectionData.projection = lightSpaceMatrix;
+        shadowPass->addCommand(std::bind([&](mvp projectionData) {
+            shaderBuffer->update(&projectionData);
+            shaderBuffer->bind(context);
+        }, projectionData));
 
-		mainRenderTarget->bind(context);
-		textures["shadowColorTexture"]->bindToUnit(0, context);
+        shadowPass->addCommand([]() {
+			Renderer::instance()->setViewport(0, 0, 1024, 1024);
+        });
 
-		renderer->drawIndexed(6);
-		renderer->swapBuffers();
+        lightGBufferPass->addCommand([&]() {
+			Renderer::instance()->setViewport(0, 0, 1920, 1080);
+        });
+
+        registry->view<Transform, Render>().each([&](Transform& transform, Render& render) {
+			modelData.toWorld = glm::mat4(1.0f);
+			modelData.toWorld = glm::translate(modelData.toWorld, transform.translation);
+			//modelData.toWorld = modelData.toWorld * glm::eulerAngleXYZ(transform.rotation.x, transform.rotation.y, transform.rotation.z);
+			modelData.toWorld = modelData.toWorld * glm::toMat4(transform.rotationq);
+			modelData.toWorld = glm::transpose(glm::scale(modelData.toWorld, transform.scale));
+			//modelData.toWorld = glm::transpose(transform.matrix);
+			modelData.inverseToWorld = glm::inverse(modelData.toWorld);
+
+			std::function<void()> command = std::bind([](ModelData modelData, ConstantBuffer* buffer) {
+				Renderer* tempRenderer = Renderer::instance();
+
+				buffer->update(&modelData);
+				buffer->bind(tempRenderer->getContext());
+				}, modelData, modelShaderBuffer.get());
+
+			gbufferPass->addCommand(command);
+			shadowPass->addCommand(command);
+
+			this->updateTransform(render.model->getRootNode(), render.model.get(), glm::mat4(1.0f));
+
+			for (auto& node : render.model->getNodes()) {
+				if (node->mesh == -1) continue;
+
+				std::function<void()> command = std::bind([](Model::Node* node, Model* model, ConstantBuffer* buffer) {
+					Renderer* tempRenderer = Renderer::instance();
+					const std::vector<std::shared_ptr<Model::SubMesh>>& submeshes = model->getSubMeshes();
+					const std::shared_ptr<Model::SubMesh>& submesh = submeshes[node->mesh];
+
+					MeshData meshData;
+					meshData.transform = glm::transpose(node->transform.worldTransform);
+					meshData.normalTransform = glm::transpose(node->transform.normalTransform);
+
+					buffer->update(&meshData);
+					buffer->bind(tempRenderer->getContext());
+
+					submesh->vBuffer->bind(tempRenderer->getContext());
+					submesh->iBuffer->bind(tempRenderer->getContext());
+
+					tempRenderer->drawIndexed(submesh->iBuffer->getSize());
+				}, node.get(), render.model.get(), meshShaderBuffer.get());
+
+				gbufferPass->addCommand(command);
+				shadowPass->addCommand(command);
+			}
+        });
+        
+        gbufferPass->addCommand(std::bind([&](PhysicsSystem* physicsSystem, std::shared_ptr<ShaderPipeline>& shader) {
+            //shader->bind(Renderer::instance()->getContext());
+            //physicsSystem->dynamicsWorld->debugDrawWorld();
+		}, physicsSystem, shaders["physdebug"]));
+
+        renderGraph->execute();
 
 		updateCamera();
-
-  //      for (auto& it : renderTargets) {
-  //          it.second->clear(context);
-  //      }
-		//shaderInputLayout->bind(context);
-		////shaderInputLayout->bind();
-
-  //      //lightCamera.m_Position.x = sin(glfwGetTime()) * 3.0f;
-  //      //lightCamera.m_Position.z = cos(glfwGetTime()) * 2.0f;
-  //      //lightCamera.m_Position.y = 3.0 + cos(glfwGetTime()) * 1.0f;
-
-  //      glm::mat4 lightProjection, lightView;
-  //      glm::mat4 lightSpaceMatrix;
-  //      float near_plane = -20.0f, far_plane = 20.0f;
-  //      lightProjection = lightCamera.getPerspectiveMatrix();
-  //      lightView = glm::lookAt(glm::vec3(lightCamera.m_Position), glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
-  //      lightSpaceMatrix = glm::transpose(lightProjection * lightView);
-
-  //      if (!useDebugCamera) {
-		//	registry->view<CameraComponent, PlayerComponent>().each([&](CameraComponent& camera, PlayerComponent& player) {
-		//		projectionData.projection = glm::transpose(camera.projectionMatrix * camera.viewMatrix);
-		//	});
-  //      } else {
-		//	projectionData.projection = glm::transpose(camera.getPerspectiveMatrix() * camera.getViewMatrix());
-  //      }
-  //      
-		//projectionData.shadowProjection = lightSpaceMatrix;
-  //      projectionData.viewPos = camera.m_Position;
-  //      projectionData.shadowCameraPos = lightCamera.m_Position;
-  //      //glm::transpose(lightCamera.getPerspectiveMatrix() * lightCamera.getViewMatrix());
-		//
-  //      gbufferPass->addCommand(std::bind([&](mvp projectionData) {
-  //          shaderBuffer->update(&projectionData);
-  //          shaderBuffer->bind(context);
-  //      }, projectionData));
-  //      
-		//projectionData.projection = lightSpaceMatrix;
-  //      shadowPass->addCommand(std::bind([&](mvp projectionData) {
-  //          shaderBuffer->update(&projectionData);
-  //          shaderBuffer->bind(context);
-  //      }, projectionData));
-
-  //      shadowPass->addCommand([]() {
-  //          //glCullFace(GL_FRONT);
-  //          //glViewport(0, 0, 1024, 1024);
-  //      });
-
-  //      blurPass->addCommand([]() {
-		//	//glCullFace(GL_BACK);
-		//});
-
-  //      lightGBufferPass->addCommand([&]() {
-  //          //glViewport(0, 0, 1920, 1080);
-  //      });
-
-  //      registry->view<Transform, Render>().each([&](Transform& transform, Render& render) {
-		//	modelData.toWorld = glm::mat4(1.0f);
-		//	modelData.toWorld = glm::translate(modelData.toWorld, transform.translation);
-		//	//modelData.toWorld = modelData.toWorld * glm::eulerAngleXYZ(transform.rotation.x, transform.rotation.y, transform.rotation.z);
-		//	modelData.toWorld = modelData.toWorld * glm::toMat4(transform.rotationq);
-		//	modelData.toWorld = glm::transpose(glm::scale(modelData.toWorld, transform.scale));
-		//	//modelData.toWorld = glm::transpose(transform.matrix);
-		//	modelData.inverseToWorld = glm::inverse(modelData.toWorld);
-
-		//	std::function<void()> command = std::bind([](ModelData modelData, ConstantBuffer* buffer) {
-		//		Renderer* tempRenderer = Renderer::instance();
-
-		//		buffer->update(&modelData);
-		//		buffer->bind(tempRenderer->getContext());
-		//		}, modelData, modelShaderBuffer.get());
-
-		//	gbufferPass->addCommand(command);
-		//	shadowPass->addCommand(command);
-
-		//	this->updateTransform(render.model->getRootNode(), render.model.get(), glm::mat4(1.0f));
-
-		//	for (auto& node : render.model->getNodes()) {
-		//		if (node->mesh == -1) continue;
-
-		//		std::function<void()> command = std::bind([](Model::Node* node, Model* model, ConstantBuffer* buffer) {
-		//			Renderer* tempRenderer = Renderer::instance();
-		//			const std::vector<std::shared_ptr<Model::SubMesh>>& submeshes = model->getSubMeshes();
-		//			const std::shared_ptr<Model::SubMesh>& submesh = submeshes[node->mesh];
-
-		//			MeshData meshData;
-		//			meshData.transform = glm::transpose(node->transform.worldTransform);
-		//			meshData.normalTransform = glm::transpose(node->transform.normalTransform);
-
-		//			buffer->update(&meshData);
-		//			buffer->bind(tempRenderer->getContext());
-
-		//			submesh->vBuffer->bind(tempRenderer->getContext());
-		//			submesh->iBuffer->bind(tempRenderer->getContext());
-
-		//			tempRenderer->drawIndexed(submesh->iBuffer->getSize());
-		//		}, node.get(), render.model.get(), meshShaderBuffer.get());
-
-		//		gbufferPass->addCommand(command);
-		//		shadowPass->addCommand(command);
-		//	}
-  //      });
-  //      
-  //      gbufferPass->addCommand(std::bind([&](PhysicsSystem* physicsSystem, std::shared_ptr<ShaderPipeline>& shader) {
-  //          shader->bind(Renderer::instance()->getContext());
-  //          physicsSystem->dynamicsWorld->debugDrawWorld();
-		//}, physicsSystem, shaders["physdebug"]));
-
-  //      renderGraph->execute();
-  //      renderer->bindMainRenderTarget();
-
 	}
 
     void updateCamera() {
@@ -401,8 +426,8 @@ public:
             pixelShaderFilename = "/vertex.glsl";
             geometryShaderFilename = "/geometry.glsl";
         } else {
-			vertexShaderFilename = "/pixel.hlsl";
-			pixelShaderFilename = "/vertex.hlsl";
+			vertexShaderFilename = "/vertex.hlsl";
+			pixelShaderFilename = "/pixel.hlsl";
 			geometryShaderFilename = "/geometry.hlsl";
         }
 
