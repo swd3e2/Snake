@@ -7,8 +7,8 @@ class DX11VertexBuffer : public VertexBuffer {
 private:
 	ID3D11Buffer* m_Buffer;
 public:
-	DX11VertexBuffer(int size, int stride, void* data) :
-		VertexBuffer(size, stride)
+	DX11VertexBuffer(int size, int stride, void* data, bool isDynamic) :
+		VertexBuffer(size, stride, isDynamic)
 	{
 		D3D11_BUFFER_DESC bufferDesc = { 0 };
 		bufferDesc.ByteWidth = stride * size;
@@ -18,10 +18,10 @@ public:
 		bufferDesc.MiscFlags = 0;
 		bufferDesc.StructureByteStride = 0;
 
-		/*if (desc.isDynamic) {
+		if (isDynamic) {
 			bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 			bufferDesc.CPUAccessFlags |= D3D11_CPU_ACCESS_WRITE;
-		}*/
+		}
 
 		D3D11_SUBRESOURCE_DATA bufferData;
 		bufferData.pSysMem = data;
@@ -33,6 +33,21 @@ public:
 		ID3D11DeviceContext* deviceContext = ((DX11RenderContext*)renderer->getContext())->getDeviceContext();
 
 		device->CreateBuffer(&bufferDesc, &bufferData, &m_Buffer);
+	}
+
+	virtual ~DX11VertexBuffer() {
+
+	}
+
+	virtual void update(void* data) override {
+		DX11RenderContext* r = static_cast<DX11RenderContext*>(Renderer::instance()->getContext());
+		ID3D11Device* device = r->getDevice();
+		ID3D11DeviceContext* deviceContext = r->getDeviceContext();
+
+		D3D11_MAPPED_SUBRESOURCE mappedResource;
+		deviceContext->Map(m_Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+		CopyMemory(mappedResource.pData, data, getSize() * getStride());
+		deviceContext->Unmap(m_Buffer, 0);
 	}
 
 	virtual void bind(RenderContext* renderContext) {

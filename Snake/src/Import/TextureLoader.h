@@ -41,7 +41,7 @@ public:
 			importTtexture->getHeight(),
 			0,
 			importTtexture->getData(),
-			importTtexture->getChannels() == 4 ? TextureFormat::RGBA8 : TextureFormat::RGB8,
+			TextureFormat::RGBA8,
 			TextureFlags::TF_ShaderResource
 		));
 

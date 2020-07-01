@@ -45,15 +45,6 @@ enum class CullMode
 	BACK
 };
 
-enum class PrimitiveTopology
-{
-	POINT,
-	LINELIST,
-	LINESTRIP,
-	TRIANGELIST,
-	TRIANGESTRIP,
-};
-
 enum class ComparisonFunction
 {
 	NEVER,
@@ -98,4 +89,12 @@ enum TextureFlags {
 	TF_DepthBuffer = 2,
 	TF_ShaderResource = 4,
 	TF_GenerateMips = 16
+};
+
+enum class PrimitiveTopology {
+	POINT,
+	LINELIST,
+	LINESTRIP,
+	TRIANGELIST,
+	TRIANGESTRIP,
 };

@@ -7,8 +7,12 @@ ModelLoader::ModelLoader() {
 }
 
 std::shared_ptr<Model> ModelLoader::loadFromFile(const std::string filename) {
-	const std::string assetFolder = getAssetFolder();
-	const std::string fullFilePath = assetFolder + "/" + filename;
+	std::string fullFilePath = filename;
+
+	if (!File(fullFilePath)) {
+		const std::string assetFolder = getAssetFolder();
+		fullFilePath = assetFolder + "/" + filename;
+	}
 
 	if (storage.has(fullFilePath)) {
 		return storage.get(fullFilePath);

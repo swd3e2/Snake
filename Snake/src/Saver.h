@@ -31,7 +31,33 @@ public:
             if (registry->has<Script>(entity)) {
                 const Script& script = registry->get<Script>(entity);
                 data["Entities"][cntr]["Script"]["filename"] = script.filename;
-            }
+			}
+			if (registry->has<PlayerComponent>(entity)) {
+				const PlayerComponent& player = registry->get<PlayerComponent>(entity);
+				data["Entities"][cntr]["Player"]["active"] = player.active;
+				data["Entities"][cntr]["Player"]["speed"] = player.speed;
+			}
+			if (registry->has<CameraComponent>(entity)) {
+				const CameraComponent& camera = registry->get<CameraComponent>(entity);
+                std::vector<float> temp;
+                for (int i = 0; i < 4; i++) {
+                    temp.push_back(camera.projectionMatrix[i].x);
+                    temp.push_back(camera.projectionMatrix[i].y);
+                    temp.push_back(camera.projectionMatrix[i].z);
+                    temp.push_back(camera.projectionMatrix[i].w);
+                }
+
+                data["Entities"][cntr]["Camera"]["projection"] = temp;
+
+				for (int i = 0; i < 4; i++) {
+					temp.push_back(camera.viewMatrix[i].x);
+					temp.push_back(camera.viewMatrix[i].y);
+					temp.push_back(camera.viewMatrix[i].z);
+					temp.push_back(camera.viewMatrix[i].w);
+				}
+
+				data["Entities"][cntr]["Camera"]["view"] = temp;
+			}
             cntr++;
 		});
 

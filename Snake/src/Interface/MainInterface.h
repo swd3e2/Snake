@@ -1,20 +1,18 @@
 #pragma once
 
 #include "imgui/imgui.h"
-#include "imgui/imgui_impl_glfw.h"
-#include "imgui/imgui_impl_opengl3.h"
+#include "imgui/imgui_impl_win32.h"
+#include "imgui/imgui_impl_dx11.h"
 #include <entt/entt.hpp>
 #include "../Model/Model.h"
 #include <ImGuizmo.h>
-#include "Camera.h"
-#include "Graphics/Platform/OpenGL/OpenGLRenderTarget.h"
+#include "Graphics/Camera.h"
+#include "Graphics/Platform/DirectX/DX11RenderTarget.h"
 #include "Saver.h"
-#include "Model/Import/GltfImporter.h"
-#include "RenderSystem.h"
+#include "Systems/RenderSystem.h"
 
 class MainInterface {
 private:
-	const char* glsl_version = "#version 130";
 	entt::registry* registry;
 	entt::entity selectedEntity;
 	bool isEntitySelected = false;
@@ -27,20 +25,20 @@ public:
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
 
-		ImGui_ImplGlfw_InitForOpenGL(((OpenGLWindow*)window)->getWindow(), true);
-		ImGui_ImplOpenGL3_Init(glsl_version);
+		ImGui_ImplWin32_Init(static_cast<DX11Window*>(window)->getHwnd());
+		DX11RenderContext* context = static_cast<DX11RenderContext*>(Renderer::instance()->getContext());
+		ImGui_ImplDX11_Init(context->getDevice(), context->getDeviceContext());
 	}
 
 	~MainInterface() {
-		// Cleanup
-		ImGui_ImplOpenGL3_Shutdown();
-		ImGui_ImplGlfw_Shutdown();
+		ImGui_ImplDX11_Shutdown();
+		ImGui_ImplWin32_Shutdown();
 		ImGui::DestroyContext();
 	}
 	
 	void update(double dt) {
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
+		ImGui_ImplDX11_NewFrame();
+		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
 		ImGuizmo::BeginFrame();
 
@@ -65,10 +63,10 @@ public:
 		//ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(((OpenGLRenderTarget*)renderSystem->rt.get())->colorTexturesMap[0])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
 		//ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(((OpenGLRenderTarget*)renderSystem->rt.get())->colorTexturesMap[1])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
 		//ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(((OpenGLRenderTarget*)renderSystem->rt.get())->colorTexturesMap[2])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
-		ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(renderSystem->textures["bluredShadowDepthTexture"])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
-		ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(renderSystem->textures["shadowColorTexture"])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
-		ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(renderSystem->textures["rtt"])->textureId, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
-		ImGui::Image((void*)std::static_pointer_cast<OpenGLTexture2D>(renderSystem->textures["shadowDepthTexture"])->textureId, ImVec2(256, 256), ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::Image((void*)std::static_pointer_cast<DX11Texture2D>(renderSystem->textures["bluredShadowDepthTexture"])->m_TextureShaderResource, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::Image((void*)std::static_pointer_cast<DX11Texture2D>(renderSystem->textures["shadowColorTexture"])->m_TextureShaderResource, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::Image((void*)std::static_pointer_cast<DX11Texture2D>(renderSystem->textures["rtt"])->m_TextureShaderResource, ImVec2(256, 144), ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::Image((void*)std::static_pointer_cast<DX11Texture2D>(renderSystem->textures["shadowDepthTexture"])->m_TextureShaderResource, ImVec2(256, 256), ImVec2(0, 1), ImVec2(1, 0));
 		ImGui::End();
 
 		ImGui::Begin("Entities");
@@ -83,9 +81,6 @@ public:
 				}
 
 				Transform& transform = registry->get<Transform>(selectedEntity);
-				ImGui::DragFloat3("Translation###T", (float*)&transform.translation, 0.01f, -10000.0f, 10000.0f);
-				ImGui::DragFloat3("Scale###S", (float*)&transform.scale, 0.01f, -10000.0f, 10000.0f);
-				ImGui::DragFloat3("Rotation###R", (float*)&transform.rotation, 0.01f, -10000.0f, 10000.0f);
 				EditTransform(transform);
 			} else {
 				if (ImGui::Button("Create render component")) {
@@ -100,7 +95,7 @@ public:
 		ImGui::End();
 
 		ImGui::Render();
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 	}
 
 	void drawNodeHierarchy(int nodeId, const std::vector<std::shared_ptr<Model::Node>>& nodes)
@@ -144,13 +139,6 @@ public:
 	void EditTransform(Transform& transform)
 	{
 		static ImGuizmo::OPERATION mCurrentGizmoOperation(ImGuizmo::ROTATE);
-		static ImGuizmo::MODE mCurrentGizmoMode(ImGuizmo::WORLD);
-		if (ImGui::IsKeyPressed(90))
-			mCurrentGizmoOperation = ImGuizmo::TRANSLATE;
-		if (ImGui::IsKeyPressed(69))
-			mCurrentGizmoOperation = ImGuizmo::ROTATE;
-		if (ImGui::IsKeyPressed(82)) // r Key
-			mCurrentGizmoOperation = ImGuizmo::SCALE;
 		if (ImGui::RadioButton("Translate", mCurrentGizmoOperation == ImGuizmo::TRANSLATE))
 			mCurrentGizmoOperation = ImGuizmo::TRANSLATE;
 		ImGui::SameLine();
@@ -159,24 +147,6 @@ public:
 		ImGui::SameLine();
 		if (ImGui::RadioButton("Scale", mCurrentGizmoOperation == ImGuizmo::SCALE))
 			mCurrentGizmoOperation = ImGuizmo::SCALE;
-		float matrixTranslation[3], matrixRotation[3], matrixScale[3];
-
-		ImGui::InputFloat3("Tr", (float*)&transform.translation, 3);
-		ImGui::InputFloat3("Rt", (float*)&transform.rotation, 3);
-		ImGui::InputFloat3("Sc", (float*)&transform.scale, 3);
-
-		if (mCurrentGizmoOperation != ImGuizmo::SCALE) {
-			if (ImGui::RadioButton("Local", mCurrentGizmoMode == ImGuizmo::LOCAL))
-				mCurrentGizmoMode = ImGuizmo::LOCAL;
-			ImGui::SameLine();
-			if (ImGui::RadioButton("World", mCurrentGizmoMode == ImGuizmo::WORLD))
-				mCurrentGizmoMode = ImGuizmo::WORLD;
-		}
-		static bool useSnap(false);
-		if (ImGui::IsKeyPressed(83))
-			useSnap = !useSnap;
-		ImGui::Checkbox("", &useSnap);
-		ImGui::SameLine();
 
 		ImGuiIO& io = ImGui::GetIO();
 		ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
@@ -184,6 +154,27 @@ public:
 		glm::mat4 view = camera->getViewMatrix();
 		glm::mat4 perspective = camera->getPerspectiveMatrix();
 
-		ImGuizmo::Manipulate((float*)&view, (float*)&perspective, mCurrentGizmoOperation, mCurrentGizmoMode, (float*)&transform.matrix, NULL, NULL);
+		ImGuizmo::Manipulate((float*)&view, (float*)&perspective, mCurrentGizmoOperation, ImGuizmo::LOCAL, (float*)&transform.matrix, NULL, NULL);
+
+		float matrixTranslation[3], matrixRotation[3], matrixScale[3];
+		ImGuizmo::DecomposeMatrixToComponents((float*)&transform.matrix, matrixTranslation, matrixRotation, matrixScale);
+
+		transform.translation.x = matrixTranslation[0];
+		transform.translation.y = matrixTranslation[1];
+		transform.translation.z = matrixTranslation[2];
+
+		transform.rotation.x = matrixRotation[0] * 3.14 / 180.0;
+		transform.rotation.y = matrixRotation[1] * 3.14 / 180.0;
+		transform.rotation.z = matrixRotation[2] * 3.14 / 180.0;
+
+		transform.scale.x = matrixScale[0];
+		transform.scale.y = matrixScale[1];
+		transform.scale.z = matrixScale[2];
+
+		ImGui::DragFloat3("Translation###T", (float*)&matrixTranslation, 0.01f, -10000.0f, 10000.0f);
+		ImGui::DragFloat3("Rotation###R", (float*)&matrixRotation, 0.01f, -10000.0f, 10000.0f);
+		ImGui::DragFloat3("Scale###S", (float*)&matrixScale, 0.01f, -10000.0f, 10000.0f);
+
+		ImGuizmo::RecomposeMatrixFromComponents(matrixTranslation, matrixRotation, matrixScale, (float*)&transform.matrix);
 	}
 };

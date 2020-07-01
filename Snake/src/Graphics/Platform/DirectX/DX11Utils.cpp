@@ -164,4 +164,15 @@ namespace DirectX {
 		}
 		return DXGI_FORMAT::DXGI_FORMAT_R24G8_TYPELESS;
 	}
+
+	D3D_PRIMITIVE_TOPOLOGY getTopology(PrimitiveTopology topology) {
+		switch (topology) {
+			case PrimitiveTopology::POINT:			return D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
+			case PrimitiveTopology::LINELIST:		return D3D_PRIMITIVE_TOPOLOGY_LINESTRIP;
+			case PrimitiveTopology::LINESTRIP:		return D3D_PRIMITIVE_TOPOLOGY_LINELIST;
+			case PrimitiveTopology::TRIANGELIST:	return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+			case PrimitiveTopology::TRIANGESTRIP:	return D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+		}
+		return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	}
 }

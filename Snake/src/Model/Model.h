@@ -55,6 +55,7 @@ private:
 public:
 	const std::vector<std::shared_ptr<SubMesh>>& getSubMeshes() const { return submeshes; }
 	const std::vector<std::shared_ptr<Node>>& getNodes() const { return nodes; }
+	const std::vector<std::shared_ptr<Material>>& getMaterials() const { return materials; }
 	const int getRootNode() const { return rootNode; }
 	const std::string getImportFilename() const { return filename; }
 };

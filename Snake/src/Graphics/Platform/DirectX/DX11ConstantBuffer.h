@@ -32,6 +32,7 @@ public:
 	virtual void bind(RenderContext* context) override {
 		ID3D11DeviceContext* deviceContext = ((DX11RenderContext*)context)->getDeviceContext();
 		deviceContext->VSSetConstantBuffers(this->getPosition(), 1, &m_Buffer);
+		deviceContext->PSSetConstantBuffers(this->getPosition(), 1, &m_Buffer);
 	}
 
 	virtual void update(void* data) override {

@@ -1,14 +1,15 @@
 #pragma once
 
+#include <d3d11.h>
 #include "LinearMath/btIDebugDraw.h"
 #include "Graphics/vertex.h"
 #include <vector>
-#include <glad/glad.h>
+#include "Graphics/Platform/DirectX/DX11VertexBuffer.h"
+#include <memory>
 
 class PhysicsDebugDraw : public btIDebugDraw {
 private:
-	GLuint vao;
-	GLuint vbo;
+	std::shared_ptr<VertexBuffer> vertexBuffer;
 public:
 	PhysicsDebugDraw()
 	{
@@ -16,13 +17,7 @@ public:
 		vertices.push_back(vertex(0.0f, 10.0f, 0.0f, 0.0f, 0.0f));
 		vertices.push_back(vertex(0.0f, -10.0f, 0.0f, 0.0f, 1.0f));
 
-		glGenVertexArrays(1, &vao);
-		glBindVertexArray(vao);
-
-		glCreateBuffers(1, &vbo);
-		glNamedBufferStorage(vbo, vertices.size() * sizeof(vertex), vertices.data(), GL_DYNAMIC_STORAGE_BIT);
-
-		glBindVertexArray(0);
+		vertexBuffer.reset(VertexBuffer::create(vertices.size(), sizeof(vertex), vertices.data(), true));
 	}
 
 	virtual ~PhysicsDebugDraw() {};
@@ -36,9 +31,9 @@ public:
 			vertex(from.getX(), from.getY(), from.getZ()),
 			vertex(to.getX(),	to.getY(),	 to.getZ())
 		};
-		glNamedBufferSubData(vbo, 0, 2 * sizeof(vertex), vertices);
-		glBindVertexBuffer(0, vbo, 0, sizeof(vertex));
-		glDrawArrays(GL_LINES, 0, 2);
+		vertexBuffer->update(vertices);
+		vertexBuffer->bind(Renderer::instance()->getContext());
+		Renderer::instance()->draw(2);
 	}
 
 	virtual void drawContactPoint(const btVector3& PointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color) override {}

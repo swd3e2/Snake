@@ -3,7 +3,7 @@
 #include "Systems/RenderSystem.h"
 #include "Components.h"
 #include <chrono>
-//#include "Interface/MainInterface.h"
+#include "Interface/MainInterface.h"
 #include "Model/Model.h"
 #include "Systems/ScriptSystem.h"
 #include "Saver.h"
@@ -19,10 +19,9 @@
 
 class Application {
 private:
-    Window* window;
     entt::registry registry;
 
-    //std::shared_ptr<MainInterface> interface;
+    std::shared_ptr<MainInterface> minterface;
 	std::unique_ptr<RenderSystem> renderSystem;
     std::unique_ptr<ScriptSystem> scriptSystem;
     std::unique_ptr<PhysicsSystem> physicsSystem;
@@ -35,11 +34,8 @@ private:
 	TextureLoader* textureLoader;
     ModelLoader* modelLoader;
 	Configuration* applicationRegistry;
+	Window* window;
 public:
-    ~Application() {
-
-    }
-
 	void init() {
 		applicationRegistry = Singleton<Configuration>::startUp();
 		textureLoader = Singleton<TextureLoader>::startUp();
@@ -63,7 +59,7 @@ public:
 		cameraSystem = std::make_unique<CameraSystem>(&registry);
 		playerSystem = std::make_unique<PlayerSystem>(&registry);
 
-        //interface = std::make_shared<MainInterface>(window, &registry, &renderSystem->camera, renderSystem.get());
+		minterface = std::make_shared<MainInterface>(window, &registry, &renderSystem->camera, renderSystem.get());
 
         Loader loader;
         loader.loadFromFile("test.json", &registry);
@@ -77,16 +73,16 @@ public:
 		std::shared_ptr<btCollisionShape> shape = std::make_shared<btCapsuleShape>(0.3f, 2.6f);
 		physicsSystem->createPhysicsBody(player, shape, 3.0f, glm::vec3(0.0, 20.0f, 0.0f), true);
 
-		/*for (int i = 0; i < 100; i++) {
+		for (int i = 0; i < 1; i++) {
 			entt::entity entity = registry.create();
 			std::shared_ptr<btCollisionShape> shape = std::make_shared<btBoxShape>(btVector3(0.5, 0.5, 0.5));
 			physicsSystem->createPhysicsBody(entity, shape, 1.0f, glm::vec3(0.0, 20.0f + i, 0.0f), true);
 
-			registry.emplace<Transform>(entity);
-			GltfImporter importer;
-			std::shared_ptr<Import::Model> model = importer.import("BoxTextured.gltf");
-			registry.emplace<Render>(entity, std::make_shared<Model>(model));
-		}*/
+			Transform& transform = registry.emplace<Transform>(entity);
+			transform.translation = glm::vec3(0.0, 20.0f + i, 0.0f);
+			transform.matrix = glm::translate(glm::mat4(1.0f), transform.translation);
+			registry.emplace<Render>(entity, ModelLoader::instance()->loadFromFile("BoxTextured.gltf"));
+		}
 		{
 			entt::entity entity = registry.create();
 			std::shared_ptr<btCollisionShape> shape = std::make_shared<btStaticPlaneShape>(btVector3(0, 1, 0), 0);
@@ -101,7 +97,7 @@ public:
             m_Start = std::chrono::high_resolution_clock::now();
 
             renderSystem->update(dt);
-            //interface->update(dt);
+			minterface->update(dt);
             scriptSystem->update();
             physicsSystem->update(dt);
             cameraSystem->update(dt);

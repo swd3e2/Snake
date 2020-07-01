@@ -5,6 +5,7 @@
 #include "DX11Window.h"
 #include "DX11RenderContext.h"
 #include "DX11MainRenderTarget.h"
+#include "DX11Utils.h"
 
 class DX11Renderer : public Renderer {
 private:
@@ -103,7 +104,7 @@ public:
 
 		D3D11_RASTERIZER_DESC rasterizerDesc { };
 		rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
-		rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
+		rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
 		rasterizerDesc.FrontCounterClockwise = true;
 		device->CreateRasterizerState(&rasterizerDesc, &m_RasterizerState);
 
@@ -123,6 +124,10 @@ public:
 
 	virtual void draw(int cnt) override {
 		deviceContext->Draw(cnt, 0);
+	}
+
+	virtual void setPrimitiveTopology(PrimitiveTopology topology) override {
+		deviceContext->IASetPrimitiveTopology(DirectX::getTopology(topology));
 	}
 
 	virtual void setViewport(int x0, int y0, int x1, int y1) override {

@@ -7,6 +7,7 @@
 #include "Bindable.h"
 #include "Renderer/MainRenderTarget.h"
 #include "Window.h"
+#include "Renderer/CommonTypes.h"
 
 class Renderer {
 private:
@@ -40,6 +41,7 @@ public:
 	virtual void setViewport(int x0, int y0, int x1, int y1) = 0;
     virtual void swapBuffers() = 0;
     virtual void unbindResource(int slot) = 0;
+    virtual void setPrimitiveTopology(PrimitiveTopology topology) = 0;
 
     static Renderer* create(RendererType type);
 
