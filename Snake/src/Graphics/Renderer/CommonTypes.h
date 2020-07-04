@@ -1,5 +1,9 @@
 #pragma once
 
+const float M_PI = 3.14159265358979323846f;
+constexpr float HALF_PI = 3.14159265358979323846f / 2.0f;
+constexpr float DEG2RAD = 3.14159265358979323846f / 180.0f;
+
 enum class TextureFormat {
     R8,
     RG8,

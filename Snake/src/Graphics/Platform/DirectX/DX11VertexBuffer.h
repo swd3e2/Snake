@@ -10,7 +10,7 @@ public:
 	DX11VertexBuffer(int size, int stride, void* data, bool isDynamic) :
 		VertexBuffer(size, stride, isDynamic)
 	{
-		D3D11_BUFFER_DESC bufferDesc = { 0 };
+		D3D11_BUFFER_DESC bufferDesc = { };
 		bufferDesc.ByteWidth = stride * size;
 		bufferDesc.Usage = D3D11_USAGE_DEFAULT;
 		bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;

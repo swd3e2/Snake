@@ -5,13 +5,13 @@
 #include "imgui/imgui_impl_dx11.h"
 #include <entt/entt.hpp>
 #include "../Model/Model.h"
-#include <ImGuizmo.h>
+#include "imgui/ImGuizmo.h"
 #include "Graphics/Camera.h"
 #include "Graphics/Platform/DirectX/DX11RenderTarget.h"
 #include "Saver.h"
 #include "Systems/RenderSystem.h"
 
-class MainInterface {
+class ImGuiInterface {
 private:
 	entt::registry* registry;
 	entt::entity selectedEntity;
@@ -19,7 +19,7 @@ private:
 	Camera* camera;
 	RenderSystem* renderSystem;
 public:
-	MainInterface(Window* window, entt::registry* registry, Camera* camera, RenderSystem* renderSystem) :
+	ImGuiInterface(Window* window, entt::registry* registry, Camera* camera, RenderSystem* renderSystem) :
 		registry(registry), camera(camera), renderSystem(renderSystem)
 	{
 		IMGUI_CHECKVERSION();
@@ -30,7 +30,7 @@ public:
 		ImGui_ImplDX11_Init(context->getDevice(), context->getDeviceContext());
 	}
 
-	~MainInterface() {
+	~ImGuiInterface() {
 		ImGui_ImplDX11_Shutdown();
 		ImGui_ImplWin32_Shutdown();
 		ImGui::DestroyContext();
@@ -154,7 +154,13 @@ public:
 		glm::mat4 view = camera->getViewMatrix();
 		glm::mat4 perspective = camera->getPerspectiveMatrix();
 
-		ImGuizmo::Manipulate((float*)&view, (float*)&perspective, mCurrentGizmoOperation, ImGuizmo::LOCAL, (float*)&transform.matrix, NULL, NULL);
+		static float* delta = new float[15];
+		ImGuizmo::Manipulate((float*)&view, (float*)&perspective, mCurrentGizmoOperation, ImGuizmo::LOCAL, (float*)&transform.matrix, delta, NULL);
+		float matrixTranslationDelta[3], matrixRotationDelta[3], matrixScaleDelta[3];
+		ImGuizmo::DecomposeMatrixToComponents(delta, matrixTranslationDelta, matrixRotationDelta, matrixScaleDelta);
+		ImGui::DragFloat3("Translation Delta###TD", (float*)&matrixTranslationDelta, 0.01f, -10000.0f, 10000.0f);
+		ImGui::DragFloat3("Rotation Delta###RD", (float*)&matrixRotationDelta, 0.01f, -10000.0f, 10000.0f);
+		ImGui::DragFloat3("Scale Delta###SD", (float*)&matrixScaleDelta, 0.01f, -10000.0f, 10000.0f);
 
 		float matrixTranslation[3], matrixRotation[3], matrixScale[3];
 		ImGuizmo::DecomposeMatrixToComponents((float*)&transform.matrix, matrixTranslation, matrixRotation, matrixScale);
@@ -163,9 +169,9 @@ public:
 		transform.translation.y = matrixTranslation[1];
 		transform.translation.z = matrixTranslation[2];
 
-		transform.rotation.x = matrixRotation[0] * 3.14 / 180.0;
-		transform.rotation.y = matrixRotation[1] * 3.14 / 180.0;
-		transform.rotation.z = matrixRotation[2] * 3.14 / 180.0;
+		transform.rotation.x = matrixRotation[0];
+		transform.rotation.y = matrixRotation[1];
+		transform.rotation.z = matrixRotation[2];
 
 		transform.scale.x = matrixScale[0];
 		transform.scale.y = matrixScale[1];
@@ -174,6 +180,14 @@ public:
 		ImGui::DragFloat3("Translation###T", (float*)&matrixTranslation, 0.01f, -10000.0f, 10000.0f);
 		ImGui::DragFloat3("Rotation###R", (float*)&matrixRotation, 0.01f, -10000.0f, 10000.0f);
 		ImGui::DragFloat3("Scale###S", (float*)&matrixScale, 0.01f, -10000.0f, 10000.0f);
+
+		/*btTransform transform;
+		transform.setIdentity();
+
+		transform.setOrigin(btVector3(position.x, position.y, position.z));
+		transform.setRotation(body->getWorldTransform().getRotation());
+		body->setWorldTransform(transform);
+		body->activate(true);*/
 
 		ImGuizmo::RecomposeMatrixFromComponents(matrixTranslation, matrixRotation, matrixScale, (float*)&transform.matrix);
 	}

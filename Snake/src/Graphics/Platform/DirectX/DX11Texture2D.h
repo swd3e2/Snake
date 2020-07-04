@@ -17,7 +17,7 @@ public:
 		ID3D11Device* device = ((DX11RenderContext*)renderer->getContext())->getDevice();
 		ID3D11DeviceContext* deviceContext = ((DX11RenderContext*)renderer->getContext())->getDeviceContext();
 
-		D3D11_TEXTURE2D_DESC textureDesc = {0};
+		D3D11_TEXTURE2D_DESC textureDesc = { };
 		textureDesc.Height = height;
 		textureDesc.Width = width;
 		textureDesc.MipLevels = numMips + 1;

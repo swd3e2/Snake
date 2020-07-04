@@ -52,6 +52,7 @@ private:
         glm::mat4 transform;
         glm::mat4 normalTransform;
         MaterialData materialData;
+		int selected = 0;
     };
 public:
     mvp projectionData;
@@ -164,6 +165,7 @@ public:
 			textures["bluredShadowDepthTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(1024, 1024, 5, nullptr, TextureFormat::RG32F, TextureFlags::TF_RenderTarget | TextureFlags::TF_ShaderResource));
 			textures["shadowDepthTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(1024, 1024, 5, nullptr, TextureFormat::D24S8, TextureFlags::TF_DepthBuffer | TextureFlags::TF_ShaderResource));
 			textures["renderTargetDepthTexture"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 3, nullptr, TextureFormat::D32, TextureFlags::TF_DepthBuffer | TextureFlags::TF_ShaderResource));
+			textures["selection"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA8, TextureFlags::TF_RenderTarget | TextureFlags::TF_ShaderResource));
 		}
 		// Render targets
 		{
@@ -190,6 +192,12 @@ public:
 				std::shared_ptr<RenderTarget> renderTarget = std::shared_ptr<RenderTarget>(RenderTarget::create());
 				renderTarget->setColorTexture(textures["bluredShadowDepthTexture"], 0);
 				renderTargets["blur"] = renderTarget;
+			}
+			// Selection render target
+			{
+				std::shared_ptr<RenderTarget> renderTarget = std::shared_ptr<RenderTarget>(RenderTarget::create());
+				renderTarget->setColorTexture(textures["selection"], 0);
+				renderTargets["selection"] = renderTarget;
 			}
 		}
 		// Shaders
@@ -376,15 +384,15 @@ public:
         }
 
         if (InputManager::instance()->instance()->isKeyPressed(87)) {
-            camera.m_Position -= camera.forwardVec * 0.002f;
+            camera.m_Position -= camera.forwardVec * 0.004f;
         } else if (InputManager::instance()->instance()->isKeyPressed(83)) {
-            camera.m_Position += camera.forwardVec * 0.002f;
+            camera.m_Position += camera.forwardVec * 0.004f;
         }
 
         if (InputManager::instance()->instance()->isKeyPressed(65)) {
-            camera.m_Position -= camera.rightVec * 0.002f;
+            camera.m_Position -= camera.rightVec * 0.004f;
         } else if (InputManager::instance()->instance()->isKeyPressed(68)) {
-            camera.m_Position += camera.rightVec * 0.002f;
+            camera.m_Position += camera.rightVec * 0.004f;
         }
 		
         camera.update();

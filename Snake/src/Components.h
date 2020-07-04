@@ -18,6 +18,7 @@ struct Transform {
 
 struct Render {
 	std::shared_ptr<Model> model;
+	bool selected = false;
 };
 
 struct Script {

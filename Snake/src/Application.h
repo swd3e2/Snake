@@ -3,7 +3,7 @@
 #include "Systems/RenderSystem.h"
 #include "Components.h"
 #include <chrono>
-#include "Interface/MainInterface.h"
+#include "Interface/ImGuiInterface.h"
 #include "Model/Model.h"
 #include "Systems/ScriptSystem.h"
 #include "Saver.h"
@@ -21,7 +21,7 @@ class Application {
 private:
     entt::registry registry;
 
-    std::shared_ptr<MainInterface> minterface;
+    std::shared_ptr<ImGuiInterface> minterface;
 	std::unique_ptr<RenderSystem> renderSystem;
     std::unique_ptr<ScriptSystem> scriptSystem;
     std::unique_ptr<PhysicsSystem> physicsSystem;
@@ -59,12 +59,12 @@ public:
 		cameraSystem = std::make_unique<CameraSystem>(&registry);
 		playerSystem = std::make_unique<PlayerSystem>(&registry);
 
-		minterface = std::make_shared<MainInterface>(window, &registry, &renderSystem->camera, renderSystem.get());
+		minterface = std::make_shared<ImGuiInterface>(window, &registry, &renderSystem->camera, renderSystem.get());
 
         Loader loader;
         loader.loadFromFile("test.json", &registry);
 
-        entt::entity player = registry.create();
+       /* entt::entity player = registry.create();
         CameraComponent& component = registry.emplace<CameraComponent>(player);
         component.projectionMatrix = glm::perspective(glm::radians(90.0f), 1920.0f / 1080.0f, 0.01f, 200.0f);
 		registry.emplace<PlayerComponent>(player);
@@ -73,8 +73,9 @@ public:
 		std::shared_ptr<btCollisionShape> shape = std::make_shared<btCapsuleShape>(0.3f, 2.6f);
 		physicsSystem->createPhysicsBody(player, shape, 3.0f, glm::vec3(0.0, 20.0f, 0.0f), true);
 
+		entt::entity entity;
 		for (int i = 0; i < 1; i++) {
-			entt::entity entity = registry.create();
+			entity = registry.create();
 			std::shared_ptr<btCollisionShape> shape = std::make_shared<btBoxShape>(btVector3(0.5, 0.5, 0.5));
 			physicsSystem->createPhysicsBody(entity, shape, 1.0f, glm::vec3(0.0, 20.0f + i, 0.0f), true);
 
@@ -83,11 +84,14 @@ public:
 			transform.matrix = glm::translate(glm::mat4(1.0f), transform.translation);
 			registry.emplace<Render>(entity, ModelLoader::instance()->loadFromFile("BoxTextured.gltf"));
 		}
-		{
-			entt::entity entity = registry.create();
-			std::shared_ptr<btCollisionShape> shape = std::make_shared<btStaticPlaneShape>(btVector3(0, 1, 0), 0);
-			physicsSystem->createPhysicsBody(entity, shape, 0.0f, glm::vec3(0.0, -0.63f, 0.0f), false);
-		}
+
+		entt::entity floor = registry.create();
+		std::shared_ptr<btCollisionShape> floorShape = std::make_shared<btStaticPlaneShape>(btVector3(0, 1, 0), 0);
+		Physics& physicsComponent = physicsSystem->createPhysicsBody(floor, floorShape, 0.0f, glm::vec3(0.0f, -0.63f, 0.0f), false);
+
+		Physics& ph = registry.get<Physics>(entity);
+		MyContactResultCallback callback;
+		physicsSystem->dynamicsWorld->contactPairTest(ph.body.get(), physicsComponent.body.get(), callback);*/
 	}
 
 	void run() {

@@ -12,19 +12,23 @@
 
 class Pass {
 protected:
-    std::queue<std::function<void()>> commands;
     std::string name;
+    std::queue<std::function<void()>> commands;
     std::shared_ptr<RenderTarget> renderTarget;
 public:
-    std::string source;
-    std::string sink;
-    std::vector<std::shared_ptr<Bindable>> bindables;
+    // List of entities to render
+	std::queue<entt::entity> entities;
+
+    Viewport viewport;
+
+	std::vector<std::shared_ptr<Bindable>> bindables;
     std::unordered_map<int, std::shared_ptr<Texture2D>> textures;
     std::shared_ptr<ShaderPipeline> shader;
 public:
     Pass(const std::string& name) : name(name) {}
 
     virtual void execute(Renderer* renderer) {
+        renderer->setViewport(viewport);
         renderTarget->bind(renderer->getContext());
 
         for (auto& it : bindables) {
@@ -41,11 +45,12 @@ public:
             std::function<void()> command = commands.front();
             commands.pop();
             command();
-        }
+		}
     }
     
 	void setRenderTarget(const std::shared_ptr<RenderTarget>& renderTarget) {
 		this->renderTarget = renderTarget;
+         viewport = { 0, 0, renderTarget->getWidth(), renderTarget->getHeight() };
 	}
 
     void setTexture(int slot, const std::shared_ptr<Texture2D>& texture) {
@@ -58,5 +63,9 @@ public:
 
     virtual void addCommand(std::function<void()> command) {
         commands.push(command);
-    }
+	}
+
+	virtual void addEntity(entt::entity entity) {
+		entities.push(entity);
+	}
 };

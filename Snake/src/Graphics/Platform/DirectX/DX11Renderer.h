@@ -7,6 +7,9 @@
 #include "DX11MainRenderTarget.h"
 #include "DX11Utils.h"
 
+/**
+ * DirectX renderer implementation
+ */
 class DX11Renderer : public Renderer {
 private:
 	ID3D11Device* device;
@@ -32,10 +35,10 @@ public:
 		vp.TopLeftY = 0;
 
 		window = new DX11Window(width, height);
-		DX11MainRenderTarget* mainRenderTarget = new DX11MainRenderTarget();
+		DX11MainRenderTarget* mainRenderTarget = new DX11MainRenderTarget(width, height);
 		_mainRenderTarget = mainRenderTarget;
 
-		DXGI_SWAP_CHAIN_DESC swapChainDesc = { 0 };
+		DXGI_SWAP_CHAIN_DESC swapChainDesc = { };
 		swapChainDesc.BufferCount = 2;
 		swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 		swapChainDesc.BufferDesc.Height = height;
@@ -114,7 +117,6 @@ public:
 	}
 	
 	virtual void swapBuffers() override {
-		
 		swapChain->Present(false, 0);
 	}
 
@@ -135,6 +137,17 @@ public:
 		vp.Height = (float)y1;
 		vp.TopLeftX = x0;
 		vp.TopLeftY = y0;
+
+		deviceContext->RSSetViewports(1, &vp);
+	}
+
+	virtual void setViewport(const Viewport& viewport) override {
+		vp.Width = (float)viewport.x1;
+		vp.Height = (float)viewport.y1;
+		vp.TopLeftX = viewport.x0;
+		vp.TopLeftY = viewport.y0;
+
+		deviceContext->RSSetViewports(1, &vp);
 	}
 
 	virtual void unbindResource(int slot) override {

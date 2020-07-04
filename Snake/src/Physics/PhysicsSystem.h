@@ -2,6 +2,22 @@
 
 #include <btBulletDynamicsCommon.h>
 #include "Graphics/Physics/PhysicsDebugDraw.h"
+#include <BulletCollision\CollisionDispatch\btCollisionWorld.h>
+
+struct MyContactResultCallback : public btCollisionWorld::ContactResultCallback
+{
+	btScalar addSingleResult(btManifoldPoint& cp,
+		const btCollisionObjectWrapper* colObj0Wrap,
+		int partId0,
+		int index0,
+		const btCollisionObjectWrapper* colObj1Wrap,
+		int partId1,
+		int index1)
+	{
+		std::cout << 123 << std::endl;
+		return 1;
+	}
+};
 
 class PhysicsSystem {
 private:
@@ -29,7 +45,7 @@ public:
 		dynamicsWorld->setDebugDrawer(new PhysicsDebugDraw());
 	}
 
-	void createPhysicsBody(const entt::entity& entity, std::shared_ptr<btCollisionShape> shape, float mass = 0.0f, glm::vec3 originalPos = glm::vec3(0.0), bool isDynamic = false) {
+	Physics& createPhysicsBody(const entt::entity& entity, std::shared_ptr<btCollisionShape> shape, float mass = 0.0f, glm::vec3 originalPos = glm::vec3(0.0), bool isDynamic = false) {
 		btTransform startTransform;
 		startTransform.setIdentity();
 
@@ -47,10 +63,32 @@ public:
 
 		Physics& physicsComponent = registry->emplace<Physics>(entity, shape, myMotionState, body);
 		physicsComponent.isDynamic = isDynamic;
+		return physicsComponent;
 	}
 
 	void update(double dt) {
 		dynamicsWorld->stepSimulation(dt / 1000.0);
+
+		int numManifolds = dynamicsWorld->getDispatcher()->getNumManifolds();
+		for (int i = 0; i < numManifolds; i++) {
+			btPersistentManifold* contactManifold = dynamicsWorld->getDispatcher()->getManifoldByIndexInternal(i);
+			const btCollisionObject* obA = contactManifold->getBody0();
+			const btCollisionObject* obB = contactManifold->getBody1();
+
+			int numContacts = contactManifold->getNumContacts();
+			for (int j = 0; j < numContacts; j++) {
+				btManifoldPoint& pt = contactManifold->getContactPoint(j);
+				if (pt.getDistance() < 0.f) {
+					const btVector3& ptA = pt.getPositionWorldOnA();
+					const btVector3& ptB = pt.getPositionWorldOnB();
+					const btVector3& normalOnB = pt.m_normalWorldOnB;
+					//printf("collision\n");
+					bool x = (ContactProcessedCallback)(pt, obA, obB);
+					if (x)
+						printf("collision\n");
+				}
+			}
+		}
 
 		registry->view<Transform, Physics>().each([&](Transform& transform, Physics& physics) {
 			if (physics.body == nullptr) return;

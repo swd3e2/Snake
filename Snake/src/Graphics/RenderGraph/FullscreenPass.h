@@ -6,6 +6,10 @@
 #include "Graphics/vertex.h"
 #include <vector>
 
+/**
+ * Class for post processing effects.
+ * It renders a single quad.
+ */
 class FullscreenPass : public Pass {
 private:
     std::shared_ptr<VertexBuffer> quadVertexBuffer;

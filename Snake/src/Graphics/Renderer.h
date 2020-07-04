@@ -8,6 +8,7 @@
 #include "Renderer/MainRenderTarget.h"
 #include "Window.h"
 #include "Renderer/CommonTypes.h"
+#include "Viewport.h"
 
 class Renderer {
 private:
@@ -39,6 +40,7 @@ public:
 
 	virtual Window* createWindow(int width, int height) = 0;
 	virtual void setViewport(int x0, int y0, int x1, int y1) = 0;
+	virtual void setViewport(const Viewport& viewport) = 0;
     virtual void swapBuffers() = 0;
     virtual void unbindResource(int slot) = 0;
     virtual void setPrimitiveTopology(PrimitiveTopology topology) = 0;

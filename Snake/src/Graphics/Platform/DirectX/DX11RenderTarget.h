@@ -11,7 +11,8 @@ private:
 	std::vector<ID3D11RenderTargetView*> renderTargets;
 	ID3D11DepthStencilView* m_DepthStencilView = nullptr;
 	ID3D11RenderTargetView* nullRenderTargets[4] = { NULL };
-	std::vector<Texture2D*> renderTargetTextures;
+	std::vector<std::shared_ptr<Texture2D>> renderTargetTextures;
+	std::shared_ptr<Texture2D> depthTexture;
 public:
 	virtual void clear(RenderContext* renderContext) override {
 		DX11Renderer* renderer = (DX11Renderer*)Renderer::instance();
@@ -39,11 +40,7 @@ public:
 		ID3D11RenderTargetView* renderTarget = nullptr;
 		device->CreateRenderTargetView(std::static_pointer_cast<DX11Texture2D>(texture)->m_Texture, &renderTargetViewDesc, &renderTarget);
 		renderTargets.push_back(renderTarget);
-		renderTargetTextures.push_back(texture.get());
-	}
-
-	virtual void removeColorTexture(int slot, int level) override {
-
+		renderTargetTextures.push_back(texture);
 	}
 
 	virtual void setDepthTexture(const std::shared_ptr<Texture2D>& texture, int level = 0) override {
@@ -59,7 +56,7 @@ public:
 		ddesc.Flags = 0;
 
 		device->CreateDepthStencilView(std::static_pointer_cast<DX11Texture2D>(texture)->m_Texture, &ddesc, &m_DepthStencilView);
-		renderTargetTextures.push_back(texture.get());
+		depthTexture = texture;
 	}
 
 	virtual void bind(RenderContext* renderContext) override {
@@ -68,14 +65,36 @@ public:
 
 		for (int i = 0; i < context->boundTextures.size(); i++) {
 			for (auto& it : renderTargetTextures) {
-				if (context->boundTextures[i] != nullptr && context->boundTextures[i] == it) {
+				if (context->boundTextures[i] != nullptr && context->boundTextures[i] == it.get()) {
 					Renderer::instance()->unbindResource(i);
 				}
+			}
+			if (context->boundTextures[i] != nullptr && context->boundTextures[i] == depthTexture.get()) {
+				Renderer::instance()->unbindResource(i);
 			}
 		}
 
 		deviceContext->OMSetRenderTargets(4, nullRenderTargets, nullptr);
 		deviceContext->OMSetRenderTargets(renderTargets.size(), renderTargets.data(), m_DepthStencilView);
 		context->boundRenderTarget = this;
+	}
+
+
+	virtual int getWidth() override {
+		if (renderTargetTextures.size() != 0) {
+			return renderTargetTextures[0]->getWidth();
+		} else if (m_DepthStencilView) {
+			return depthTexture->getWidth();
+		}
+		return 0;
+	}
+
+	virtual int getHeight() override {
+		if (renderTargetTextures.size() != 0) {
+			return renderTargetTextures[0]->getHeight();
+		} else if (m_DepthStencilView) {
+			return depthTexture->getHeight();
+		}
+		return 0;
 	}
 };
