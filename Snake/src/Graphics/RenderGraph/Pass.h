@@ -13,7 +13,6 @@
 class Pass {
 protected:
     std::string name;
-    std::queue<std::function<void()>> commands;
     std::shared_ptr<RenderTarget> renderTarget;
 public:
     // List of entities to render
@@ -40,12 +39,6 @@ public:
 		}
 
         this->shader->bind(renderer->getContext());
-
-        while (!commands.empty()) {
-            std::function<void()> command = commands.front();
-            commands.pop();
-            command();
-		}
     }
     
 	void setRenderTarget(const std::shared_ptr<RenderTarget>& renderTarget) {
@@ -60,10 +53,6 @@ public:
     void setShader(const std::shared_ptr<ShaderPipeline>& shader) {
         this->shader = shader;
     }
-
-    virtual void addCommand(std::function<void()> command) {
-        commands.push(command);
-	}
 
 	virtual void addEntity(entt::entity entity) {
 		entities.push(entity);

@@ -142,12 +142,7 @@ public:
 	}
 
 	virtual void setViewport(const Viewport& viewport) override {
-		vp.Width = (float)viewport.x1;
-		vp.Height = (float)viewport.y1;
-		vp.TopLeftX = viewport.x0;
-		vp.TopLeftY = viewport.y0;
-
-		deviceContext->RSSetViewports(1, &vp);
+		setViewport(viewport.x0, viewport.y0, viewport.x1, viewport.y1);
 	}
 
 	virtual void unbindResource(int slot) override {

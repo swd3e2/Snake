@@ -54,7 +54,7 @@ public:
         window = renderer->createWindow(1920, 1080);
 
 		physicsSystem = std::make_unique<PhysicsSystem>(&registry);
-        renderSystem = std::make_unique<RenderSystem>(&registry, physicsSystem.get());
+        renderSystem = std::make_unique<RenderSystem>(&registry, physicsSystem.get(), renderer.get());
         scriptSystem = std::make_unique<ScriptSystem>(&registry);
 		cameraSystem = std::make_unique<CameraSystem>(&registry);
 		playerSystem = std::make_unique<PlayerSystem>(&registry);

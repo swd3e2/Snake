@@ -21,100 +21,53 @@
 #include "Graphics/Renderer/RenderTarget.h"
 #include "Import/Texture/RawTexture.h"
 #include "Graphics/RenderGraph/FullscreenPass.h"
+#include "Graphics/RenderGraph/DefaultRenderPass.h"
 #include "Graphics/Renderer/Sampler.h"
 #include "Physics/PhysicsSystem.h"
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include "CommonRenderTypes.h"
 
 class RenderSystem {
-private:
-    struct mvp {
-        glm::mat4 projection;
-        glm::mat4 shadowProjection;
-        glm::vec4 shadowCameraPos;
-        glm::vec4 viewPos;
-    };
-    struct ModelData {
-        glm::mat4 toWorld;
-        glm::mat4 inverseToWorld;
-    };
-	struct MaterialData {
-		glm::vec3 ambientColor = glm::vec3(1.0f, 0.0f, 1.0f);
-        float shininess = 64.0f;
-		glm::vec3 diffuseColor = glm::vec3(1.0f);
-        float dummy;
-		glm::vec3 specularColor = glm::vec3(1.0f);
-		int hasDiffuseMap = 0;
-		int hasNormalMap = 0;
-	};
-    struct MeshData {
-        glm::mat4 transform;
-        glm::mat4 normalTransform;
-        MaterialData materialData;
-		int selected = 0;
-    };
 public:
-    mvp projectionData;
-    ModelData modelData;
-    MeshData meshData;
     Renderer* renderer;
     RenderContext* context;
     std::unique_ptr<RenderGraph> renderGraph;
 
-    std::shared_ptr<ShaderPipeline> shaderPipeline;
+	std::shared_ptr<FullscreenPass> lightGBufferPass;
+	std::shared_ptr<FullscreenPass> testRenderPass;
+	std::shared_ptr<FullscreenPass> blurPass;
+	std::shared_ptr<DefaultRenderPass> gbufferPass;
+	std::shared_ptr<Pass> shadowPass;
+
     std::shared_ptr<ShaderInputLayout> shaderInputLayout;
-	std::shared_ptr<VertexBuffer> vertexBuffer;
-	std::shared_ptr<IndexBuffer> indexBuffer;
     std::shared_ptr<ConstantBuffer> shaderBuffer;
-    std::shared_ptr<ConstantBuffer> modelShaderBuffer;
-    std::shared_ptr<ConstantBuffer> meshShaderBuffer;
-    std::shared_ptr<ConstantBuffer> materialShaderBuffer;
     
     std::shared_ptr<MainRenderTarget> mainRenderTarget;
     entt::registry* registry;
-    
-    Camera camera;
-    Camera lightCamera;
-
-    std::shared_ptr<FullscreenPass> lightGBufferPass;
-	std::shared_ptr<FullscreenPass> testRenderPass;
-	std::shared_ptr<FullscreenPass> blurPass;
-    std::shared_ptr<Pass> gbufferPass;
-    std::shared_ptr<Pass> shadowPass;
-    int mainCamera = 0;
-
+  
     std::unordered_map<std::string, std::shared_ptr<Texture2D>> textures;
     std::unordered_map<std::string, std::shared_ptr<RenderTarget>> renderTargets;
-    std::unordered_map<std::string, std::shared_ptr<ConstantBuffer>> constantBuffers;
     std::unordered_map<std::string, std::shared_ptr<ShaderPipeline>> shaders;
 
-	std::shared_ptr<RenderTarget> rt;
-	std::shared_ptr<RenderTarget> rt2;
-	std::shared_ptr<RenderTarget> shadowRt;
 	std::shared_ptr<Sampler> pointSampler;
 
     PhysicsSystem* physicsSystem;
     bool useDebugCamera = true;
+	int mainCamera = 0;
+
+	WVP projectionData;
+	Camera camera;
+	Camera lightCamera;
 public:
-	RenderSystem(entt::registry* registry, PhysicsSystem* physics):physicsSystem(physics){
-		this->registry = registry;
-		renderer = Renderer::instance();
-		context = renderer->getContext();
-		mainRenderTarget = std::shared_ptr<MainRenderTarget>(renderer->getMainRenderTarget());
+	RenderSystem(entt::registry* registry, PhysicsSystem* physics, Renderer* renderer):
+		physicsSystem(physics), registry(registry), renderer(renderer), context(renderer->getContext()), mainRenderTarget(std::shared_ptr<MainRenderTarget>(renderer->getMainRenderTarget()))
+	{
+		camera.setProjectionMatrix(90.0f, 1920.0f / 1080.0f, 0.1f, 200.f);
+		shaderBuffer.reset(ConstantBuffer::create(0, sizeof(WVP), nullptr));
 
-		std::vector<vertex> vertexData;
-		vertexData.push_back(vertex(1.0f, 1.0f, 0.1f, 1.0f, 1.0f));
-		vertexData.push_back(vertex(1.0f, -1.0f, 0.1f, 1.0f, 0.0f));
-		vertexData.push_back(vertex(-1.0f, 1.0f, 0.1f, 0.0f, 1.0f));
-		vertexData.push_back(vertex(-1.0f, -1.0f, 0.1f, 0.0f, 0.0f));
-		vertexBuffer.reset(VertexBuffer::create(vertexData.size(), sizeof(vertex), vertexData.data()));
-
-		std::vector<unsigned int> indexData;
-		indexData.push_back(0);  indexData.push_back(1); indexData.push_back(2);
-		indexData.push_back(2);  indexData.push_back(1); indexData.push_back(3);
-		indexBuffer.reset(IndexBuffer::create(indexData.size(), indexData.data()));
-
+		// Input layout
 		{
 			ShaderInputLayoutDesc desc;
 			desc.elements.push_back({ InputDataType::Float3, "POSITION" });
@@ -127,25 +80,7 @@ public:
 
 			shaderInputLayout.reset(ShaderInputLayout::create(desc));
 		}
-
-
-		shaderBuffer.reset(ConstantBuffer::create(0, sizeof(projectionData), nullptr));
-		modelShaderBuffer.reset(ConstantBuffer::create(1, sizeof(ModelData), nullptr));
-		meshShaderBuffer.reset(ConstantBuffer::create(2, sizeof(MeshData), nullptr));
-
-		camera.setProjectionMatrix(90.0f, 1920.0f / 1080.0f, 0.1f, 200.f);
-
-		std::shared_ptr<RawTexture> texture = std::make_shared<RawTexture>("texture_01.png");
-		texture->import();
-		textures["tex"] = std::shared_ptr<Texture2D>(Texture2D::create(
-			texture->getWidth(), 
-			texture->getHeight(), 
-			0, 
-			texture->getData(), 
-			TextureFormat::RGBA8,
-			TextureFlags::TF_ShaderResource
-		));
-
+		// Samplers
 		{
 			SamplerDesc desc;
 			desc.minFilterModel = FilterMode::POINT;
@@ -156,6 +91,7 @@ public:
 			pointSampler->setSamplerUnit(0);
 			pointSampler->bind(context);
 		}
+		// Textures
 		{
  			textures["positions"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 0, nullptr, TextureFormat::RGBA32F, TextureFlags::TF_RenderTarget | TextureFlags::TF_ShaderResource));
 			textures["normals"] = std::shared_ptr<Texture2D>(Texture2D::create(1920, 1080, 1, nullptr, TextureFormat::RGBA32F, TextureFlags::TF_RenderTarget | TextureFlags::TF_ShaderResource));
@@ -212,10 +148,9 @@ public:
 		// Render passess
 		renderGraph = std::make_unique<RenderGraph>(renderer);
 		{
-			gbufferPass.reset(new Pass("GBufferPass"));
+			gbufferPass.reset(new DefaultRenderPass("GBufferPass", registry));
 			gbufferPass->setRenderTarget(renderTargets["gBuffer"]);
 			gbufferPass->setShader(shaders["gbuffer"]);
-			gbufferPass->setTexture(0, textures["tex"]);
 			renderGraph->addPass(gbufferPass);
 		}
 		{
@@ -256,6 +191,7 @@ public:
         for (auto& it : renderTargets) {
             it.second->clear(context);
         }
+
 		mainRenderTarget->clear(context);
 		shaderInputLayout->bind(context);
 
@@ -274,84 +210,23 @@ public:
         }
         
 		projectionData.shadowProjection = lightSpaceMatrix;
-        projectionData.viewPos = camera.m_Position;
         projectionData.shadowCameraPos = lightCamera.m_Position;
-        //glm::transpose(lightCamera.getPerspectiveMatrix() * lightCamera.getViewMatrix());
+        projectionData.viewPos = camera.m_Position;
 		
-        gbufferPass->addCommand([shaderBuffer = shaderBuffer, projectionData = projectionData, context = context]() {
-            shaderBuffer->update((void*)&projectionData);
-            shaderBuffer->bind(context);
+		shaderBuffer->update((void*)&projectionData);
+		shaderBuffer->bind(context);
+
+        registry->view<Transform, Render>().each([&](entt::entity entity, Transform& transform, Render& render) {
+			updateTransform(render.model->getRootNode(), render.model.get(), glm::mat4(1.0f));
+			gbufferPass->addEntity(entity);
         });
         
-        /*shadowPass->addCommand([shaderBuffer = shaderBuffer, projectionData = projectionData, context = context]() {
-            shaderBuffer->update((void*)&projectionData);
-            shaderBuffer->bind(context);
-        });*/
-
-        shadowPass->addCommand([](){ Renderer::instance()->setViewport(0, 0, 1024, 1024); });
-        lightGBufferPass->addCommand([](){ Renderer::instance()->setViewport(0, 0, 1920, 1080); });
-
-        registry->view<Transform, Render>().each([&](Transform& transform, Render& render) {
-			modelData.toWorld = glm::transpose(transform.matrix);
-			modelData.inverseToWorld = glm::inverse(modelData.toWorld);
-			std::function<void()> command = [modelData = modelData, modelShaderBuffer = modelShaderBuffer, context = context]() {
-				modelShaderBuffer->update((void*)&modelData);
-				modelShaderBuffer->bind(context);
-			};
-
-			gbufferPass->addCommand(command);
-			shadowPass->addCommand(command);
-
-			this->updateTransform(render.model->getRootNode(), render.model.get(), glm::mat4(1.0f));
-
-			for (auto& node : render.model->getNodes()) {
-				if (node->mesh == -1) continue;
-
-				auto command = [node = node, model = render.model, buffer = meshShaderBuffer, renderer = renderer]() {
-					const std::vector<std::shared_ptr<Model::SubMesh>>& submeshes = model->getSubMeshes();
-					const std::vector<std::shared_ptr<Material>>& materials = model->getMaterials();
-					const std::shared_ptr<Model::SubMesh>& submesh = submeshes[node->mesh];
-
-					const std::shared_ptr<Material>& material = materials[submesh->material];
-					MeshData meshData;
-
-					if (material->diffuseTexture) {
-						material->diffuseTexture->bindToUnit(0, renderer->getContext());
-						meshData.materialData.hasDiffuseMap = true;
-					} else {
-						meshData.materialData.hasDiffuseMap = false;
-					}
-
-					if (material->normalTexture) {
-						material->normalTexture->bindToUnit(1, renderer->getContext());
-						meshData.materialData.hasNormalMap = true;
-					} else {
-						meshData.materialData.hasNormalMap = false;
-					}
-
-					meshData.transform = glm::transpose(node->transform.worldTransform);
-					meshData.normalTransform = glm::transpose(node->transform.normalTransform);
-
-					buffer->update(&meshData);
-					buffer->bind(renderer->getContext());
-
-					submesh->vBuffer->bind(renderer->getContext());
-					submesh->iBuffer->bind(renderer->getContext());
-
-					renderer->drawIndexed(submesh->iBuffer->getSize());
-				};
-
-				gbufferPass->addCommand(command);
-				shadowPass->addCommand(command);
-			}
-        });
-        
-        gbufferPass->addCommand([physicsSystem = physicsSystem, shader = shaders["physdebug"]]() {
-			Renderer::instance()->setPrimitiveTopology(PrimitiveTopology::LINELIST);
-			shader->bind(Renderer::instance()->getContext());
-			physicsSystem->dynamicsWorld->debugDrawWorld();
-			Renderer::instance()->setPrimitiveTopology(PrimitiveTopology::TRIANGELIST);
-		});
+		//gbufferPass->addCommand([physicsSystem = physicsSystem, shader = shaders["physdebug"]]() {
+		//Renderer::instance()->setPrimitiveTopology(PrimitiveTopology::LINELIST);
+		//shader->bind(Renderer::instance()->getContext());
+		//physicsSystem->dynamicsWorld->debugDrawWorld();
+		//Renderer::instance()->setPrimitiveTopology(PrimitiveTopology::TRIANGELIST);
+		//});
 
         renderGraph->execute();
 

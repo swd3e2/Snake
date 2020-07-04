@@ -32,12 +32,8 @@ public:
     }
 
     virtual void execute(Renderer* renderer) {
+        renderer->setViewport(viewport);
         renderTarget->bind(renderer->getContext());
-        while (!commands.empty()) {
-            std::function<void()> command = commands.front();
-            commands.pop();
-            command();
-        }
 
         for (auto& it : bindables) {
             it->bind(renderer->getContext());

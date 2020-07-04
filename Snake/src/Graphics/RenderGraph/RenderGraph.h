@@ -12,18 +12,11 @@ private:
 public:
     RenderGraph(Renderer* renderer) :
         renderer(renderer) 
-    {
-    }
+    {}
 
     void execute() {
         for (auto& it : renderPasses) {
             it->execute(renderer);
-        }
-    }
-
-    void addCommand(const std::function<void()>& command) {
-        for (auto& it : renderPasses) {
-            it->addCommand(command);
         }
     }
 
