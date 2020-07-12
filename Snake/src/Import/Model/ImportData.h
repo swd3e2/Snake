@@ -8,6 +8,7 @@
 #include <map>
 #include <memory>
 #include "Graphics/vertex.h"
+#include <unordered_map>
 
 namespace Import {
 	struct Node {
@@ -63,7 +64,7 @@ namespace Import {
 
 	struct Model {
 		std::string filename;
-		std::vector <std::shared_ptr<Mesh >> meshes;
+		std::unordered_map<int, std::vector<std::shared_ptr<Mesh>>> meshes;
 		std::vector<Material> materials;
 		// Animation data
 		std::vector<int> joints;

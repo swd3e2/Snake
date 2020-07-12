@@ -4,7 +4,7 @@
 #include "LinearMath/btIDebugDraw.h"
 #include "Graphics/vertex.h"
 #include <vector>
-#include "Graphics/Platform/DirectX/DX11VertexBuffer.h"
+#include "Graphics/Renderer/VertexBuffer.h"
 #include <memory>
 
 class PhysicsDebugDraw : public btIDebugDraw {
@@ -31,7 +31,7 @@ public:
 			vertex(from.getX(), from.getY(), from.getZ()),
 			vertex(to.getX(),	to.getY(),	 to.getZ())
 		};
-		vertexBuffer->update(vertices);
+		vertexBuffer->update(vertices, 2, sizeof(vertex));
 		vertexBuffer->bind(Renderer::instance()->getContext());
 		Renderer::instance()->draw(2);
 	}

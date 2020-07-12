@@ -48,11 +48,12 @@ public:
     }
 
     void update() {
-        registry->view<Script, Transform>().each([&](Script& script, Transform& transform) {
+        registry->view<ScriptComponent, TransformComponent>().each([&](ScriptComponent& script, TransformComponent& transform) {
             luabridge::push(L, &transform.translation);
             lua_setglobal(L, "translation");
             luabridge::push(L, &transform.rotation);
             lua_setglobal(L, "rotation");
+            
 
             int lscript = luaL_dofile(L, script.filename.c_str()); 
             report_errors(L, lscript);

@@ -16,20 +16,20 @@ public:
 
         int cntr = 0;
         registry->each([&](const entt::entity& entity) {
-			if (registry->has<Render>(entity)) {
-                const Render& render = registry->get<Render>(entity);
-                data["Entities"][cntr]["Render"]["filename"] = render.model->getImportFilename();
+			if (registry->has<RenderComponent>(entity)) {
+                const RenderComponent& render = registry->get<RenderComponent>(entity);
+                data["Entities"][cntr]["Render"]["filename"] = render.model->filename;
             }
-            if (registry->has<Transform>(entity)) {
-                const Transform& transform = registry->get<Transform>(entity);
+            if (registry->has<TransformComponent>(entity)) {
+                const TransformComponent& transform = registry->get<TransformComponent>(entity);
                 data["Entities"][cntr]["Transform"] = {
                     { "rotation", { transform.rotation.x, transform.rotation.y, transform.rotation.z }},
                     { "translation", { transform.translation.x, transform.translation.y, transform.translation.z }},
                     { "scale", { transform.scale.x, transform.scale.y, transform.scale.z }}
                 };
             }
-            if (registry->has<Script>(entity)) {
-                const Script& script = registry->get<Script>(entity);
+            if (registry->has<ScriptComponent>(entity)) {
+                const ScriptComponent& script = registry->get<ScriptComponent>(entity);
                 data["Entities"][cntr]["Script"]["filename"] = script.filename;
 			}
 			if (registry->has<PlayerComponent>(entity)) {

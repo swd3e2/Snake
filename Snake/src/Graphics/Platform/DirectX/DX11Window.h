@@ -125,16 +125,23 @@ public:
 		case WM_KEYUP: {
 			InputManager::instance()->setKeyPressed(wParam, false);
 		} break;
-		// Mouse events handling
-		case WM_LBUTTONDOWN:
-		case WM_MBUTTONDOWN:
-		case WM_RBUTTONDOWN: {
-			InputManager::instance()->setKeyPressed(wParam, true);
+		case WM_LBUTTONDOWN: {
+			InputManager::instance()->setMouseKeyPressed(1, true);
 		} break;
-		case WM_LBUTTONUP:
-		case WM_RBUTTONUP:
+		case WM_MBUTTONDOWN: {
+			InputManager::instance()->setMouseKeyPressed(2, true);
+		} break;
+		case WM_RBUTTONDOWN: {
+			InputManager::instance()->setMouseKeyPressed(3, true);
+		} break;
+		case WM_LBUTTONUP: {
+			InputManager::instance()->setMouseKeyPressed(1, false);
+		} break;
+		case WM_RBUTTONUP: {
+			InputManager::instance()->setMouseKeyPressed(2, false);
+		} break;
 		case WM_MBUTTONUP: {
-			InputManager::instance()->setKeyPressed(wParam, false);
+			InputManager::instance()->setMouseKeyPressed(3, false);
 		} break;
 		case WM_MOUSEMOVE: {
 			InputManager::instance()->mousePosX = GET_X_LPARAM(lParam);

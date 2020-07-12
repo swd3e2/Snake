@@ -13,10 +13,10 @@ private:
 	Storage<Model> storage;
 	std::string assetFolder;
 public:
+	ModelLoader();
 	std::shared_ptr<Model> loadFromFile(const std::string filename);
 	bool canImport(const std::string& filename);
-public:
-	ModelLoader();
+	const std::shared_ptr<ModelImporter>& getSuitableImporter(const std::string& filename);
 private:
 	void processNodes(const std::shared_ptr<Model>& model, const std::shared_ptr<Import::Model>& importModel);
 	void processVertexArrays(const std::shared_ptr<Model>& model, const std::shared_ptr<Import::Model>& importModel);
@@ -26,5 +26,4 @@ private:
 	/**
 	 * Returns importer for given file
 	 */
-	const std::shared_ptr<ModelImporter>& getSuitableImporter(const std::string& filename);
 };

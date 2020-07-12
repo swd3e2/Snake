@@ -36,17 +36,22 @@ public:
 	}
 
 	virtual ~DX11VertexBuffer() {
-
+		if (m_Buffer) {
+			m_Buffer->Release();
+		}
 	}
 
-	virtual void update(void* data) override {
+	virtual void update(void* data, size_t size, size_t stride) override {
+		this->stride = stride;
+		this->size = size;
+
 		DX11RenderContext* r = static_cast<DX11RenderContext*>(Renderer::instance()->getContext());
 		ID3D11Device* device = r->getDevice();
 		ID3D11DeviceContext* deviceContext = r->getDeviceContext();
 
 		D3D11_MAPPED_SUBRESOURCE mappedResource;
 		deviceContext->Map(m_Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-		CopyMemory(mappedResource.pData, data, getSize() * getStride());
+		CopyMemory(mappedResource.pData, data, size * stride);
 		deviceContext->Unmap(m_Buffer, 0);
 	}
 

@@ -35,10 +35,6 @@ public:
         renderer->setViewport(viewport);
         renderTarget->bind(renderer->getContext());
 
-        for (auto& it : bindables) {
-            it->bind(renderer->getContext());
-        }
-
 		for (auto& it : textures) {
 			it.second->bindToUnit(it.first, renderer->getContext());
 		}

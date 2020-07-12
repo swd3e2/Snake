@@ -6,6 +6,7 @@
 #include "Graphics/Renderer/Texture2D.h"
 #include "FileSystem/File.h"
 #include "Configuration.h"
+#include <iostream>
 
 class TextureLoader : public Singleton<TextureLoader> {
 private:
@@ -21,6 +22,7 @@ public:
 		const std::string fullFilePath = assetFolder + "/" + filename;
 		File file(fullFilePath);
 		if (!file.exists()) {
+			std::cout << "File not found " << fullFilePath << std::endl;
 			return nullptr;
 		}
 

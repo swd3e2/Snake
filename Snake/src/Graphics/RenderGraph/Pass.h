@@ -1,10 +1,8 @@
 #pragma once
 
 #include <queue>
-#include <vector>
 #include <string>
 #include "Graphics/Renderer.h"
-#include "Graphics/Bindable.h"
 #include <unordered_map>
 #include "Graphics/Renderer/RenderTarget.h"
 #include "Graphics/Renderer/Texture2D.h"
@@ -20,7 +18,6 @@ public:
 
     Viewport viewport;
 
-	std::vector<std::shared_ptr<Bindable>> bindables;
     std::unordered_map<int, std::shared_ptr<Texture2D>> textures;
     std::shared_ptr<ShaderPipeline> shader;
 public:
@@ -29,10 +26,6 @@ public:
     virtual void execute(Renderer* renderer) {
         renderer->setViewport(viewport);
         renderTarget->bind(renderer->getContext());
-
-        for (auto& it : bindables) {
-            it->bind(renderer->getContext());
-        }
 
 		for (auto& it : textures) {
 			it.second->bindToUnit(it.first, renderer->getContext());

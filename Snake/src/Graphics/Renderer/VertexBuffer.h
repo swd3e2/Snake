@@ -4,7 +4,7 @@
 #include "Graphics/Bindable.h"
 
 class VertexBuffer : public Bindable {
-private:
+protected:
 	int stride = 0;
 	int size = 0;
 	bool isDynamic = false;
@@ -13,7 +13,7 @@ public:
 	virtual ~VertexBuffer() {}
 	const int getSize() const { return size; }
 	const int getStride() const { return stride; }
-	virtual void update(void* data) = 0;
+	virtual void update(void* data, size_t size, size_t stride) = 0;
 
 	static VertexBuffer* create(int size, int stride, void* data, bool isDynamic = false);
 };

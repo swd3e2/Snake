@@ -41,7 +41,7 @@ std::shared_ptr<Model> ModelLoader::loadFromFile(const std::string filename) {
 
 void ModelLoader::processNodes(const std::shared_ptr<Model>& model, const std::shared_ptr<Import::Model>& importModel) {
 	for (int i = 0; i < importModel->nodes.size(); i++) {
-		std::shared_ptr<Model::Node> node = std::make_shared<Model::Node>();
+		std::shared_ptr<Node> node = std::make_shared<Node>();
 		node->id = importModel->nodes[i]->id;
 		node->jointId = importModel->nodes[i]->jointId;
 		node->mesh = importModel->nodes[i]->meshId;
@@ -60,15 +60,18 @@ void ModelLoader::processNodes(const std::shared_ptr<Model>& model, const std::s
 }
 
 void ModelLoader::processVertexArrays(const std::shared_ptr<Model>& model, const std::shared_ptr<Import::Model>& importModel) {
-	for (int i = 0; i < importModel->meshes.size(); i++) {
-		std::shared_ptr<Model::SubMesh> renderable = std::make_shared<Model::SubMesh>();
-		renderable->id = i;
-		renderable->material = importModel->meshes[i]->material;
+	int renderableCounter = -1;
+	for (auto& meshId : importModel->meshes) {
+		for (auto& mesh : meshId.second) {
+			std::shared_ptr<SubMesh> renderable = std::make_shared<SubMesh>();
+			renderable->id = ++renderableCounter;
+			renderable->material = mesh->material;
 
-		renderable->vBuffer.reset(VertexBuffer::create(importModel->meshes[i]->vertices.size(), sizeof(vertex), importModel->meshes[i]->vertices.data()));
-		renderable->iBuffer.reset(IndexBuffer::create(importModel->meshes[i]->indices.size(), importModel->meshes[i]->indices.data()));
+			renderable->vBuffer.reset(VertexBuffer::create(mesh->vertices.size(), sizeof(vertex), mesh->vertices.data()));
+			renderable->iBuffer.reset(IndexBuffer::create(mesh->indices.size(), mesh->indices.data()));
 
-		model->submeshes.push_back(renderable);
+			model->submeshes[meshId.first].push_back(renderable);
+		}
 	}
 }
 

@@ -7,42 +7,45 @@
 #include <btBulletDynamicsCommon.h>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <BulletCollision\CollisionDispatch\btCollisionWorld.h>
+#include <BulletCollision\CollisionDispatch\btGhostObject.h>
 
-struct Transform {
-	glm::vec3 translation;
-	glm::vec3 rotation;
+struct TransformComponent {
+	glm::vec3 translation = glm::vec3(0.0f, 0.0f, 0.0f);
+	glm::vec3 rotation = glm::vec3(0.0f, 0.0f, 0.0f);
 	glm::vec3 scale = glm::vec3(1.0f, 1.0f, 1.0f);
 	glm::quat rotationq = glm::quat(0.0, 0.0, 0.0, 0.0);
 	glm::mat4 matrix = glm::mat4(1.0f);
 };
 
-struct Render {
+struct RenderComponent {
 	std::shared_ptr<Model> model;
 	bool selected = false;
 };
 
-struct Script {
+struct ScriptComponent {
 	std::string filename;
 };
 
 struct PlayerComponent {
 	bool active = false;
-	float speed = 0.1f;
+	float speed = 5.0f;
+	glm::vec3 m_manualVelocity;
 };
 
-struct Animation {
-	double animationTime = 0.0;
-	int startX = 0;
-	int startY = 8;
-
-	int endX = 8;
-	int endY = 7;
-};
-
-struct Physics {
+struct PlayerPhysics {
 	std::shared_ptr<btCollisionShape> shape;
 	std::shared_ptr<btDefaultMotionState> myMotionState;
 	std::shared_ptr<btRigidBody> body;
+	glm::vec3 originPosition;
+};
+
+struct PhysicsComponent {
+	btCollisionShape* shape;
+	btDefaultMotionState* myMotionState;
+	btRigidBody* body;
+	btPairCachingGhostObject* m_pGhostObject;
+
 	//PhysicsShapeType type;
 	glm::vec3 originPosition;
 	glm::vec3 boxSize;
@@ -57,6 +60,7 @@ struct Physics {
 	bool applyRotation = true;
 	bool isDynamic = false;
 	float mass = 0.0f;
+	bool m_onGround = true;
 };
 
 struct CameraComponent {
@@ -66,6 +70,10 @@ struct CameraComponent {
 	glm::vec4 rightVec;
 };
 
-struct Light {
+struct LightComponent {
 	glm::vec3 color;
+};
+
+struct MovingBoxComponent {
+	bool moveUp = false;
 };

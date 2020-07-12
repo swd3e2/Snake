@@ -51,7 +51,7 @@ void GltfImporter::processMeshes(Import::Model* model, const tinygltf::Model& gl
 			std::shared_ptr<Import::Mesh> mesh = std::make_shared<Import::Mesh>();
 			mesh->material = primitive.material;
 			mesh->name = gltfMesh.name.size() ? gltfMesh.name : ("Mesh " + std::to_string(meshCounter));
-			mesh->id = meshCounter++;
+			mesh->id = i;
 
 			for (auto& attribute : primitive.attributes) {
 				const tinygltf::Accessor& accessor = gltfModel.accessors[attribute.second];
@@ -154,7 +154,7 @@ void GltfImporter::processMeshes(Import::Model* model, const tinygltf::Model& gl
 				delete[] data;
 			}
 
-			model->meshes.push_back(mesh);
+			model->meshes[mesh->id].push_back(mesh);
 		}
 	}
 }
@@ -314,50 +314,53 @@ void GltfImporter::processAnimations(Import::Model* model, tinygltf::Model& gltf
 
 void GltfImporter::calculateTangent(Import::Model* model)
 {
-	for (auto& it : model->meshes) {
-		if (it->hasTangent) {
-			for (int i = 0; i < it->indices.size(); i++) {
-				it->vertices[it->indices[i]].bitangent = glm::cross(it->vertices[it->indices[i]].normal, it->vertices[it->indices[i]].tangent);
+	for (auto& meshId : model->meshes) {
+		for (auto& it : meshId.second) {
+			if (it->hasTangent) {
+				for (int i = 0; i < it->indices.size(); i++) {
+					it->vertices[it->indices[i]].bitangent = glm::cross(it->vertices[it->indices[i]].normal, it->vertices[it->indices[i]].tangent);
+				}
 			}
-		} else {
-			for (int i = 0; i < it->indices.size() - 2; i += 3) {
-				vertex& first = it->vertices[it->indices[i + 0]];
-				vertex& second = it->vertices[it->indices[i + 1]];
-				vertex& third = it->vertices[it->indices[i + 2]];
+			else {
+				for (int i = 0; i < it->indices.size() - 2; i += 3) {
+					vertex& first = it->vertices[it->indices[i + 0]];
+					vertex& second = it->vertices[it->indices[i + 1]];
+					vertex& third = it->vertices[it->indices[i + 2]];
 
-				glm::vec3 edge1 = second.pos - first.pos;
-				glm::vec3 edge2 = third.pos  - first.pos;
+					glm::vec3 edge1 = second.pos - first.pos;
+					glm::vec3 edge2 = third.pos - first.pos;
 
-				glm::vec2 uv1 = second.texCoord - first.texCoord;
-				glm::vec2 uv2 = third.texCoord  - first.texCoord;
+					glm::vec2 uv1 = second.texCoord - first.texCoord;
+					glm::vec2 uv2 = third.texCoord - first.texCoord;
 
-				float f = 1.0f / uv1.x * uv2.y - uv2.x * uv1.y;
+					float f = 1.0f / uv1.x * uv2.y - uv2.x * uv1.y;
 
-				glm::vec3 tangent(
-					f * (uv2.y * edge1.x - uv1.y * edge2.x),
-					f * (uv2.y * edge1.y - uv1.y * edge2.y),
-					f * (uv2.y * edge1.z - uv1.y * edge2.z)
-				);
+					glm::vec3 tangent(
+						f * (uv2.y * edge1.x - uv1.y * edge2.x),
+						f * (uv2.y * edge1.y - uv1.y * edge2.y),
+						f * (uv2.y * edge1.z - uv1.y * edge2.z)
+					);
 
-				glm::vec3 bitangent(
-					f * (uv1.x * edge2.x - uv2.x * edge1.x),
-					f * (uv1.x * edge2.y - uv2.x * edge1.y),
-					f * (uv1.x * edge2.z - uv2.x * edge1.z)
-				);
+					glm::vec3 bitangent(
+						f * (uv1.x * edge2.x - uv2.x * edge1.x),
+						f * (uv1.x * edge2.y - uv2.x * edge1.y),
+						f * (uv1.x * edge2.z - uv2.x * edge1.z)
+					);
 
-				first.tangent += tangent;
-				second.tangent += tangent;
-				third.tangent += tangent;
+					first.tangent += tangent;
+					second.tangent += tangent;
+					third.tangent += tangent;
 
-				first.bitangent += bitangent;
-				second.bitangent += bitangent;
-				third.bitangent += bitangent;
+					first.bitangent += bitangent;
+					second.bitangent += bitangent;
+					third.bitangent += bitangent;
+				}
 			}
-		}
 
-		for (auto& vertex : it->vertices) {
-			vertex.bitangent = glm::normalize(vertex.bitangent);
-			vertex.tangent = glm::normalize(vertex.tangent);
+			for (auto& vertex : it->vertices) {
+				vertex.bitangent = glm::normalize(vertex.bitangent);
+				vertex.tangent = glm::normalize(vertex.tangent);
+			}
 		}
 	}
 }

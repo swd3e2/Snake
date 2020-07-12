@@ -19,7 +19,7 @@ public:
             entt::entity entity = registry->create();
 
             if (it.find("Transform") != it.end()) {
-                Transform& transform = registry->emplace<Transform>(entity,
+                TransformComponent& transform = registry->emplace<TransformComponent>(entity,
                     glm::vec3(
                         it["Transform"]["translation"][0].get<float>(),
                         it["Transform"]["translation"][1].get<float>(),
@@ -43,11 +43,11 @@ public:
             }
 
             if (it.find("Render") != it.end()) {
-                registry->emplace<Render>(entity, ModelLoader::instance()->loadFromFile(it["Render"]["filename"].get<std::string>()));
+                registry->emplace<RenderComponent>(entity, ModelLoader::instance()->loadFromFile(it["Render"]["filename"].get<std::string>()));
             }
 
             if (it.find("Script") != it.end()) {
-                registry->emplace<Script>(entity, it["Script"]["filename"].get<std::string>());
+                registry->emplace<ScriptComponent>(entity, it["Script"]["filename"].get<std::string>());
             }
         }
     }
