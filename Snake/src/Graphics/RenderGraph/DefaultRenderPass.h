@@ -15,6 +15,7 @@ private:
 public:
 	//void (*func)(Renderer* renderer, entt::entity entity);
 	std::function<void(Renderer*, entt::entity)> func;
+	std::function<void()> func2;
 private:
 	entt::registry* registry;
 	//ModelData modelData;
@@ -37,8 +38,14 @@ public:
 		for (auto& it : textures) {
 			it.second->bindToUnit(it.first, renderer->getContext());
 		}
-
+		for (auto& it : buffers) {
+			it->bind(renderer->getContext());
+		}
 		this->shader->bind(renderer->getContext());
+
+		if (func2) {
+			func2();
+		}
 
 		while (!entities.empty()) {
 			entt::entity entity = entities.front();

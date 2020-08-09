@@ -44,5 +44,5 @@ public:
 
 	virtual void setDebugMode(int debugMode) override { }
 
-	virtual int getDebugMode() const override { return DBG_DrawWireframe | DBG_DrawAabb; }
+	virtual int getDebugMode() const override { return DBG_DrawWireframe; }// | DBG_DrawAabb; }
 };

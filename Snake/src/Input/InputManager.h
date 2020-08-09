@@ -7,6 +7,7 @@ public:
 
 	double mouseMoveX = 0.0;
 	double mouseMoveY = 0.0;
+	int mouseMoveCnt = 0;
 private:
 	bool keyboardKeys[349];
 	bool mouseButton[5];
@@ -35,9 +36,16 @@ public:
 	inline void setMouseKeyPressed(int mouseCode, bool state) { mouseButton[mouseCode] = state; }
 
 	void setCursorPosition(double x, double y) {
-		mouseMoveX = x - mousePosX;
-		mouseMoveY = y - mousePosY;
+		mouseMoveCnt++;
 
+		if (mouseMoveCnt == 1) {
+			mouseMoveX += x - mousePosX;
+			mouseMoveY += y - mousePosY;
+		} else {
+			mouseMoveX += (x - mousePosX) * 0.2f;
+			mouseMoveY += (y - mousePosY) * 0.2f;
+		}
+		
 		mousePosX = x;
 		mousePosY = y;
 	}

@@ -32,7 +32,7 @@ public:
 		_rendererType = RendererType::DirectX;
 	}
 
-	virtual Window* createWindow(int width, int height) override {
+	virtual Window* createWindow(int width, int height, EventSystem* eventSystem) override {
 		vp.Width = (float)width;
 		vp.Height = (float)height;
 		vp.MinDepth = 0.0f;
@@ -40,7 +40,7 @@ public:
 		vp.TopLeftX = 0;
 		vp.TopLeftY = 0;
 
-		window = new DX11Window(width, height);
+		window = new DX11Window(width, height, eventSystem);
 		DX11MainRenderTarget* mainRenderTarget = new DX11MainRenderTarget(width, height);
 		_mainRenderTarget = mainRenderTarget;
 
@@ -65,7 +65,7 @@ public:
 		};
 
 		D3D_FEATURE_LEVEL m_featureLevel = D3D_FEATURE_LEVEL_11_1;
-		UINT creationFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT | D3D11_CREATE_DEVICE_DEBUG;
+		UINT creationFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;// | D3D11_CREATE_DEVICE_DEBUG;
 
 		HRESULT hr = S_OK;
 

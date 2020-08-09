@@ -5,17 +5,17 @@
 #include <iostream>
 #include "Import/ModelLoader.h"
 #include "Graphics/Renderer/CommonTypes.h"
+#include "JobSystem.h"
 
 class Loader {
-private:
 public:
-    void loadFromFile(const std::string& filename, entt::registry* registry) {
+    void loadFromFile(JobSystem* system, const std::string& filename, entt::registry* registry) {
         using nlohmann::json;
 
         File file(filename);
-        auto projectData = json::parse(file.getConent());
+        nlohmann::basic_json<> projectData = json::parse(file.getConent());
 
-        for (auto& it : projectData["Entities"]) {
+        for (nlohmann::basic_json<>& it : projectData["Entities"]) {
             entt::entity entity = registry->create();
 
             if (it.find("Transform") != it.end()) {
@@ -35,9 +35,8 @@ public:
                         it["Transform"]["scale"][1].get<float>(),
                         it["Transform"]["scale"][2].get<float>()
                     )
-                );
-                transform.matrix = glm::mat4(1.0f);
-                transform.matrix = glm::translate(transform.matrix, transform.translation);
+                    );
+                transform.matrix = glm::translate(glm::mat4(1.0f), transform.translation);
                 transform.matrix = transform.matrix * glm::eulerAngleXYZ(transform.rotation.x * DEG2RAD, transform.rotation.y * DEG2RAD, transform.rotation.z * DEG2RAD);
                 transform.matrix = glm::scale(transform.matrix, transform.scale);
             }

@@ -13,4 +13,6 @@ public:
 
 	virtual bool isOpen() = 0;
 	virtual void pollEvents() = 0;
+	virtual bool isActive() = 0;
+	virtual void setCursorPos(int x, int y) = 0;
 };

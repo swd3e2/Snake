@@ -15,9 +15,10 @@ class DX11Window : public Window {
 private:
 	HINSTANCE hInst;
 	HWND hWnd;
+	EventSystem* eventSystem;
 public:
-	DX11Window(int width, int height) :
-		Window(width, height) 
+	DX11Window(int width, int height, EventSystem* eventSystem) :
+		Window(width, height), eventSystem(eventSystem)
 	{
 		hInst = GetModuleHandle(NULL);
 
@@ -62,9 +63,9 @@ public:
 		Rid[0].hwndTarget = 0;
 
 		RegisterRawInputDevices(Rid, 1, sizeof(Rid[0]));
-		//ShowCursor(false);
 		ShowWindow(hWnd, SW_SHOW); // SW_SHOWMAXIMIZED
 		UpdateWindow(hWnd);
+		//ShowCursor(false);
 	}
 
 	static LRESULT __stdcall _HandleMsgThunk(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -110,8 +111,8 @@ public:
 				if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, rawData.get(), &dataSize, sizeof(RAWINPUTHEADER)) == dataSize) {
 					RAWINPUT* input = reinterpret_cast<RAWINPUT*>(rawData.get());
 					if (input->header.dwType == RIM_TYPEMOUSE) {
-						InputManager::instance()->mouseMoveX = input->data.mouse.lLastX;
-						InputManager::instance()->mouseMoveY = input->data.mouse.lLastY;
+						/*InputManager::instance()->mouseMoveX = input->data.mouse.lLastX;
+						InputManager::instance()->mouseMoveY = input->data.mouse.lLastY;*/
 					}
 				}
 			}
@@ -135,6 +136,7 @@ public:
 			InputManager::instance()->setMouseKeyPressed(3, true);
 		} break;
 		case WM_LBUTTONUP: {
+			eventSystem->addEvent(new LeftMouseClickEvent());
 			InputManager::instance()->setMouseKeyPressed(1, false);
 		} break;
 		case WM_RBUTTONUP: {
@@ -144,8 +146,7 @@ public:
 			InputManager::instance()->setMouseKeyPressed(3, false);
 		} break;
 		case WM_MOUSEMOVE: {
-			InputManager::instance()->mousePosX = GET_X_LPARAM(lParam);
-			InputManager::instance()->mousePosY = GET_Y_LPARAM(lParam);
+			InputManager::instance()->setCursorPosition(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 		} break;
 		case WM_SIZE: {
 			/*if (wParam == SIZE_RESTORED) {
@@ -178,4 +179,16 @@ public:
 
 	HWND getHwnd() { return hWnd; }
 	HINSTANCE getHInstances() { return hInst; }
+
+	virtual bool isActive() override
+	{
+		return hWnd == GetForegroundWindow();
+	}
+
+	virtual void setCursorPos(int x, int y) override
+	{
+		POINT lpPoint = { x, y };
+		ClientToScreen(hWnd, &lpPoint);
+		SetCursorPos(lpPoint.x, lpPoint.y);
+	}
 };

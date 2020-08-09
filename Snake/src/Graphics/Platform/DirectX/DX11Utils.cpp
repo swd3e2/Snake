@@ -3,42 +3,42 @@
 namespace DirectX {
 	const std::string getShaderTarget(const ShaderType type) {
 		switch (type) {
-			case ShaderType::VERTEX:	return "vs_5_0";
-			case ShaderType::PIXEL:		return "ps_5_0";
-			case ShaderType::GEOMERTY:	return "gs_5_0";
-			case ShaderType::COMPUTE:	return "cs_5_0";
-			case ShaderType::HULL:		return "hs_5_0";
-			case ShaderType::DOMAINS:	return "ds_5_0";
+			case ShaderType::VERTEX:			return "vs_5_0";
+			case ShaderType::PIXEL:				return "ps_5_0";
+			case ShaderType::GEOMERTY:			return "gs_5_0";
+			case ShaderType::COMPUTE:			return "cs_5_0";
+			case ShaderType::HULL:				return "hs_5_0";
+			case ShaderType::DOMAINS:			return "ds_5_0";
 		}
 		return "vs_5_0";
 	}
 
 	std::string getInputLayoutShaderFormat(InputDataType type) {
 		switch (type) {
-			case InputDataType::Float:		return "float";
-			case InputDataType::Float2:		return "float2";
-			case InputDataType::Float3:		return "float3";
-			case InputDataType::Float4:		return "float4";
-			case InputDataType::Int:		return "int";
-			case InputDataType::Int2:		return "int2";
-			case InputDataType::Int3:		return "int3";
-			case InputDataType::Int4:		return "int4";
-			case InputDataType::Bool:		return "bool";
+			case InputDataType::Float:			return "float";
+			case InputDataType::Float2:			return "float2";
+			case InputDataType::Float3:			return "float3";
+			case InputDataType::Float4:			return "float4";
+			case InputDataType::Int:			return "int";
+			case InputDataType::Int2:			return "int2";
+			case InputDataType::Int3:			return "int3";
+			case InputDataType::Int4:			return "int4";
+			case InputDataType::Bool:			return "bool";
 		}
 		return "";
 	}
 
 	DXGI_FORMAT getInputLayoutFormat(InputDataType type) {
 		switch (type) {
-			case InputDataType::Float:		return DXGI_FORMAT_R32_FLOAT;
-			case InputDataType::Float2:		return DXGI_FORMAT_R32G32_FLOAT;
-			case InputDataType::Float3:		return DXGI_FORMAT_R32G32B32_FLOAT;
-			case InputDataType::Float4:		return DXGI_FORMAT_R32G32B32A32_FLOAT;
-			case InputDataType::Int:		return DXGI_FORMAT_R32_SINT;
-			case InputDataType::Int2:		return DXGI_FORMAT_R32G32_SINT;
-			case InputDataType::Int3:		return DXGI_FORMAT_R32G32B32_SINT;
-			case InputDataType::Int4:		return DXGI_FORMAT_R32G32B32A32_SINT;
-			case InputDataType::Bool:		return DXGI_FORMAT_R32_UINT;
+			case InputDataType::Float:			return DXGI_FORMAT_R32_FLOAT;
+			case InputDataType::Float2:			return DXGI_FORMAT_R32G32_FLOAT;
+			case InputDataType::Float3:			return DXGI_FORMAT_R32G32B32_FLOAT;
+			case InputDataType::Float4:			return DXGI_FORMAT_R32G32B32A32_FLOAT;
+			case InputDataType::Int:			return DXGI_FORMAT_R32_SINT;
+			case InputDataType::Int2:			return DXGI_FORMAT_R32G32_SINT;
+			case InputDataType::Int3:			return DXGI_FORMAT_R32G32B32_SINT;
+			case InputDataType::Int4:			return DXGI_FORMAT_R32G32B32A32_SINT;
+			case InputDataType::Bool:			return DXGI_FORMAT_R32_UINT;
 		}
 	}
 
@@ -54,6 +54,8 @@ namespace DirectX {
 			case TextureFormat::RG16:			return DXGI_FORMAT_R16G16_UNORM;
 			case TextureFormat::RGB16:
 			case TextureFormat::RGBA16:			return DXGI_FORMAT_R16G16B16A16_UNORM;
+			case TextureFormat::RGB16F:			
+			case TextureFormat::RGBA16F:			return DXGI_FORMAT_R16G16B16A16_FLOAT;
 			case TextureFormat::R32F:			return DXGI_FORMAT_R32_FLOAT;
 			case TextureFormat::RG32F:			return DXGI_FORMAT_R32G32_FLOAT;
 			case TextureFormat::RGB32F:			return DXGI_FORMAT_R32G32B32_FLOAT;
@@ -76,8 +78,10 @@ namespace DirectX {
 			case TextureFormat::RGB8:
 			case TextureFormat::BGR8:
 			case TextureFormat::RGB16:
-			case TextureFormat::RGB32F:
+			case TextureFormat::RGB16F:
 				return 3 * width;
+			case TextureFormat::RGB32F:
+				return 4 * 3 * width;
 			case TextureFormat::RGBA8:
 			case TextureFormat::BGRA8:
 			case TextureFormat::RGBA16:
@@ -88,10 +92,10 @@ namespace DirectX {
 
 	D3D11_TEXTURE_ADDRESS_MODE getAddressingMode(const AddressingMode& mode) {
 		switch (mode) {
-			case AddressingMode::WRAP: return  D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_WRAP;
-			case AddressingMode::CLAMP: return  D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_CLAMP;
-			case AddressingMode::MIRROR: return  D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_MIRROR;
-			case AddressingMode::BORDER: return  D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_BORDER;
+			case AddressingMode::WRAP:			return  D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_WRAP;
+			case AddressingMode::CLAMP:			return  D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_CLAMP;
+			case AddressingMode::MIRROR:		return  D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_MIRROR;
+			case AddressingMode::BORDER:		return  D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_BORDER;
 		}
 		return D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_WRAP;
 	}
@@ -111,7 +115,7 @@ namespace DirectX {
 
 	D3D11_FILTER getFilteringMode(const FilterMode& _min, const FilterMode& mag, const FilterMode& mip, const bool comparison)
 	{
-#define MERGE_FILTERS(_comparison, _min, _mag, _mip) ((_comparison << 16) | (_min << 8) | (_mag << 4) | (_mip))
+#define MERGE_FILTERS(_comparison, _min, _mag, _mip) ((_comparison << 16) | ((int)_min << 8) | ((int)_mag << 4) | ((int)_mip))
 		switch ((MERGE_FILTERS((int)comparison, (int)_min, (int)mag, (int)mip))) {
 		case MERGE_FILTERS(true, (int)(int)FilterMode::POINT, (int)(int)FilterMode::POINT, (int)(int)FilterMode::POINT):
 			return D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT;

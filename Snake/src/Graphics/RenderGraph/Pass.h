@@ -2,6 +2,7 @@
 
 #include <queue>
 #include <string>
+#include <vector>
 #include "Graphics/Renderer.h"
 #include <unordered_map>
 #include "Graphics/Renderer/RenderTarget.h"
@@ -19,6 +20,7 @@ public:
     Viewport viewport;
 
     std::unordered_map<int, std::shared_ptr<Texture2D>> textures;
+    std::vector<std::shared_ptr<ConstantBuffer>> buffers;
     std::shared_ptr<ShaderPipeline> shader;
 public:
     Pass(const std::string& name) : name(name) {}
@@ -29,6 +31,9 @@ public:
 
 		for (auto& it : textures) {
 			it.second->bindToUnit(it.first, renderer->getContext());
+		}
+		for (auto& it : buffers) {
+			it->bind(renderer->getContext());
 		}
 
         this->shader->bind(renderer->getContext());
@@ -45,6 +50,10 @@ public:
     
     void setShader(const std::shared_ptr<ShaderPipeline>& shader) {
         this->shader = shader;
+    }
+    
+    void setConstantBuffer(const std::shared_ptr<ConstantBuffer>& buffer) {
+        buffers.push_back(buffer);
     }
 
 	virtual void addEntity(entt::entity entity) {

@@ -44,13 +44,14 @@ public:
 		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionState, shape, localInertia);
 		
 		btRigidBody* body = new btRigidBody(rbInfo);
-		body->setFriction(-1.0f);
-		body->setRollingFriction(-1.0f);
-		body->setActivationState(DISABLE_DEACTIVATION);
+		//body->setFriction(-1.0f);
+		//body->setRollingFriction(-1.0f);
+		//body->setActivationState(DISABLE_DEACTIVATION);
 		dynamicsWorld->addRigidBody(body);
 
 		PhysicsComponent& physicsComponent = registry->emplace<PhysicsComponent>(entity, shape, motionState, body);
 		physicsComponent.isDynamic = isDynamic;
+
 		return physicsComponent;
 	}
 
@@ -93,7 +94,7 @@ public:
 		//	}
 		//}
 
-		registry->view<TransformComponent, PhysicsComponent>().each([&](TransformComponent& transform, PhysicsComponent& physics) {
+		/*registry->view<TransformComponent, PhysicsComponent>().each([&](TransformComponent& transform, PhysicsComponent& physics) {
 			if (physics.body == nullptr) return;
 
 			btTransform tr;
@@ -110,17 +111,15 @@ public:
 			transform.translation.y = pos.getY();
 			transform.translation.z = pos.getZ();
 
-			btQuaternion rot = physics.body->getCenterOfMassTransform().getRotation();
+			btQuaternion rot = tr.getRotation();
 
-			if (physics.applyRotation) {
-				transform.rotationq = glm::quat(rot.getW(), rot.getX(), rot.getY(), rot.getZ());
-				transform.rotation = glm::eulerAngles(transform.rotationq) * 3.14159f / 180.f;
-			}
+			transform.rotationq = glm::quat(rot.getW(), rot.getX(), rot.getY(), rot.getZ());
+			transform.rotation = glm::eulerAngles(transform.rotationq) * 3.14159f / 180.f;
 
 			transform.matrix = glm::translate(glm::mat4(1.0f), transform.translation);
 			transform.matrix = transform.matrix * glm::toMat4(transform.rotationq);
 			transform.matrix = glm::scale(transform.matrix, transform.scale);
-		});
+		});*/
 
 		//registry->view<TransformComponent, PlayerPhysics>().each([&](TransformComponent& transform, PlayerPhysics& physics) {
 		//	btTransform tr;

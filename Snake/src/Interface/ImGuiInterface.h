@@ -108,12 +108,12 @@ public:
 			if (registry->has<TransformComponent>(selectedEntity)) {
 				TransformComponent& transform = registry->get<TransformComponent>(selectedEntity);
 
-				bool moved = false;
+				/*bool moved = false;
 				moved = moved || ImGui::DragFloat3("Translation###TD", (float*)&transform.translation, 0.01f, -10000.0f, 10000.0f);
 				moved = moved || ImGui::DragFloat3("Rotation###RD", (float*)&transform.rotation, 0.01f, -10000.0f, 10000.0f);
-				moved = moved || ImGui::DragFloat3("Scale###SD", (float*)&transform.scale, 0.01f, -10000.0f, 10000.0f);
+				moved = moved || ImGui::DragFloat3("Scale###SD", (float*)&transform.scale, 0.01f, -10000.0f, 10000.0f);*/
 
-				if (registry->has<PhysicsComponent>(selectedEntity) && moved) {
+				/*if (registry->has<PhysicsComponent>(selectedEntity) && moved) {
 					PhysicsComponent& physics = registry->get<PhysicsComponent>(selectedEntity);
 
 					btTransform physicsTransform;
@@ -127,7 +127,7 @@ public:
 					physics.body->setWorldTransform(physicsTransform);
 					physics.body->setCenterOfMassTransform(physicsTransform);
 					physics.body->activate(true);
-				}
+				}*/
 			} else {
 				if (ImGui::Button("Create transform component")) {
 					registry->emplace<TransformComponent>(selectedEntity);
@@ -138,8 +138,60 @@ public:
 		ImGui::End();
 
 		ImGui::Begin("Debug");
+		double x = InputManager::instance()->mousePosX;
+		double y = InputManager::instance()->mousePosY;
+		//std::cout << "x " << x << " y " << y << std::endl;
+		char str[80];
+		{
+			glm::mat4x4 viewproj = renderSystem->camera.getPerspectiveMatrix();
+			ImGui::Text("Projection matrix");
+			sprintf(str, "%f %f %f %f", viewproj[0][0], viewproj[0][1], viewproj[0][2], viewproj[0][3]);
+			ImGui::Text(str);
+			sprintf(str, "%f %f %f %f", viewproj[1][0], viewproj[1][1], viewproj[1][2], viewproj[1][3]);
+			ImGui::Text(str);
+			sprintf(str, "%f %f %f %f", viewproj[2][0], viewproj[2][1], viewproj[2][2], viewproj[2][3]);
+			ImGui::Text(str);
+			sprintf(str, "%f %f %f %f", viewproj[3][0], viewproj[3][1], viewproj[3][2], viewproj[3][3]);
+			ImGui::Text(str);
+		}
+		{
+			glm::mat4x4 viewproj = renderSystem->camera.getViewMatrix();
+
+			ImGui::Text("View matrix");
+			sprintf(str, "%f %f %f %f", viewproj[0][0], viewproj[0][1], viewproj[0][2], viewproj[0][3]);
+			ImGui::Text(str);
+			sprintf(str, "%f %f %f %f", viewproj[1][0], viewproj[1][1], viewproj[1][2], viewproj[1][3]);
+			ImGui::Text(str);
+			sprintf(str, "%f %f %f %f", viewproj[2][0], viewproj[2][1], viewproj[2][2], viewproj[2][3]);
+			ImGui::Text(str);
+			sprintf(str, "%f %f %f %f", viewproj[3][0], viewproj[3][1], viewproj[3][2], viewproj[3][3]);
+			ImGui::Text(str);
+		}
+		{
+			glm::mat4x4 viewproj = renderSystem->camera.getPerspectiveMatrix() * renderSystem->camera.getViewMatrix();
+			//viewproj = glm::inverse(viewproj);
+
+			ImGui::Text("View proj matrix");
+			sprintf(str, "%f %f %f %f", viewproj[0][0], viewproj[0][1], viewproj[0][2], viewproj[0][3]);
+			ImGui::Text(str);
+			sprintf(str, "%f %f %f %f", viewproj[1][0], viewproj[1][1], viewproj[1][2], viewproj[1][3]);
+			ImGui::Text(str);
+			sprintf(str, "%f %f %f %f", viewproj[2][0], viewproj[2][1], viewproj[2][2], viewproj[2][3]);
+			ImGui::Text(str);
+			sprintf(str, "%f %f %f %f", viewproj[3][0], viewproj[3][1], viewproj[3][2], viewproj[3][3]);
+			ImGui::Text(str);
+		}
+		
+
 		ImGui::Checkbox("Enable physics", &physicsSystem->enabled);
+		ImGui::DragFloat("Camera pitch", &renderSystem->camera.Pitch);
+		ImGui::DragFloat("Camera yaw", &renderSystem->camera.Yaw);
+		ImGui::DragFloat3("Camera position", (float*)&renderSystem->camera.Position);
 		ImGui::Text(("Delta " + std::to_string(dt)).c_str());
+		ImGui::Image((void*)std::static_pointer_cast<DX11Texture2D>(renderSystem->textures["noise"])->m_TextureShaderResource, ImVec2(256, 256));
+		ImGui::Image((void*)std::static_pointer_cast<DX11Texture2D>(renderSystem->textures["ambient_occlusion_color"])->m_TextureShaderResource, ImVec2(256, 144));
+		ImGui::Image((void*)std::static_pointer_cast<DX11Texture2D>(renderSystem->textures["view_space_pos"])->m_TextureShaderResource, ImVec2(256, 144));
+		ImGui::Image((void*)std::static_pointer_cast<DX11Texture2D>(renderSystem->textures["view_space_normal"])->m_TextureShaderResource, ImVec2(256, 144));
 		ImGui::Image((void*)std::static_pointer_cast<DX11Texture2D>(renderSystem->textures["picker"])->m_TextureShaderResource, ImVec2(256, 144));
 		ImGui::Image((void*)std::static_pointer_cast<DX11Texture2D>(renderSystem->textures["bluredShadowDepthTexture"])->m_TextureShaderResource, ImVec2(256, 144));
 		ImGui::Image((void*)std::static_pointer_cast<DX11Texture2D>(renderSystem->textures["shadowColorTexture"])->m_TextureShaderResource, ImVec2(256, 144));

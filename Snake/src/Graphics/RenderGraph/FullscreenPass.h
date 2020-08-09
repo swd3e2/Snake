@@ -38,7 +38,9 @@ public:
 		for (auto& it : textures) {
 			it.second->bindToUnit(it.first, renderer->getContext());
 		}
-
+        for (auto& it : buffers) {
+            it->bind(renderer->getContext());
+        }
 		this->shader->bind(renderer->getContext());
 
         quadVertexBuffer->bind(renderer->getContext());

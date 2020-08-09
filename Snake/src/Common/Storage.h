@@ -6,27 +6,36 @@
 #include <unordered_map>
 #include <string>
 #include "Singleton.h"
+#include <mutex>
 
 template<typename T>
 class Storage : public Singleton<Storage<T>> {
 private:
+	std::mutex mutex;
 	std::unordered_map<std::string, std::weak_ptr<T>> storage;
 public:
-	bool has(const std::string& name) {
+	bool has(const std::string& name) 
+	{
 		if (storage.find(name) != storage.end()) {
 			return !storage[name].expired();
 		}
 		return false;
 	}
 
-	std::shared_ptr<T> get(const std::string& name) {
+	std::shared_ptr<T> get(const std::string& name) 
+	{
 		if (storage.find(name) != storage.end()) {
 			return storage[name].lock();
 		}
 		return nullptr;
 	}
 
-	void set(const std::string& name, const std::shared_ptr<T>& object) {
-		storage[name] = object;
+	void set(const std::string& name, const std::shared_ptr<T>& object) 
+	{
+		mutex.lock();
+		if (!has(name)) {
+			storage[name] = object;
+		}
+		mutex.unlock();
 	}
 };

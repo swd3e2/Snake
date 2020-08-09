@@ -9,6 +9,7 @@
 #include "Window.h"
 #include "Renderer/CommonTypes.h"
 #include "Viewport.h"
+#include "EventSystem/EventSystem.h"
 
 class Renderer {
 private:
@@ -38,7 +39,7 @@ public:
         _mainRenderTarget->bind(_renderContext);
     }
 
-	virtual Window* createWindow(int width, int height) = 0;
+	virtual Window* createWindow(int width, int height, EventSystem* eventSystem) = 0;
 	virtual void setViewport(int x0, int y0, int x1, int y1) = 0;
 	virtual void setViewport(const Viewport& viewport) = 0;
     virtual void swapBuffers() = 0;

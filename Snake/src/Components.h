@@ -77,3 +77,8 @@ struct LightComponent {
 struct MovingBoxComponent {
 	bool moveUp = false;
 };
+
+struct MoveComponent {
+	glm::vec3 destination;
+	float speed = 0.2f;
+};

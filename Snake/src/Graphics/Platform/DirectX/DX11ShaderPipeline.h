@@ -43,7 +43,7 @@ public:
 		};
 
 		HRESULT hr = D3DCompile(code.c_str(), code.size(), NULL, defines, NULL,
-			"main", DirectX::getShaderTarget(type).c_str(), D3DCOMPILE_ENABLE_STRICTNESS, // | D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
+			"main", DirectX::getShaderTarget(type).c_str(), D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
 			0, &shaderBlob, &errorBlob);
 
 		if (FAILED(hr)) {
