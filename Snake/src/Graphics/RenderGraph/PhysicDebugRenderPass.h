@@ -5,7 +5,7 @@
 #include "Graphics/Renderer/VertexBuffer.h"
 #include "Graphics/vertex.h"
 #include <memory>
-#include "Physics/PhysicsSystem.h"
+#include "Systems/PhysicsSystem.h"
 
 struct Line {
 	glm::vec3 from;
@@ -32,27 +32,27 @@ public:
 	}
 
 	virtual void execute(Renderer* renderer) {
-		renderer->setViewport(viewport);
-		renderTarget->bind(renderer->getContext());
+		//renderer->setViewport(viewport);
+		//renderTarget->bind(renderer->getContext());
 
-		for (auto& it : textures) {
-			it.second->bindToUnit(it.first, renderer->getContext());
-		}
+		//for (auto& it : textures) {
+		//	it.second->bindToUnit(it.first, renderer->getContext());
+		//}
 
-		this->shader->bind(renderer->getContext());
+		//this->shader->bind(renderer->getContext());
 
-		Renderer::instance()->setPrimitiveTopology(PrimitiveTopology::LINELIST);
-		phsyicsSystem->dynamicsWorld->debugDrawWorld();
-		Renderer::instance()->setPrimitiveTopology(PrimitiveTopology::TRIANGELIST);
+		//Renderer::instance()->setPrimitiveTopology(PrimitiveTopology::LINELIST);
+		//phsyicsSystem->dynamicsWorld->debugDrawWorld();
+		//Renderer::instance()->setPrimitiveTopology(PrimitiveTopology::TRIANGELIST);
 
-		/*if (linesSize > 0) {
-			vertexBuffer->update(lines, linesSize * 2, sizeof(vertex));
-			vertexBuffer->bind(renderer->getContext());
+		///*if (linesSize > 0) {
+		//	vertexBuffer->update(lines, linesSize * 2, sizeof(vertex));
+		//	vertexBuffer->bind(renderer->getContext());
 
-			renderer->draw(linesSize * 2);
-		}
+		//	renderer->draw(linesSize * 2);
+		//}
 
-		linesSize = 0;*/
+		//linesSize = 0;*/
 	}
 
 	void addLine(glm::vec3& from, glm::vec3& to) {

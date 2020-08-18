@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ISystem.h"
 #include "Components.h"
 #include <entt/entt.hpp>
 #include "Input/InputManager.h"
@@ -7,22 +8,61 @@
 #include "Graphics/Camera.h"
 #include "EventSystem/EventSystem.h"
 
-class PlayerSystem {
+class PlayerSystem : public ISystem
+{
 public:
 	Camera* mainCamera;
 	entt::entity player;
 private:
-	entt::registry* registry;
 	PhysicsSystem* physicsSystem;
 	EventSystem* eventSystem;
 public:
-	PlayerSystem(EventSystem* eventSystem, entt::registry* registry, PhysicsSystem* physicsSystem) : registry(registry), physicsSystem(physicsSystem), eventSystem(eventSystem) {
+	PlayerSystem(SceneManager* sceneManager, EventSystem* eventSystem, PhysicsSystem* physicsSystem) : 
+		ISystem(sceneManager), physicsSystem(physicsSystem), eventSystem(eventSystem)
+	{
 		ClassEventDelegate<PlayerSystem>* eventDeleage = new ClassEventDelegate<PlayerSystem>(this, &PlayerSystem::onMouseClick);
 		eventSystem->addEventListener<PlayerSystem, LeftMouseClickEvent>(eventDeleage);
+
+#if 0
+		entt::registry* registry = sceneManager->getCurrentScene()->getRegistry();
+		entt::entity player = registry->create();
+		CameraComponent& component = registry->emplace<CameraComponent>(player);
+		component.projectionMatrix = glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.01f, 200.0f);
+		registry->emplace<PlayerComponent>(player);
+		registry->emplace<TransformComponent>(player);
+
+		btCollisionShape* shape = new btCapsuleShape(0.6f, 1.6f);
+
+		btTransform startTransform;
+		startTransform.setIdentity();
+
+		btVector3 localInertia(0, 0, 0);
+		shape->calculateLocalInertia(150.0f, localInertia);
+
+		startTransform.setOrigin(btVector3(0.0f, 0.0f, 0.0f));
+		//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
+		btDefaultMotionState* motionState = new btDefaultMotionState(startTransform);
+		btRigidBody::btRigidBodyConstructionInfo rbInfo(150.0f, motionState, shape, localInertia);
+		rbInfo.m_friction = 0.0f;
+		rbInfo.m_restitution = 0.0f;
+		rbInfo.m_linearDamping = 0.0f;
+
+		btRigidBody* body = new btRigidBody(rbInfo);
+		body->setAngularFactor(0.0f);
+		// No sleeping (or else setLinearVelocity won't work)
+		body->setActivationState(DISABLE_DEACTIVATION);
+		physicsSystem->dynamicsWorld->addRigidBody(body);
+
+		PhysicsComponent& physicsComponent = registry->emplace<PhysicsComponent>(player, shape, motionState, body);
+		physicsComponent.isDynamic = true;
+		physicsComponent.applyRotation = false;
+#endif
 	}
 
-	void update(double dt) 
+	virtual void update(double dt) override
 	{
+		entt::registry* registry = sceneManager->getCurrentScene()->getRegistry();
+
 		registry->view<TransformComponent, PlayerComponent>().each([&](TransformComponent& transform, PlayerComponent& player) {
 			//if (!player.active) return;
 
@@ -101,6 +141,8 @@ public:
 
 	void onMouseClick(Event* event)
 	{
+		entt::registry* registry = sceneManager->getCurrentScene()->getRegistry();
+
 		double x = InputManager::instance()->mousePosX;
 		double y = InputManager::instance()->mousePosY;
 		glm::mat4x4 viewproj = mainCamera->getPerspectiveMatrix() * mainCamera->getViewMatrix();

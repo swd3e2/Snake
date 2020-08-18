@@ -1,16 +1,21 @@
 #pragma once
 
+#include "ISystem.h"
 #include <entt/entt.hpp>
 #include <glm/glm.hpp>
 #include "Components.h"
 
-class MovingBoxSystem {
-private:
-	entt::registry* registry;
+class MovingBoxSystem : public ISystem
+{
 public:
-	MovingBoxSystem(entt::registry* registry) : registry(registry) {}
+	MovingBoxSystem(SceneManager* sceneManager) : 
+		ISystem(sceneManager) 
+	{}
 
-	void update(double dt) {
+	virtual void update(double dt) override
+	{
+		entt::registry* registry = sceneManager->getCurrentScene()->getRegistry();
+
 		registry->view<MovingBoxComponent, PhysicsComponent>().each([dt](MovingBoxComponent& movingBox, PhysicsComponent& physics) {
 			btTransform transform = physics.body->getWorldTransform();
 			btVector3 position = transform.getOrigin();

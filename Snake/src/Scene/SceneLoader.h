@@ -1,3 +1,5 @@
+#pragma once
+
 #include <string>
 #include <nlohmann/json.hpp>
 #include "Components.h"
@@ -5,14 +7,19 @@
 #include <iostream>
 #include "Import/ModelLoader.h"
 #include "Graphics/Renderer/CommonTypes.h"
-#include "JobSystem.h"
 
-class Loader {
+class SceneLoader 
+{
 public:
-    void loadFromFile(JobSystem* system, const std::string& filename, entt::registry* registry) {
+    void loadFromFile(const std::string& filename, entt::registry* registry) {
         using nlohmann::json;
 
         File file(filename);
+        if (!file.exists()) {
+            std::cout << "No such file: " << filename << std::endl;
+            return;
+        }
+
         nlohmann::basic_json<> projectData = json::parse(file.getConent());
 
         for (nlohmann::basic_json<>& it : projectData["Entities"]) {

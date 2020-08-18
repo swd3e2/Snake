@@ -26,7 +26,7 @@ public:
         _instance = this;
     }
 
-    RenderContext* getContext() { return _renderContext; }
+    inline RenderContext* getContext() { return _renderContext; }
 
     void bind(Bindable* bindable) {
         bindable->bind(_renderContext);

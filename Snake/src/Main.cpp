@@ -1,4 +1,14 @@
 #include "Application.h"
+#include "Graphics/RenderQueue/RenderQueue.h"
+
+struct test {
+    float a, b, c, d;
+};
+
+struct test2 {
+    float a, b, c, d;
+    float a1, b2, c3, d4;
+};
 
 int main(char* args)
 {
@@ -7,7 +17,6 @@ int main(char* args)
 	_CrtSetDbgFlag(0);
 #endif
     Application app;
-    app.init();
     app.run();
     return 0;
 }

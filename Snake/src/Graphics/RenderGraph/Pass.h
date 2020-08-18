@@ -8,55 +8,24 @@
 #include "Graphics/Renderer/RenderTarget.h"
 #include "Graphics/Renderer/Texture2D.h"
 #include "Graphics/Renderer/ShaderPipeline.h"
+#include <functional>
 
-class Pass {
+enum class PassType {
+    RENDER_MODELS,
+    FULLSCREEN
+};
+
+class Pass 
+{
 protected:
-    std::string name;
-    std::shared_ptr<RenderTarget> renderTarget;
-public:
-    // List of entities to render
-	std::queue<entt::entity> entities;
-
     Viewport viewport;
-
-    std::unordered_map<int, std::shared_ptr<Texture2D>> textures;
-    std::vector<std::shared_ptr<ConstantBuffer>> buffers;
-    std::shared_ptr<ShaderPipeline> shader;
+    std::string debugName;
 public:
-    Pass(const std::string& name) : name(name) {}
-
-    virtual void execute(Renderer* renderer) {
-        renderer->setViewport(viewport);
-        renderTarget->bind(renderer->getContext());
-
-		for (auto& it : textures) {
-			it.second->bindToUnit(it.first, renderer->getContext());
-		}
-		for (auto& it : buffers) {
-			it->bind(renderer->getContext());
-		}
-
-        this->shader->bind(renderer->getContext());
-    }
-    
-	void setRenderTarget(const std::shared_ptr<RenderTarget>& renderTarget) {
-		this->renderTarget = renderTarget;
-         viewport = { 0, 0, renderTarget->getWidth(), renderTarget->getHeight() };
-	}
-
-    void setTexture(int slot, const std::shared_ptr<Texture2D>& texture) {
-        textures[slot] = texture;
-    }
-    
-    void setShader(const std::shared_ptr<ShaderPipeline>& shader) {
-        this->shader = shader;
-    }
-    
-    void setConstantBuffer(const std::shared_ptr<ConstantBuffer>& buffer) {
-        buffers.push_back(buffer);
-    }
-
-	virtual void addEntity(entt::entity entity) {
-		entities.push(entity);
-	}
+    std::function<void(Renderer*)> setupPass;
+    std::function<void(Renderer*, Model*)> processModel;
+    std::function<void(Renderer*)> execute;
+    bool renderModels = false;
+    PassType type;
+public:
+    Pass(const std::string& name) : debugName(name) {}
 };

@@ -5,10 +5,8 @@
 #include "imgui/imgui_impl_dx11.h"
 #include <entt/entt.hpp>
 #include "../Model/Model.h"
-#include "imgui/ImGuizmo.h"
 #include "Graphics/Camera.h"
 #include "Graphics/Platform/DirectX/DX11RenderTarget.h"
-#include "Saver.h"
 #include "Systems/RenderSystem.h"
 #include "Import/ModelLoader.h"
 
@@ -45,7 +43,6 @@ public:
 		ImGui_ImplDX11_NewFrame();
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
-		ImGuizmo::BeginFrame();
 
 		ImGui::Begin("Entities");
 		std::string temp = "Entity №";
@@ -55,9 +52,9 @@ public:
 			selectedEntity = registry->create();
 		}
 		if (ImGui::Button("Save")) {
-			Saver saver;
-			saver.saveToFile("test.json", registry);
+
 		}
+
 		registry->each([&](const entt::entity& entity) {
 			if (ImGui::Selectable(("Entity###" + std::to_string(i)).c_str())) {
 				selectedEntity = entity;
@@ -188,15 +185,15 @@ public:
 		ImGui::DragFloat("Camera yaw", &renderSystem->camera.Yaw);
 		ImGui::DragFloat3("Camera position", (float*)&renderSystem->camera.Position);
 		ImGui::Text(("Delta " + std::to_string(dt)).c_str());
-		ImGui::Image((void*)std::static_pointer_cast<DX11Texture2D>(renderSystem->textures["noise"])->m_TextureShaderResource, ImVec2(256, 256));
-		ImGui::Image((void*)std::static_pointer_cast<DX11Texture2D>(renderSystem->textures["ambient_occlusion_color"])->m_TextureShaderResource, ImVec2(256, 144));
-		ImGui::Image((void*)std::static_pointer_cast<DX11Texture2D>(renderSystem->textures["view_space_pos"])->m_TextureShaderResource, ImVec2(256, 144));
-		ImGui::Image((void*)std::static_pointer_cast<DX11Texture2D>(renderSystem->textures["view_space_normal"])->m_TextureShaderResource, ImVec2(256, 144));
-		ImGui::Image((void*)std::static_pointer_cast<DX11Texture2D>(renderSystem->textures["picker"])->m_TextureShaderResource, ImVec2(256, 144));
-		ImGui::Image((void*)std::static_pointer_cast<DX11Texture2D>(renderSystem->textures["bluredShadowDepthTexture"])->m_TextureShaderResource, ImVec2(256, 144));
-		ImGui::Image((void*)std::static_pointer_cast<DX11Texture2D>(renderSystem->textures["shadowColorTexture"])->m_TextureShaderResource, ImVec2(256, 144));
-		ImGui::Image((void*)std::static_pointer_cast<DX11Texture2D>(renderSystem->textures["rtt"])->m_TextureShaderResource, ImVec2(256, 144));
-		ImGui::Image((void*)std::static_pointer_cast<DX11Texture2D>(renderSystem->textures["shadowDepthTexture"])->m_TextureShaderResource, ImVec2(256, 256), ImVec2(0, 1), ImVec2(1, 0));
+		//ImGui::Image((void*)std::static_pointer_cast<DX11Texture2D>(renderSystem->textures["noise"])->m_TextureShaderResource, ImVec2(256, 256));
+		//ImGui::Image((void*)std::static_pointer_cast<DX11Texture2D>(renderSystem->textures["ambient_occlusion_color"])->m_TextureShaderResource, ImVec2(256, 144));
+		//ImGui::Image((void*)std::static_pointer_cast<DX11Texture2D>(renderSystem->textures["view_space_pos"])->m_TextureShaderResource, ImVec2(256, 144));
+		//ImGui::Image((void*)std::static_pointer_cast<DX11Texture2D>(renderSystem->textures["view_space_normal"])->m_TextureShaderResource, ImVec2(256, 144));
+		//ImGui::Image((void*)std::static_pointer_cast<DX11Texture2D>(renderSystem->textures["picker"])->m_TextureShaderResource, ImVec2(256, 144));
+		//ImGui::Image((void*)std::static_pointer_cast<DX11Texture2D>(renderSystem->textures["bluredShadowDepthTexture"])->m_TextureShaderResource, ImVec2(256, 144));
+		//ImGui::Image((void*)std::static_pointer_cast<DX11Texture2D>(renderSystem->textures["shadowColorTexture"])->m_TextureShaderResource, ImVec2(256, 144));
+		//ImGui::Image((void*)std::static_pointer_cast<DX11Texture2D>(renderSystem->textures["rtt"])->m_TextureShaderResource, ImVec2(256, 144));
+		//ImGui::Image((void*)std::static_pointer_cast<DX11Texture2D>(renderSystem->textures["shadowDepthTexture"])->m_TextureShaderResource, ImVec2(256, 256), ImVec2(0, 1), ImVec2(1, 0));
 		ImGui::End();
 
 		ImGui::Render();

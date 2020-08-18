@@ -10,7 +10,8 @@
  * Class for post processing effects.
  * It renders a single quad.
  */
-class FullscreenPass : public Pass {
+class FullscreenPass : public Pass 
+{
 private:
     std::shared_ptr<VertexBuffer> quadVertexBuffer;
     std::shared_ptr<IndexBuffer> quadIndexBuffer;
@@ -32,17 +33,6 @@ public:
     }
 
     virtual void execute(Renderer* renderer) {
-        renderer->setViewport(viewport);
-        renderTarget->bind(renderer->getContext());
-
-		for (auto& it : textures) {
-			it.second->bindToUnit(it.first, renderer->getContext());
-		}
-        for (auto& it : buffers) {
-            it->bind(renderer->getContext());
-        }
-		this->shader->bind(renderer->getContext());
-
         quadVertexBuffer->bind(renderer->getContext());
         quadIndexBuffer->bind(renderer->getContext());
 

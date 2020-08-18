@@ -3,7 +3,8 @@
 #include "RenderTarget.h"
 #include "Graphics/Renderer/RenderTarget.h"
 
-class MainRenderTarget : public RenderTarget {
+class MainRenderTarget : public RenderTarget 
+{
 private:
 	int width;
 	int height;

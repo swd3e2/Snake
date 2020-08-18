@@ -2,6 +2,8 @@
 #define _SCRIPT_SYSTEM_H
 
 #include <entt/entt.hpp>
+#include "ISystem.h"
+#include "Scene/SceneManager.h"
 
 extern "C" {
 # include "lua.h"
@@ -23,14 +25,14 @@ void printMessage(const std::string& message) {
     std::cout << message << std::endl;
 }
 
-class ScriptSystem {
+class ScriptSystem : public ISystem 
+{
 private:
-    entt::registry* registry;
-
     lua_State* L;
 public:
-    ScriptSystem(entt::registry* registry) {
-        this->registry = registry;
+    ScriptSystem(SceneManager* sceneManager) :
+        ISystem(sceneManager)
+    {
         // create a Lua state
         L = luaL_newstate();
 
@@ -47,7 +49,10 @@ public:
         .endClass();
     }
 
-    void update() {
+    virtual void update(double dt) override
+    {
+        entt::registry* registry = sceneManager->getCurrentScene()->getRegistry();
+
         registry->view<ScriptComponent, TransformComponent>().each([&](ScriptComponent& script, TransformComponent& transform) {
             luabridge::push(L, &transform.translation);
             lua_setglobal(L, "translation");

@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <glm/glm.hpp>
@@ -9,8 +8,6 @@
 #include <unordered_set>
 #include <set>
 #include <string>
-
-
 
 class GridSystem {
 public:
@@ -33,6 +30,9 @@ public:
 	float cellSize = 0.5f;
 
 	std::set<Node*> path;
+
+	std::shared_ptr<VertexBuffer> quadVertexBuffer;
+	std::shared_ptr<IndexBuffer> quadIndexBuffer;
 public:
 	GridSystem() {
 		for (int x = 0; x < gridSizeX; x++) {

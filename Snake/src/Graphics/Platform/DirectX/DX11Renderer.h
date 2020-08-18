@@ -7,10 +7,6 @@
 #include "DX11MainRenderTarget.h"
 #include "DX11Utils.h"
 
-struct alignas(32) Command {
-	int index;
-};
-
 /**
  * DirectX renderer implementation
  */
@@ -25,8 +21,6 @@ private:
 	ID3D11RasterizerState* m_RasterizerState;
 	ID3D11RenderTargetView* nullRenderTargets[4] = { NULL };
 	ID3D11ShaderResourceView* const nullShaderResourceView[1] = { NULL };
-	void* mem;
-	Command* commands;
 public:
 	DX11Renderer() {
 		_rendererType = RendererType::DirectX;

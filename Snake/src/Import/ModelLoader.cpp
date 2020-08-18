@@ -61,6 +61,7 @@ void ModelLoader::processNodes(const std::shared_ptr<Model>& model, const std::s
 
 void ModelLoader::processVertexArrays(const std::shared_ptr<Model>& model, const std::shared_ptr<Import::Model>& importModel) {
 	int renderableCounter = -1;
+
 	for (auto& meshId : importModel->meshes) {
 		for (auto& mesh : meshId.second) {
 			std::shared_ptr<SubMesh> renderable = std::make_shared<SubMesh>();

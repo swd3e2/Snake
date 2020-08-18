@@ -1,19 +1,21 @@
 #pragma once
 
+#include "ISystem.h"
 #include <entt/entt.hpp>
 #include "Components.h"
 #include <glm/glm.hpp>
 #include <iostream>
 
-class MoveSystem {
-private:
-	entt::registry* registry;
+class MoveSystem : public ISystem 
+{
 public:
-	MoveSystem(entt::registry* registry) :
-		registry(registry) 
+	MoveSystem(SceneManager* sceneManager) :
+		ISystem(sceneManager) 
 	{}
 
-	void update(double dt) {
+	virtual void update(double dt) override 
+	{
+		entt::registry* registry = sceneManager->getCurrentScene()->getRegistry();
 		auto group = registry->group<MoveComponent, TransformComponent>();
 
 		for (auto entity : group) {

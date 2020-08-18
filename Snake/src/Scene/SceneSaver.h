@@ -6,8 +6,8 @@
 #include "Components.h"
 #include <fstream>
 
-class Saver {
-private:
+class SceneSaver 
+{
 public:
     void saveToFile(const std::string& filename, entt::registry* registry) {
         using nlohmann::json;

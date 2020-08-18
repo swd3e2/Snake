@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ISystem.h"
 #include <entt/entt.hpp>
 #include "Components.h"
 #include <glm/glm.hpp>
@@ -9,13 +10,17 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/euler_angles.hpp>
 
-class CameraSystem {
-private:
-	entt::registry* registry;
+class CameraSystem : public ISystem 
+{
 public:
-	CameraSystem(entt::registry* registry) : registry(registry) {}
+	CameraSystem(SceneManager* sceneManager) 
+		: ISystem(sceneManager)
+	{}
 
-	void update(double dt) {
+	virtual void update(double dt) override
+	{
+		entt::registry* registry = sceneManager->getCurrentScene()->getRegistry();
+
 		registry->view<CameraComponent, TransformComponent>().each([&](CameraComponent& camera, TransformComponent& transform) {
 			glm::mat4 rotation = glm::transpose(glm::eulerAngleYXZ(transform.rotation.x, transform.rotation.y, 0.0f));
 			glm::vec3 camTarget = glm::normalize(glm::vec4(0.0f, 0.0f, 1.0f, 0.0f) * rotation) + glm::vec4(transform.translation + glm::vec3(0.0f, 1.0f, 0.0f), 1.0f);

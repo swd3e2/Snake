@@ -2,10 +2,11 @@
 
 #include <btBulletDynamicsCommon.h>
 #include "Graphics/Physics/PhysicsDebugDraw.h"
+#include "ISystem.h"
 #include <BulletCollision\CollisionDispatch\btCollisionWorld.h>
 #include <BulletCollision\CollisionDispatch\btGhostObject.h>
 
-class PhysicsSystem {
+class PhysicsSystem : public ISystem {
 private:
 	std::shared_ptr<btSequentialImpulseConstraintSolver> solver;
 	std::shared_ptr<btBroadphaseInterface> overlappingPairCache;
@@ -16,8 +17,8 @@ public:
 	std::shared_ptr<btDiscreteDynamicsWorld> dynamicsWorld;
 	bool enabled = true;
 public:
-	PhysicsSystem(entt::registry* registry) :
-		registry(registry)
+	PhysicsSystem(SceneManager* sceneManager) :
+		ISystem(sceneManager)
 	{
 		collisionConfiguration = std::make_shared<btDefaultCollisionConfiguration>();
 		dispatcher = std::make_shared<btCollisionDispatcher>(collisionConfiguration.get());

@@ -32,7 +32,7 @@ public:
 	}
 
 	virtual void execute(Renderer* renderer) {
-		renderer->setViewport(viewport);
+		/*renderer->setViewport(viewport);
 		renderTarget->bind(renderer->getContext());
 
 		for (auto& it : textures) {
@@ -51,7 +51,7 @@ public:
 			entt::entity entity = entities.front();
 			entities.pop();
 			renderEntity(renderer, entity);
-		}
+		}*/
 	}
 private:
 	void renderEntity(Renderer* renderer, entt::entity entity) {
