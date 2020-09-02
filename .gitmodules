@@ -28,3 +28,6 @@
 [submodule "Snake/vendor/ImGuizmo"]
 	path = Snake/vendor/ImGuizmo
 	url = https://github.com/CedricGuillemet/ImGuizmo.git
+[submodule "Snake/vendor/freetype"]
+	path = Snake/vendor/freetype
+	url = https://github.com/aseprite/freetype2.git
