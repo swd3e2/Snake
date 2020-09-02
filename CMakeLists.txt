@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 
 project(Snake)
 
-add_definitions(-D_CRT_SECURE_NO_WARNINGS -D_DEBUG)
+add_definitions(-D_CRT_SECURE_NO_WARNINGS)# -D_DEBUG)
 
 file(GLOB_RECURSE SOURCES "Snake/src/*.cpp")
 file(GLOB_RECURSE HEADERS "Snake/src/*.h")
@@ -20,22 +20,22 @@ set(INCLUDE_DIRS
     Snake/vendor/bullet/src
     Snake/vendor/glfw/include
     Snake/vendor/glad/include
+    Snake/vendor/freetype/include
 )
 
 add_executable(Snake ${SOURCES} ${HEADERS})
 
 target_include_directories(Snake PRIVATE ${INCLUDE_DIRS})
 target_link_libraries(Snake 
-    opengl32 	
-    Snake/vendor/libs/glfw/glfw3 
-    Snake/vendor/libs/Lua52
-    Snake/vendor/libs/Bullet3Collision_Debug
-    Snake/vendor/libs/Bullet3Common_Debug
-    Snake/vendor/libs/Bullet3Dynamics_Debug
-    Snake/vendor/libs/Bullet3Geometry_Debug
-    Snake/vendor/libs/BulletCollision_Debug
-    Snake/vendor/libs/BulletDynamics_Debug
-    Snake/vendor/libs/LinearMath_Debug
+    debug   Snake/vendor/libs/debug/Lua52                     optimized   Snake/vendor/libs/debug/Lua52
+    debug   Snake/vendor/libs/debug/Bullet3Collision_Debug    optimized   Snake/vendor/libs/release/Bullet3Collision
+    debug   Snake/vendor/libs/debug/Bullet3Common_Debug       optimized   Snake/vendor/libs/release/Bullet3Common
+    debug   Snake/vendor/libs/debug/Bullet3Dynamics_Debug     optimized   Snake/vendor/libs/release/Bullet3Dynamics
+    debug   Snake/vendor/libs/debug/Bullet3Geometry_Debug     optimized   Snake/vendor/libs/release/Bullet3Geometry
+    debug   Snake/vendor/libs/debug/BulletCollision_Debug     optimized   Snake/vendor/libs/release/BulletCollision
+    debug   Snake/vendor/libs/debug/BulletDynamics_Debug      optimized   Snake/vendor/libs/release/BulletDynamics
+    debug   Snake/vendor/libs/debug/LinearMath_Debug          optimized   Snake/vendor/libs/release/LinearMath
+    debug   Snake/vendor/libs/debug/freetyped                 optimized   Snake/vendor/libs/release/freetype
     d3d11.lib
     D3DCompiler.lib
 )

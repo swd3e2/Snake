@@ -9,10 +9,11 @@
 #include "Graphics/Renderer/Texture2D.h"
 #include "Graphics/Renderer/ShaderPipeline.h"
 #include <functional>
+#include "Scene/Scene.h"
 
 enum class PassType {
     RENDER_MODELS,
-    FULLSCREEN
+    POSTPROCESS
 };
 
 class Pass 
@@ -21,10 +22,8 @@ protected:
     Viewport viewport;
     std::string debugName;
 public:
-    std::function<void(Renderer*)> setupPass;
-    std::function<void(Renderer*, Model*)> processModel;
-    std::function<void(Renderer*)> execute;
-    bool renderModels = false;
+    std::function<void(Renderer*)> setup;
+    std::function<void(Renderer*, Scene*)> execute;
     PassType type;
 public:
     Pass(const std::string& name) : debugName(name) {}

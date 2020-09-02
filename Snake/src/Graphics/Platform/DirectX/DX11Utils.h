@@ -3,6 +3,10 @@
 #include "DX11RenderContext.h"
 #include "Graphics/Renderer/CommonTypes.h"
 
+#define SAFE_RELEASE(res)\
+	if (res != nullptr)\
+		res->Release();
+
 namespace DirectX {
 	const std::string getShaderTarget(const ShaderType type);
 	std::string getInputLayoutShaderFormat(InputDataType type);

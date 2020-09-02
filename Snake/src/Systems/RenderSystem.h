@@ -64,7 +64,7 @@ public:
 	Model* model;
 	bool useDebugCamera = true;
 public:
-	RenderSystem(SceneManager* sceneManager, ApplicationSettings* settings, PhysicsSystem* physics, Renderer* renderer, EventSystem* eventSystem):
+	RenderSystem(SceneManager* sceneManager, ApplicationSettings* settings, PhysicsSystem* physics, Renderer* renderer):
 		ISystem(sceneManager), physicsSystem(physics), renderer(renderer), context(renderer->getContext()),
 		eventSystem(eventSystem)
 	{
@@ -81,47 +81,8 @@ public:
 		RenderGraphBuilder renderGraphBuilder;
 		renderGraph = renderGraphBuilder.build(renderQueue, renderer, resources);
 
+		auto eventSystem = EventSystem::instance();
 		eventSystem->addEventListener<RenderSystem, LeftMouseClickEvent>(new ClassEventDelegate(this, &RenderSystem::onLeftMouseClick));
-
-		/*model = new Model();
-		{
-			std::shared_ptr<Node> node = std::make_shared<Node>();
-			node->id = 0;
-			node->mesh = 0;
-			node->name = "Test";
-
-			node->transform.rotation = glm::vec3(0.0f);
-			node->transform.scale = glm::vec3(1.0f);
-			node->transform.translation = glm::vec3(0.0f);
-
-			model->nodes.push_back(node);
-		}
-		{
-			std::shared_ptr<VertexBuffer> quadVertexBuffer;
-			std::shared_ptr<IndexBuffer> quadIndexBuffer;
-			{
-				std::vector<vertex> vertexData;
-				vertexData.push_back(vertex(1.0f, 1.0f, 0.1f, 1.0f, 0.0f));
-				vertexData.push_back(vertex(1.0f, -1.0f, 0.1f, 1.0f, 1.0f));
-				vertexData.push_back(vertex(-1.0f, 1.0f, 0.1f, 0.0f, 0.0f));
-				vertexData.push_back(vertex(-1.0f, -1.0f, 0.1f, 0.0f, 1.0f));
-				quadVertexBuffer.reset(VertexBuffer::create(vertexData.size(), sizeof(vertex), vertexData.data()));
-
-				std::vector<unsigned int> indexData;
-				indexData.push_back(0); indexData.push_back(2); indexData.push_back(1);
-				indexData.push_back(2); indexData.push_back(3); indexData.push_back(1);
-				quadIndexBuffer.reset(IndexBuffer::create(indexData.size(), indexData.data()));
-			}
-
-			std::shared_ptr<SubMesh> renderable = std::make_shared<SubMesh>();
-			renderable->id = 0;
-			renderable->material = -1;
-
-			renderable->vBuffer = quadVertexBuffer;
-			renderable->iBuffer = quadIndexBuffer;
-
-			model->submeshes[0].push_back(renderable);
-		}*/
 	}
 
 	virtual void update(double dt) override
@@ -152,21 +113,12 @@ public:
 		renderQueue->bindShaderInputLayout(resources->shader_input_layout.get());
 		renderQueue->updateConstantBuffer(resources->shader_buffer.get(), &projectionData, sizeof(WVP));
 
-		int cursor = 0;
-		auto group = registry->group<RenderComponent, TransformComponent>();
-
-		for (auto entity : group) {
-			auto& transform = group.get<TransformComponent>(entity);
-			auto& render = group.get<RenderComponent>(entity);
-
-			renderGraph->models[cursor++] = render.model.get();
-		}
-
-        renderGraph->execute();
+        renderGraph->execute(sceneManager->getCurrentScene());
 		renderQueue->present();
 
 		for (int i = 0; i < renderQueue->commands_size; i++) {
-			renderQueue->commands[i]->execute(renderer, renderQueue->commands[i]);
+			auto& command = renderQueue->commands[i];
+			command->execute(renderer, command);
 		}
 		renderQueue->clear();
 

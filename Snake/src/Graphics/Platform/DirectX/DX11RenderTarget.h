@@ -6,7 +6,8 @@
 #include "DX11Utils.h"
 #include "DX11Texture2D.h"
 
-class DX11RenderTarget : public RenderTarget {
+class DX11RenderTarget : public RenderTarget 
+{
 private:
 	std::vector<ID3D11RenderTargetView*> renderTargets;
 	ID3D11DepthStencilView* m_DepthStencilView = nullptr;
@@ -14,7 +15,16 @@ private:
 	std::vector<std::shared_ptr<Texture2D>> renderTargetTextures;
 	std::shared_ptr<Texture2D> depthTexture;
 public:
-	virtual void clear(RenderContext* renderContext) override {
+	virtual ~DX11RenderTarget()
+	{
+		for (auto& it : renderTargets) {
+			SAFE_RELEASE(m_DepthStencilView);
+		}
+		SAFE_RELEASE(m_DepthStencilView);
+	}
+
+	virtual void clear(RenderContext* renderContext) override 
+	{
 		DX11Renderer* renderer = (DX11Renderer*)Renderer::instance();
 		ID3D11DeviceContext* deviceContext = ((DX11RenderContext*)renderer->getContext())->getDeviceContext();
 		
@@ -27,7 +37,8 @@ public:
 		}
 	}
 
-	virtual void setColorTexture(const std::shared_ptr<Texture2D>& texture, int slot, int level = 0) override {
+	virtual void setColorTexture(const std::shared_ptr<Texture2D>& texture, int slot, int level = 0) override 
+	{
 		DX11Renderer* renderer = (DX11Renderer*)Renderer::instance();
 		ID3D11Device* device = ((DX11RenderContext*)renderer->getContext())->getDevice();
 		ID3D11DeviceContext* deviceContext = ((DX11RenderContext*)renderer->getContext())->getDeviceContext();
@@ -43,7 +54,8 @@ public:
 		renderTargetTextures.push_back(texture);
 	}
 
-	virtual void setDepthTexture(const std::shared_ptr<Texture2D>& texture, int level = 0) override {
+	virtual void setDepthTexture(const std::shared_ptr<Texture2D>& texture, int level = 0) override 
+	{
 		DX11Renderer* renderer = (DX11Renderer*)Renderer::instance();
 		ID3D11Device* device = ((DX11RenderContext*)renderer->getContext())->getDevice();
 		ID3D11DeviceContext* deviceContext = ((DX11RenderContext*)renderer->getContext())->getDeviceContext();
@@ -59,7 +71,8 @@ public:
 		depthTexture = texture;
 	}
 
-	virtual void bind(RenderContext* renderContext) override {
+	virtual void bind(RenderContext* renderContext) override 
+	{
 		DX11RenderContext* context = (DX11RenderContext*)renderContext;
 		ID3D11DeviceContext* deviceContext = context->getDeviceContext();
 
@@ -80,7 +93,8 @@ public:
 	}
 
 
-	virtual int getWidth() override {
+	virtual int getWidth() override 
+	{
 		if (renderTargetTextures.size() != 0) {
 			return renderTargetTextures[0]->getWidth();
 		} else if (m_DepthStencilView) {
@@ -89,7 +103,8 @@ public:
 		return 0;
 	}
 
-	virtual int getHeight() override {
+	virtual int getHeight() override 
+	{
 		if (renderTargetTextures.size() != 0) {
 			return renderTargetTextures[0]->getHeight();
 		} else if (m_DepthStencilView) {

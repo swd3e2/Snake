@@ -7,16 +7,17 @@
 
 class DX11RenderTarget;
 class Texture2D;
+class ShaderPipeline;
 
-class DX11RenderContext : public RenderContext {
+class DX11RenderContext : public RenderContext 
+{
 private:
 	ID3D11Device* m_Device;
 	ID3D11DeviceContext* m_DeviceContext;
 	IDXGISwapChain* m_SwapChain;
-
-	unsigned int renderTargetsBound;
 public:
 	std::vector<Texture2D*> boundTextures;
+	ShaderPipeline* boundShader = nullptr;
 	DX11RenderTarget* boundRenderTarget = nullptr;
 public:
 	DX11RenderContext(ID3D11Device* device, ID3D11DeviceContext* deviceContext, IDXGISwapChain* swapChain) :
@@ -31,6 +32,7 @@ public:
 		m_SwapChain->Release();
 	}
 
+	inline ShaderPipeline* getCurrentShader() { return boundShader; }
 	inline ID3D11Device* getDevice() const { return m_Device; }
 	inline ID3D11DeviceContext* getDeviceContext() const { return m_DeviceContext; }
 	inline IDXGISwapChain* getSwapChain() const { return m_SwapChain; }

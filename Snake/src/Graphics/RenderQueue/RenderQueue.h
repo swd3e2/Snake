@@ -46,9 +46,6 @@ public:
 		};
 
 		addCommand((RenderCommand*)command);
-		/*BindIndexBufferCommand* command = new (allocator->allocate(sizeof(BindIndexBufferCommand))) BindIndexBufferCommand();
-		command->index_buffer = index_buffer;
-		addCommand(command);*/
 	}
 
 	void bindVertexBuffer(VertexBuffer* vertex_buffer)
@@ -65,10 +62,6 @@ public:
 		};
 
 		addCommand((RenderCommand*)command);
-
-		/*BindVertexBufferCommand* command = new (allocator->allocate(sizeof(BindVertexBufferCommand))) BindVertexBufferCommand();
-		command->vertex_buffer = vertex_buffer;
-		addCommand(command);*/
 	}
 
 	void updateConstantBuffer(ConstantBuffer* buffer, void* data, int size)
@@ -154,9 +147,6 @@ public:
 		};
 
 		addCommand((RenderCommand*)command);
-		/*BindShaderInputLayoutCommand* command = new (allocator->allocate(sizeof(BindShaderInputLayoutCommand))) BindShaderInputLayoutCommand();
-		command->layout = layout;
-		addCommand(command);*/
 	}
 
 	void bindRenderTarget(RenderTarget* render_target)

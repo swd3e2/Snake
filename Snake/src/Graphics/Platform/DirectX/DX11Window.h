@@ -8,17 +8,18 @@
 #include <memory>
 #include "Input/InputManager.h"
 #include <Windowsx.h>
+#include <EventSystem/EventSystem.h>
 
 LRESULT  ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-class DX11Window : public Window {
+class DX11Window : public Window 
+{
 private:
 	HINSTANCE hInst;
 	HWND hWnd;
-	EventSystem* eventSystem;
 public:
-	DX11Window(int width, int height, EventSystem* eventSystem) :
-		Window(width, height), eventSystem(eventSystem)
+	DX11Window(int width, int height) :
+		Window(width, height)
 	{
 		hInst = GetModuleHandle(NULL);
 
@@ -33,7 +34,7 @@ public:
 		windowClass.hCursor = LoadCursor(NULL, IDC_ARROW);
 		windowClass.hbrBackground = nullptr;
 		windowClass.lpszMenuName = nullptr;
-		windowClass.lpszClassName = "HollowAppClass";
+		windowClass.lpszClassName = "SnakeWindowClass";
 		RegisterClassEx(&windowClass);
 
 		// Center positions
@@ -50,7 +51,7 @@ public:
 
 		int styles = WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU | WS_THICKFRAME;
 
-		hWnd = CreateWindow("HollowAppClass", "Hollow", styles,
+		hWnd = CreateWindow("SnakeWindowClass", "Hollow", styles,
 			windowRect.left, windowRect.top,
 			windowRect.right - windowRect.left, windowRect.bottom - windowRect.top,
 			nullptr, nullptr, hInst, this);
@@ -65,7 +66,12 @@ public:
 		RegisterRawInputDevices(Rid, 1, sizeof(Rid[0]));
 		ShowWindow(hWnd, SW_SHOW); // SW_SHOWMAXIMIZED
 		UpdateWindow(hWnd);
-		//ShowCursor(false);
+		//ShowCursor(true);
+	}
+
+	virtual ~DX11Window() 
+	{
+		DestroyWindow(hWnd);
 	}
 
 	static LRESULT __stdcall _HandleMsgThunk(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -136,7 +142,7 @@ public:
 			InputManager::instance()->setMouseKeyPressed(3, true);
 		} break;
 		case WM_LBUTTONUP: {
-			eventSystem->addEvent(new LeftMouseClickEvent());
+			EventSystem::instance()->add(new LeftMouseClickEvent());
 			InputManager::instance()->setMouseKeyPressed(1, false);
 		} break;
 		case WM_RBUTTONUP: {

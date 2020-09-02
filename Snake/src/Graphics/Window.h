@@ -7,9 +7,8 @@ private:
 protected:
 	bool isClosed = false;
 public:
-	Window(int width, int height) :
-		width(width), height(height)
-	{}
+	Window(int width, int height) : width(width), height(height) {}
+	virtual ~Window() {}
 
 	virtual bool isOpen() = 0;
 	virtual void pollEvents() = 0;

@@ -14,12 +14,9 @@ public:
 	{
 		entt::registry* registry = sceneManager->getCurrentScene()->getRegistry();
 
-		/*auto group = registry->group<RenderComponent>();
-
-		for (auto entity : group) {
-			auto& render = group.get<RenderComponent>(entity);
-             updateTransform(render.model->rootNode, render.model, glm::mat4(1.0f));
-		}*/
+        registry->view<RenderComponent>().each([&](RenderComponent& render) {
+            updateTransform(render.model->rootNode, render.model, glm::mat4(1.0f));
+        });
 	}
 private:
     void updateTransform(const int nodeId, const std::shared_ptr<Model>& renderable, const glm::mat4& parentTransform)

@@ -17,9 +17,10 @@ private:
 	PhysicsSystem* physicsSystem;
 	EventSystem* eventSystem;
 public:
-	PlayerSystem(SceneManager* sceneManager, EventSystem* eventSystem, PhysicsSystem* physicsSystem) : 
+	PlayerSystem(SceneManager* sceneManager, PhysicsSystem* physicsSystem) : 
 		ISystem(sceneManager), physicsSystem(physicsSystem), eventSystem(eventSystem)
 	{
+		auto eventSystem = EventSystem::instance();
 		ClassEventDelegate<PlayerSystem>* eventDeleage = new ClassEventDelegate<PlayerSystem>(this, &PlayerSystem::onMouseClick);
 		eventSystem->addEventListener<PlayerSystem, LeftMouseClickEvent>(eventDeleage);
 

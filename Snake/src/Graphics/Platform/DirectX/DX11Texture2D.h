@@ -80,6 +80,16 @@ public:
 		}
 	}
 
+	virtual ~DX11Texture2D() 
+	{
+		if (m_TextureShaderResource != nullptr) {
+			m_TextureShaderResource->Release();
+		}
+		if (m_Texture != nullptr) {
+			m_Texture->Release();
+		}
+	}
+
 	virtual void bind(RenderContext* renderContext) override {
 		DX11RenderContext* context = (DX11RenderContext*)renderContext;
 		ID3D11DeviceContext* deviceContext = ((DX11RenderContext*)renderContext)->getDeviceContext();

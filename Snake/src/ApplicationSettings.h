@@ -7,8 +7,8 @@
 class ApplicationSettings 
 {
 private:
-	int windowHeight = 1024;
-	int windowWidth = 1024;
+	int windowHeight = 1080;
+	int windowWidth = 1920;
 
 	int shadowMapWidth = 1024;
 	int shadowMapHeight = 1024;

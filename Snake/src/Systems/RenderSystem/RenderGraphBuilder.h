@@ -13,9 +13,9 @@ public:
 
 		{
 			Pass* clearRenderTargetPass = new Pass("ClearRenderTargetPass");
-			clearRenderTargetPass->type = PassType::FULLSCREEN;
+			clearRenderTargetPass->type = PassType::POSTPROCESS;
 
-			clearRenderTargetPass->setupPass = [
+			clearRenderTargetPass->setup = [
 				renderQueue = renderQueue, 
 				resource = resource
 			] (Renderer* renderer) {
@@ -32,7 +32,7 @@ public:
 			Pass* gbufferPass = new Pass("GBufferPass");
 			gbufferPass->type = PassType::RENDER_MODELS;
 
-			gbufferPass->setupPass = [renderQueue = renderQueue,resource = resource](Renderer* renderer) {
+			gbufferPass->setup = [renderQueue = renderQueue,resource = resource](Renderer* renderer) {
 				RenderContext* context = renderer->getContext();
 
 				renderQueue->bindConstantBuffer(resource->shader_buffer.get(), 0);
@@ -40,66 +40,77 @@ public:
 				renderQueue->bindRenderTarget(resource->renderTargets["gBuffer"].get());
 			};
 
-			gbufferPass->processModel = [
+			gbufferPass->execute = [
 				renderQueue = renderQueue,
 				resource = resource
-			] (Renderer* renderer, Model* model) {
+			] (Renderer* renderer, Scene* scene) {
 				ModelData modelData;
 				MeshData meshData;
 
-				modelData.toWorld = glm::mat4(1.0f);
-				modelData.inverseToWorld = glm::mat4(1.0f);
-				modelData.selected = false;
+				auto group = scene->getRegistry()->group<RenderComponent, TransformComponent>();
 
-				renderQueue->updateConstantBuffer(resource->model_shader_buffer.get(), &modelData, sizeof(ModelData));
-				renderQueue->bindConstantBuffer(resource->model_shader_buffer.get(), resource->model_shader_buffer->getPosition());
+				for (auto entity : group) {
+					auto& transform = group.get<TransformComponent>(entity);
+					auto& render = group.get<RenderComponent>(entity);
+					auto& model = render.model;
 
-				std::unordered_map<int, std::vector<std::shared_ptr<SubMesh>>>& submeshes = model->submeshes;
-				const std::vector<std::shared_ptr<Material>>& materials = model->materials;
+					modelData.toWorld = glm::transpose(transform.matrix);
+					modelData.inverseToWorld = glm::inverse(modelData.toWorld);
+					modelData.selected = false;
 
-				for (auto& node : model->nodes) {
-					if (node->mesh == -1) continue;
+					renderQueue->updateConstantBuffer(resource->model_shader_buffer.get(), &modelData, sizeof(ModelData));
+					renderQueue->bindConstantBuffer(resource->model_shader_buffer.get(), resource->model_shader_buffer->getPosition());
 
-					const std::vector<std::shared_ptr<SubMesh>>& submeshs = submeshes[node->mesh];
+					std::unordered_map<int, std::vector<std::shared_ptr<SubMesh>>>& submeshes = model->submeshes;
+					const std::vector<std::shared_ptr<Material>>& materials = model->materials;
 
-					for (auto& submesh : submeshs) {
-						if (materials.size() > submesh->material) {
-							const std::shared_ptr<Material>& material = materials[submesh->material];
+					for (auto& node : model->nodes) {
+						if (node->mesh == -1) continue;
 
-							if (material->diffuseTexture) {
-								material->diffuseTexture->bindToUnit(0, renderer->getContext());
-								meshData.materialData.hasDiffuseMap = true;
-							} else {
-								meshData.materialData.hasDiffuseMap = false;
+						const std::vector<std::shared_ptr<SubMesh>>& submeshs = submeshes[node->mesh];
+
+						for (auto& submesh : submeshs) {
+							if (materials.size() > submesh->material) {
+								const std::shared_ptr<Material>& material = materials[submesh->material];
+
+								if (material->diffuseTexture) {
+									material->diffuseTexture->bindToUnit(0, renderer->getContext());
+									meshData.materialData.hasDiffuseMap = true;
+								}
+								else {
+									meshData.materialData.hasDiffuseMap = false;
+								}
+
+								if (material->normalTexture) {
+									material->normalTexture->bindToUnit(1, renderer->getContext());
+									meshData.materialData.hasNormalMap = true;
+								}
+								else {
+									meshData.materialData.hasNormalMap = false;
+								}
 							}
-
-							if (material->normalTexture) {
-								material->normalTexture->bindToUnit(1, renderer->getContext());
-								meshData.materialData.hasNormalMap = true;
-							} else {
+							else {
+								meshData.materialData.diffuseColor = glm::vec4(0.3f, 0.3f, 0.3f, 1.0f);
+								meshData.materialData.hasDiffuseMap = false;
 								meshData.materialData.hasNormalMap = false;
 							}
-						} else {
-							meshData.materialData.diffuseColor = glm::vec4(0.3f, 0.3f, 0.3f, 1.0f);
-							meshData.materialData.hasDiffuseMap = false;
-							meshData.materialData.hasNormalMap = false;
+
+							meshData.transform = glm::transpose(node->transform.worldTransform);
+							meshData.normalTransform = glm::transpose(node->transform.normalTransform);
+
+							/*meshData.transform = glm::mat4(1.0f);
+							meshData.normalTransform = glm::mat4(1.0f);*/
+
+							renderQueue->updateConstantBuffer(resource->mesh_shader_buffer.get(), &meshData, sizeof(MeshData));
+							renderQueue->bindConstantBuffer(resource->mesh_shader_buffer.get(), resource->mesh_shader_buffer->getPosition());
+
+							renderQueue->bindVertexBuffer(submesh->vBuffer.get());
+							renderQueue->bindIndexBuffer(submesh->iBuffer.get());
+
+							renderQueue->drawIndexed(submesh->iBuffer->getSize());
 						}
-
-						/*meshData.transform = glm::transpose(node->transform.worldTransform);
-						meshData.normalTransform = glm::transpose(node->transform.normalTransform);*/
-
-						meshData.transform = glm::mat4(1.0f);
-						meshData.normalTransform = glm::mat4(1.0f);
-
-						renderQueue->updateConstantBuffer(resource->mesh_shader_buffer.get(), &meshData, sizeof(MeshData));
-						renderQueue->bindConstantBuffer(resource->mesh_shader_buffer.get(), resource->mesh_shader_buffer->getPosition());
-
-						renderQueue->bindVertexBuffer(submesh->vBuffer.get());
-						renderQueue->bindIndexBuffer(submesh->iBuffer.get());
-
-						renderQueue->drawIndexed(submesh->iBuffer->getSize());
-					}
-				};
+					};
+				}
 			};
 
 			renderGraph->addPass(gbufferPass);
@@ -116,7 +127,7 @@ public:
 		//{
 		//	Pass* pickerPass = new Pass("Picker pass");
 
-		//	pickerPass->setupPass = [resource = resource](Renderer* renderer) {
+		//	pickerPass->setup = [resource = resource](Renderer* renderer) {
 		//		RenderContext* context = renderer->getContext();
 
 		//		resource->shaderBuffer->bind(context);
@@ -226,15 +237,16 @@ public:
 		//}
 		{
 			Pass* mainRenderPass = new Pass("Result Pass");
-			mainRenderPass->type = PassType::FULLSCREEN;
+			mainRenderPass->type = PassType::POSTPROCESS;
 
-			mainRenderPass->setupPass = [
+			mainRenderPass->setup = [
 				renderQueue = renderQueue,
 				resource = resource
 			] (Renderer* renderer) {
 				RenderContext* context = renderer->getContext();
 				// @todo: fix render target binding
 				renderQueue->bindRenderTarget(resource->main_render_target);
+
 				renderQueue->bindTexture(resource->textures["positions"].get(), 0);
 				renderQueue->bindTexture(resource->textures["normals"].get(), 1);
 				renderQueue->bindTexture(resource->textures["diffuse"].get(), 2);
@@ -244,7 +256,7 @@ public:
 			mainRenderPass->execute = [
 				renderQueue = renderQueue,
 				resource = resource
-			] (Renderer* renderer) {
+			] (Renderer* renderer, Scene* scene) {
 				RenderContext* context = renderer->getContext();
 
 				renderQueue->bindVertexBuffer(resource->quadVertexBuffer.get());

@@ -19,7 +19,7 @@ public:
 	Texture2D(int width, int height, int location, TextureFormat textureFormat, int flags, int numMips) :
 		width(width), height(height), location(location), flags(flags), textureFormat(textureFormat), numMips(numMips)
 	{}
-
+	virtual ~Texture2D() {}
 	static Texture2D* create(int width, int height, int location, void* data, TextureFormat textureFormat = TextureFormat::RGBA8, int flags = 0, int numMips = 0);
 
 	const TextureFormat getFormat() const { return textureFormat; }

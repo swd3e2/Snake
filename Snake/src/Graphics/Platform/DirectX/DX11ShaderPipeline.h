@@ -63,7 +63,10 @@ public:
 	}
 
 	virtual void bind(RenderContext* renderContext) override {
-		ID3D11DeviceContext* context = ((DX11RenderContext*)renderContext)->getDeviceContext();
+		DX11RenderContext* dxContext = (DX11RenderContext*)renderContext;
+		dxContext->boundShader = this;
+
+		ID3D11DeviceContext* context = dxContext->getDeviceContext();
 		context->VSSetShader(vertexShader, NULL, 0);
 		context->PSSetShader(pixelShader, NULL, 0);
 	}

@@ -8,7 +8,7 @@ RendererType Renderer::_rendererType = RendererType::None;
 
 Renderer* Renderer::create(RendererType type) {
 	switch (type) {
-	case RendererType::DirectX: return new DX11Renderer();
+		case RendererType::DirectX: return new DX11Renderer();
 	}
 	return nullptr;
 }
