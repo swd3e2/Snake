@@ -25,9 +25,9 @@ public:
 	};
 
 	std::vector<std::vector<Node>> nodes;
-	int gridSizeX = 20;
-	int gridSizeY = 20;
-	float cellSize = 0.5f;
+	int gridSizeX = 10;
+	int gridSizeY = 10;
+	float cellSize = 0.2f;
 
 	std::set<Node*> path;
 

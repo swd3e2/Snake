@@ -142,27 +142,27 @@ public:
 
 	void onMouseClick(Event* event)
 	{
-		entt::registry* registry = sceneManager->getCurrentScene()->getRegistry();
+		//entt::registry* registry = sceneManager->getCurrentScene()->getRegistry();
 
-		double x = InputManager::instance()->mousePosX;
-		double y = InputManager::instance()->mousePosY;
-		glm::mat4x4 viewproj = mainCamera->getPerspectiveMatrix() * mainCamera->getViewMatrix();
-		viewproj = glm::transpose(viewproj);
-		viewproj = glm::inverse(viewproj);
-		glm::vec4 temp = glm::vec4(x / 1920.0 * 2.0 - 1.0, -(y / 1080 * 2.0 - 1.0), 1.0f, 1.0f);
-		temp = temp * viewproj;
-		temp /= temp.w;
-		btVector3 from = btVector3(mainCamera->Position.x, mainCamera->Position.y, mainCamera->Position.z);
-		btVector3 to = btVector3(temp.x, temp.y, temp.z);
-		btCollisionWorld::ClosestRayResultCallback res(from, to);
-		physicsSystem->dynamicsWorld->rayTest(from, to, res);
+		//double x = InputManager::instance()->mousePosX;
+		//double y = InputManager::instance()->mousePosY;
+		//glm::mat4x4 viewproj = mainCamera->getPerspectiveMatrix() * mainCamera->getViewMatrix();
+		//viewproj = glm::transpose(viewproj);
+		//viewproj = glm::inverse(viewproj);
+		//glm::vec4 temp = glm::vec4(x / 1920.0 * 2.0 - 1.0, -(y / 1080 * 2.0 - 1.0), 1.0f, 1.0f);
+		//temp = temp * viewproj;
+		//temp /= temp.w;
+		//btVector3 from = btVector3(mainCamera->Position.x, mainCamera->Position.y, mainCamera->Position.z);
+		//btVector3 to = btVector3(temp.x, temp.y, temp.z);
+		//btCollisionWorld::ClosestRayResultCallback res(from, to);
+		//physicsSystem->dynamicsWorld->rayTest(from, to, res);
 
-		TransformComponent& transform = registry->get<TransformComponent>(player);
-		if (res.hasHit()) {
-			if (registry->has<MoveComponent>(player)) {
-				registry->remove<MoveComponent>(player);
-			}
-			//registry->emplace<MoveComponent>(player, glm::vec3(res.m_hitPointWorld.x(), res.m_hitPointWorld.y() + 0.5f, res.m_hitPointWorld.z()));
-		}
+		//TransformComponent& transform = registry->get<TransformComponent>(player);
+		//if (res.hasHit()) {
+		//	if (registry->has<MoveComponent>(player)) {
+		//		registry->remove<MoveComponent>(player);
+		//	}
+		//	//registry->emplace<MoveComponent>(player, glm::vec3(res.m_hitPointWorld.x(), res.m_hitPointWorld.y() + 0.5f, res.m_hitPointWorld.z()));
+		//}
 	}
 };

@@ -7,7 +7,8 @@
 #include "Common/Storage.h"
 #include "TextureLoader.h"
 
-class ModelLoader : public Singleton<ModelLoader> {
+class ModelLoader : public Singleton<ModelLoader> 
+{
 private:
 	std::vector<std::shared_ptr<ModelImporter>> importers;
 	Storage<Model> storage;
@@ -22,8 +23,4 @@ private:
 	void processVertexArrays(const std::shared_ptr<Model>& model, const std::shared_ptr<Import::Model>& importModel);
 	void processMaterials(std::shared_ptr<Model>& model, const std::shared_ptr<Import::Model>& importModel);
 	const std::string getAssetFolder();
-
-	/**
-	 * Returns importer for given file
-	 */
 };

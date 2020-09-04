@@ -5,9 +5,6 @@
 #include "Graphics/Renderer/VertexBuffer.h"
 #include "Graphics/Renderer/ConstantBuffer.h"
 #include "Graphics/Renderer/Texture2D.h"
-#include "Graphics/RenderGraph/FullscreenPass.h"
-#include "Graphics/RenderGraph/DefaultRenderPass.h"
-#include "Graphics/RenderGraph/PhysicDebugRenderPass.h"
 #include "Graphics/Renderer/Sampler.h"
 #include "Graphics/Renderer/RenderTarget.h"
 
@@ -16,14 +13,17 @@ struct RenderSystemResource
 	std::shared_ptr<VertexBuffer> quadVertexBuffer;
 	std::shared_ptr<IndexBuffer> quadIndexBuffer;
 
-	std::shared_ptr<FullscreenPass> light_pass;
-	std::shared_ptr<FullscreenPass> ambient_occlusion_pass;
-	std::shared_ptr<FullscreenPass> ambient_occlusion_blur_pass;
-	std::shared_ptr<FullscreenPass> main_render_pass;
-	std::shared_ptr<FullscreenPass> variance_shadow_map_blur_pass;
-	std::shared_ptr<DefaultRenderPass> gbuffer_pass;
-	std::shared_ptr<DefaultRenderPass> picker_pass;
-	std::shared_ptr<PhysicDebugRenderPass> debug_physics_pass;
+	std::shared_ptr<VertexBuffer> gridQuadVertexBuffer;
+	std::shared_ptr<IndexBuffer> gridQuadIndexBuffer;
+
+	std::shared_ptr<Pass> light_pass;
+	std::shared_ptr<Pass> ambient_occlusion_pass;
+	std::shared_ptr<Pass> ambient_occlusion_blur_pass;
+	std::shared_ptr<Pass> main_render_pass;
+	std::shared_ptr<Pass> variance_shadow_map_blur_pass;
+	std::shared_ptr<Pass> gbuffer_pass;
+	std::shared_ptr<Pass> picker_pass;
+	std::shared_ptr<Pass> debug_physics_pass;
 	std::shared_ptr<Pass> shadow_pass;
 
 	std::shared_ptr<ShaderInputLayout> shader_input_layout;

@@ -23,14 +23,15 @@ public:
 			bufferDesc.CPUAccessFlags |= D3D11_CPU_ACCESS_WRITE;
 		}
 
-		D3D11_SUBRESOURCE_DATA bufferData;
-		bufferData.pSysMem = data;
-		bufferData.SysMemPitch = 0;
-		bufferData.SysMemSlicePitch = 0;
 
 		DX11Renderer* renderer = (DX11Renderer*)Renderer::instance();
 		ID3D11Device* device = ((DX11RenderContext*)renderer->getContext())->getDevice();
 		ID3D11DeviceContext* deviceContext = ((DX11RenderContext*)renderer->getContext())->getDeviceContext();
+
+		D3D11_SUBRESOURCE_DATA bufferData;
+		bufferData.pSysMem = data;
+		bufferData.SysMemPitch = 0;
+		bufferData.SysMemSlicePitch = 0;
 
 		device->CreateBuffer(&bufferDesc, &bufferData, &m_Buffer);
 	}

@@ -13,6 +13,8 @@
 #include "ApplicationSettings.h"
 #include "Systems/SystemManager.h"
 #include "Scene/SceneManager.h"
+#include "Graphics/Renderer/Texture2D.h"
+
 
 class Application {
 private:

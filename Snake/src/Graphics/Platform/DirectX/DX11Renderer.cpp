@@ -103,16 +103,19 @@ Window* DX11Renderer::createWindow(int width, int height)
 
 void DX11Renderer::swapBuffers()
 {
+	_renderContext->drawCalls = 0;
 	swapChain->Present(false, 0);
 }
 
 void DX11Renderer::drawIndexed(int cnt)
 {
+	_renderContext->drawCalls++;
 	deviceContext->DrawIndexed(cnt, 0, 0);
 }
 
 void DX11Renderer::draw(int cnt)
 {
+	_renderContext->drawCalls++;
 	deviceContext->Draw(cnt, 0);
 }
 

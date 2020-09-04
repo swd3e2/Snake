@@ -10,6 +10,12 @@
 #include <BulletCollision\CollisionDispatch\btCollisionWorld.h>
 #include <BulletCollision\CollisionDispatch\btGhostObject.h>
 
+class GridSystem;
+
+struct GridComponent {
+	GridSystem* grid;
+};
+
 struct TransformComponent {
 	glm::vec3 translation = glm::vec3(0.0f, 0.0f, 0.0f);
 	glm::vec3 rotation = glm::vec3(0.0f, 0.0f, 0.0f);

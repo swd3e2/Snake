@@ -34,6 +34,7 @@
 
 #include "RenderSystem/RenderSystemResourceManager.h"
 #include "RenderSystem/RenderGraphBuilder.h"
+#include "Graphics/DebugHelper.h"
 
 class RenderSystem : public ISystem
 {
@@ -49,7 +50,6 @@ public:
 	RenderGraph* renderGraph;
 
 	GridSystem gridSystem;
-
     PhysicsSystem* physicsSystem;
 
 	WVP projectionData;
@@ -63,6 +63,7 @@ public:
 
 	Model* model;
 	bool useDebugCamera = true;
+	DebugHelper debug;
 public:
 	RenderSystem(SceneManager* sceneManager, ApplicationSettings* settings, PhysicsSystem* physics, Renderer* renderer):
 		ISystem(sceneManager), physicsSystem(physics), renderer(renderer), context(renderer->getContext()),
@@ -83,6 +84,10 @@ public:
 
 		auto eventSystem = EventSystem::instance();
 		eventSystem->addEventListener<RenderSystem, LeftMouseClickEvent>(new ClassEventDelegate(this, &RenderSystem::onLeftMouseClick));
+
+		auto registry = sceneManager->getCurrentScene()->getRegistry();
+		auto entity = registry->create();
+		registry->emplace<GridComponent>(entity, &gridSystem);
 	}
 
 	virtual void update(double dt) override
@@ -110,17 +115,30 @@ public:
         projectionData.viewMatrix = glm::transpose(camera.getViewMatrix());
         projectionData.invViewMatrix = glm::inverse(projectionData.viewMatrix);
 		
-		renderQueue->bindShaderInputLayout(resources->shader_input_layout.get());
-		renderQueue->updateConstantBuffer(resources->shader_buffer.get(), &projectionData, sizeof(WVP));
+		//renderQueue->bindShaderInputLayout(resources->shader_input_layout.get());
+		//renderQueue->updateConstantBuffer(resources->shader_buffer.get(), &projectionData, sizeof(WVP));
+
+		resources->shader_input_layout->bind(context);
+		resources->shader_input_layout->bind(context);
+		resources->shader_buffer->update(&projectionData);
 
         renderGraph->execute(sceneManager->getCurrentScene());
-		renderQueue->present();
+		//renderQueue->present();
 
-		for (int i = 0; i < renderQueue->commands_size; i++) {
-			auto& command = renderQueue->commands[i];
-			command->execute(renderer, command);
-		}
-		renderQueue->clear();
+		debug.renderTexture(0.0f, 0.0f, 0.5f, 0.5f, resources->textures["positions"].get());
+		debug.renderFont("Dt: " + std::to_string(dt), 0.0f, 0.97f);
+		debug.renderFont("Draw calls: " + std::to_string(renderer->getContext()->getDrawCallCount()), 0.0f, 0.94f);
+		//debug.renderFont("Settings", 0.435f, 0.45f);
+		//debug.renderFont("Exit", 0.45f, 0.4f);
+
+		renderer->swapBuffers();
+
+		//for (int i = 0; i < renderQueue->commands_size; i++) {
+		//	auto& command = renderQueue->commands[i];
+		//	command->execute(renderer, command);
+		//}
+
+		//renderQueue->clear();
 
 		updateCamera(dt);
 	}
