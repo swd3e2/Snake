@@ -18,4 +18,9 @@ namespace DirectX {
 	D3D11_FILTER getFilteringMode(const FilterMode& _min, const FilterMode& mag, const FilterMode& mip, const bool comparison);
 	DXGI_FORMAT getDepthResourceFormat(TextureFormat textureFormat);
 	D3D_PRIMITIVE_TOPOLOGY getTopology(PrimitiveTopology topology);
+	D3D11_COMPARISON_FUNC getComparisonFunction(const ComparisonFunction& func);
+	D3D11_STENCIL_OP getDepthStencilOperation(const StencilOperation& stecnilOp);
+	D3D11_DEPTH_WRITE_MASK getDepthWriteMask(const DepthWriteMask& writeMask);
+	D3D11_BLEND getBlend(const BlendFunction& blendFunc);
+	D3D11_BLEND_OP getBlendOperation(const BlendOperation& blendOp);
 }

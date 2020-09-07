@@ -4,7 +4,6 @@
 #include "Renderer/IndexBuffer.h"
 #include "Renderer/VertexBuffer.h"
 #include "Renderer/ShaderPipeline.h"
-#include "Common/Helper.h"
 #include <memory>
 #include "Renderer.h"
 #include <vector>
@@ -75,7 +74,7 @@ public:
 		prevShader->bind(context);
 	}
 
-	void renderFont(const std::string& text, float x, float y)
+	void renderFont(const std::string& text, float x, float y, float scale)
 	{
 		Renderer* renderer = Renderer::instance();
 		RenderContext* context = renderer->getContext();
@@ -86,6 +85,6 @@ public:
 		x = x * 2.0f - 1.0f;
 		y = y * 2.0f - 1.0f;
 
-		fontRenderer.renderFont(text, x, y, 0.0015f);
+		fontRenderer.renderFont(text, x, y, scale);
 	}
 };

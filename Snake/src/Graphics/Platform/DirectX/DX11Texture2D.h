@@ -27,6 +27,7 @@ public:
 		textureDesc.Format = DirectX::getTextureFormat(textureFormat);
 		textureDesc.Usage = D3D11_USAGE_DEFAULT;
 		textureDesc.BindFlags = 0;
+		textureDesc.MiscFlags = 0;
 
 		if (flags & TextureFlags::TF_RenderTarget) {
 			textureDesc.BindFlags |= D3D11_BIND_RENDER_TARGET;
@@ -38,7 +39,8 @@ public:
 			textureDesc.BindFlags |= D3D11_BIND_DEPTH_STENCIL;
 		}
 		if (flags & TextureFlags::TF_GenerateMips) {
-			textureDesc.BindFlags |= D3D11_RESOURCE_MISC_GENERATE_MIPS;
+			textureDesc.MiscFlags |= D3D11_RESOURCE_MISC_GENERATE_MIPS;
+			textureDesc.BindFlags |= D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 		}
 
 		textureDesc.CPUAccessFlags = 0;
@@ -115,14 +117,18 @@ public:
 	}
 
 	virtual void generateMips() override {
+		DX11Renderer* renderer = (DX11Renderer*)Renderer::instance();
+		DX11RenderContext* context = (DX11RenderContext*)renderer->getContext();
+		ID3D11DeviceContext* deviceContext = ((DX11RenderContext*)context)->getDeviceContext();
 
+		deviceContext->GenerateMips(m_TextureShaderResource);
 	}
 
 	virtual void bindToUnit(const int location, RenderContext* renderContext) override {
 		DX11RenderContext* context = (DX11RenderContext*)renderContext;
 		ID3D11DeviceContext* deviceContext = ((DX11RenderContext*)renderContext)->getDeviceContext();
-		deviceContext->PSSetShaderResources(location, 1, &m_TextureShaderResource);
 
+		deviceContext->PSSetShaderResources(location, 1, &m_TextureShaderResource);
 		context->boundTextures[location] = this;
 	}
 };

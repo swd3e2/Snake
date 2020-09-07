@@ -139,6 +139,16 @@ void DX11Renderer::setViewport(const Viewport& viewport)
 	setViewport(viewport.x0, viewport.y0, viewport.x1, viewport.y1);
 }
 
+void DX11Renderer::setDefaultDepthStencil()
+{
+	deviceContext->OMSetDepthStencilState(nullptr, 0xFF);
+}
+
+void DX11Renderer::setDefaultBlendState()
+{
+	deviceContext->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
+}
+
 void DX11Renderer::unbindResource(int slot)
 {
 	deviceContext->PSSetShaderResources(slot, 1, nullShaderResourceView);

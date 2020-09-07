@@ -41,5 +41,9 @@ public:
 
 	virtual void setViewport(const Viewport& viewport) override;
 
+	virtual void setDefaultDepthStencil() override;
+
+	virtual void setDefaultBlendState() override;
+
 	virtual void unbindResource(int slot) override;
 };

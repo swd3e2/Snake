@@ -13,6 +13,7 @@
 #include "Graphics/Renderer.h"
 #include "EventSystem/EventSystem.h"
 #include "GltfTransformSystem.h"
+#include "Ui/UiSystem.h"
 
 class SystemManager 
 {
@@ -26,10 +27,10 @@ private:
 	std::unique_ptr<MoveSystem> moveSystem;
 	std::unique_ptr<GltfTransformSystem> gltfTransformSystem;
 public:
-	void initialize(ApplicationSettings* settings, SceneManager* sceneManager, Renderer* renderer)
+	void initialize(ApplicationSettings* settings, SceneManager* sceneManager, Renderer* renderer, UiSystem* ui)
 	{
 		physicsSystem	= std::make_unique<PhysicsSystem>(sceneManager);
-		renderSystem	= std::make_unique<RenderSystem>(sceneManager, settings, physicsSystem.get(), renderer);
+		renderSystem	= std::make_unique<RenderSystem>(sceneManager, settings, physicsSystem.get(), renderer, ui);
 		scriptSystem	= std::make_unique<ScriptSystem>(sceneManager);
 		cameraSystem	= std::make_unique<CameraSystem>(sceneManager);
 		playerSystem	= std::make_unique<PlayerSystem>(sceneManager, physicsSystem.get());

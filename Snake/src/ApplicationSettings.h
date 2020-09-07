@@ -3,12 +3,14 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
+#include <string>
+#include "Common/Helper.h"
 
 class ApplicationSettings 
 {
 private:
-	int windowHeight = 1080;
-	int windowWidth = 1920;
+	int windowHeight = 1440;
+	int windowWidth = 2560;
 
 	int shadowMapWidth = 1024;
 	int shadowMapHeight = 1024;
@@ -30,9 +32,9 @@ public:
 		assetsDir = temp;
 	}
 
-	inline int getWindowWidth() { return windowWidth; }
-	inline int getWindowHeight() { return windowHeight; }
+	inline int getWindowWidth() const { return windowWidth; }
+	inline int getWindowHeight() const { return windowHeight; }
 
-	inline int getShadowMapWidth() { return shadowMapWidth; }
-	inline int getShadowMapHeight() { return shadowMapHeight; }
+	inline int getShadowMapWidth() const { return shadowMapWidth; }
+	inline int getShadowMapHeight() const { return shadowMapHeight; }
 };
