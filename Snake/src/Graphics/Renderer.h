@@ -46,6 +46,8 @@ public:
     virtual void swapBuffers() = 0;
     virtual void unbindResource(int slot) = 0;
     virtual void setPrimitiveTopology(PrimitiveTopology topology) = 0;
+    virtual void setDefaultDepthStencil() = 0;
+    virtual void setDefaultBlendState() = 0;
 
     static Renderer* create(RendererType type);
 

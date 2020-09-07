@@ -1,7 +1,8 @@
 #include "DX11Utils.h"
 
 namespace DirectX {
-	const std::string getShaderTarget(const ShaderType type) {
+	const std::string getShaderTarget(const ShaderType type) 
+	{
 		switch (type) {
 			case ShaderType::VERTEX:			return "vs_5_0";
 			case ShaderType::PIXEL:				return "ps_5_0";
@@ -13,7 +14,8 @@ namespace DirectX {
 		return "vs_5_0";
 	}
 
-	std::string getInputLayoutShaderFormat(InputDataType type) {
+	std::string getInputLayoutShaderFormat(InputDataType type) 
+	{
 		switch (type) {
 			case InputDataType::Float:			return "float";
 			case InputDataType::Float2:			return "float2";
@@ -28,7 +30,8 @@ namespace DirectX {
 		return "";
 	}
 
-	DXGI_FORMAT getInputLayoutFormat(InputDataType type) {
+	DXGI_FORMAT getInputLayoutFormat(InputDataType type) 
+	{
 		switch (type) {
 			case InputDataType::Float:			return DXGI_FORMAT_R32_FLOAT;
 			case InputDataType::Float2:			return DXGI_FORMAT_R32G32_FLOAT;
@@ -42,7 +45,8 @@ namespace DirectX {
 		}
 	}
 
-	DXGI_FORMAT getTextureFormat(TextureFormat textureFormat) {
+	DXGI_FORMAT getTextureFormat(TextureFormat textureFormat) 
+	{
 		switch (textureFormat) {
 			case TextureFormat::R8:				return DXGI_FORMAT_R8_UNORM;
 			case TextureFormat::RG8:			return DXGI_FORMAT_R8G8_UNORM;
@@ -65,7 +69,8 @@ namespace DirectX {
 		}
 	}
 
-	const unsigned int getPitch(TextureFormat textureFormat, int width) {
+	const unsigned int getPitch(TextureFormat textureFormat, int width) 
+	{
 		switch (textureFormat) {
 			case TextureFormat::R8:
 			case TextureFormat::R16:
@@ -90,7 +95,8 @@ namespace DirectX {
 		}
 	}
 
-	D3D11_TEXTURE_ADDRESS_MODE getAddressingMode(const AddressingMode& mode) {
+	D3D11_TEXTURE_ADDRESS_MODE getAddressingMode(const AddressingMode& mode) 
+	{
 		switch (mode) {
 			case AddressingMode::WRAP:			return  D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_WRAP;
 			case AddressingMode::CLAMP:			return  D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -100,66 +106,55 @@ namespace DirectX {
 		return D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_WRAP;
 	}
 
-	D3D11_COMPARISON_FUNC getComparisonFunction(const ComparisonFunction& func) {
-		switch (func) {
-			case ComparisonFunction::NEVER:		return D3D11_COMPARISON_FUNC::D3D11_COMPARISON_NEVER;
-			case ComparisonFunction::LESS:		return D3D11_COMPARISON_FUNC::D3D11_COMPARISON_LESS;
-			case ComparisonFunction::EQUAL:		return D3D11_COMPARISON_FUNC::D3D11_COMPARISON_EQUAL;
-			case ComparisonFunction::LEQUAL:	return D3D11_COMPARISON_FUNC::D3D11_COMPARISON_LESS_EQUAL;
-			case ComparisonFunction::GREATER:	return D3D11_COMPARISON_FUNC::D3D11_COMPARISON_GREATER;
-			case ComparisonFunction::NOT_EQUAL:	return D3D11_COMPARISON_FUNC::D3D11_COMPARISON_NOT_EQUAL;
-			case ComparisonFunction::ALWAYS:	return D3D11_COMPARISON_FUNC::D3D11_COMPARISON_ALWAYS;
-		}
-		return D3D11_COMPARISON_FUNC::D3D11_COMPARISON_NEVER;
-	}
-
 	D3D11_FILTER getFilteringMode(const FilterMode& _min, const FilterMode& mag, const FilterMode& mip, const bool comparison)
 	{
 #define MERGE_FILTERS(_comparison, _min, _mag, _mip) ((_comparison << 16) | ((int)_min << 8) | ((int)_mag << 4) | ((int)_mip))
+
 		switch ((MERGE_FILTERS((int)comparison, (int)_min, (int)mag, (int)mip))) {
-		case MERGE_FILTERS(true, (int)(int)FilterMode::POINT, (int)(int)FilterMode::POINT, (int)(int)FilterMode::POINT):
-			return D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT;
-		case MERGE_FILTERS(true, (int)FilterMode::POINT, (int)FilterMode::POINT, (int)FilterMode::LINEAR):
-			return D3D11_FILTER_COMPARISON_MIN_MAG_POINT_MIP_LINEAR;
-		case MERGE_FILTERS(true, (int)FilterMode::POINT, (int)FilterMode::LINEAR, (int)FilterMode::POINT):
-			return D3D11_FILTER_COMPARISON_MIN_POINT_MAG_LINEAR_MIP_POINT;
-		case MERGE_FILTERS(true, (int)FilterMode::POINT, (int)FilterMode::LINEAR, (int)FilterMode::LINEAR):
-			return D3D11_FILTER_COMPARISON_MIN_POINT_MAG_MIP_LINEAR;
-		case MERGE_FILTERS(true, (int)FilterMode::LINEAR, (int)FilterMode::POINT, (int)FilterMode::POINT):
-			return D3D11_FILTER_COMPARISON_MIN_LINEAR_MAG_MIP_POINT;
-		case MERGE_FILTERS(true, (int)FilterMode::LINEAR, (int)FilterMode::POINT, (int)FilterMode::LINEAR):
-			return D3D11_FILTER_COMPARISON_MIN_LINEAR_MAG_POINT_MIP_LINEAR;
-		case MERGE_FILTERS(true, (int)FilterMode::LINEAR, (int)FilterMode::LINEAR, (int)FilterMode::POINT):
-			return D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
-		case MERGE_FILTERS(true, (int)FilterMode::LINEAR, (int)FilterMode::LINEAR, (int)FilterMode::LINEAR):
-			return D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
-		case MERGE_FILTERS(true, (int)FilterMode::ANISOTROPIC, (int)FilterMode::ANISOTROPIC, (int)FilterMode::ANISOTROPIC):
-			return D3D11_FILTER_COMPARISON_ANISOTROPIC;
-		case MERGE_FILTERS(false, (int)FilterMode::POINT, (int)FilterMode::POINT, (int)FilterMode::POINT):
-			return D3D11_FILTER_MIN_MAG_MIP_POINT;
-		case MERGE_FILTERS(false, (int)FilterMode::POINT, (int)FilterMode::POINT, (int)FilterMode::LINEAR):
-			return D3D11_FILTER_MIN_MAG_POINT_MIP_LINEAR;
-		case MERGE_FILTERS(false, (int)FilterMode::POINT, (int)FilterMode::LINEAR, (int)FilterMode::POINT):
-			return D3D11_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT;
-		case MERGE_FILTERS(false, (int)FilterMode::POINT, (int)FilterMode::LINEAR, (int)FilterMode::LINEAR):
-			return D3D11_FILTER_MIN_POINT_MAG_MIP_LINEAR;
-		case MERGE_FILTERS(false, (int)FilterMode::LINEAR, (int)FilterMode::POINT, (int)FilterMode::POINT):
-			return D3D11_FILTER_MIN_LINEAR_MAG_MIP_POINT;
-		case MERGE_FILTERS(false, (int)FilterMode::LINEAR, (int)FilterMode::POINT, (int)FilterMode::LINEAR):
-			return D3D11_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR;
-		case MERGE_FILTERS(false, (int)FilterMode::LINEAR, (int)FilterMode::LINEAR, (int)FilterMode::POINT):
-			return D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-		case MERGE_FILTERS(false, (int)FilterMode::LINEAR, (int)FilterMode::LINEAR, (int)FilterMode::LINEAR):
-			return D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-		case MERGE_FILTERS(false, (int)FilterMode::ANISOTROPIC, (int)FilterMode::ANISOTROPIC, (int)FilterMode::ANISOTROPIC):
-			return D3D11_FILTER_ANISOTROPIC;
-		default:
-			return D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+			case MERGE_FILTERS(true, (int)(int)FilterMode::POINT, (int)(int)FilterMode::POINT, (int)(int)FilterMode::POINT):
+				return D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT;
+			case MERGE_FILTERS(true, (int)FilterMode::POINT, (int)FilterMode::POINT, (int)FilterMode::LINEAR):
+				return D3D11_FILTER_COMPARISON_MIN_MAG_POINT_MIP_LINEAR;
+			case MERGE_FILTERS(true, (int)FilterMode::POINT, (int)FilterMode::LINEAR, (int)FilterMode::POINT):
+				return D3D11_FILTER_COMPARISON_MIN_POINT_MAG_LINEAR_MIP_POINT;
+			case MERGE_FILTERS(true, (int)FilterMode::POINT, (int)FilterMode::LINEAR, (int)FilterMode::LINEAR):
+				return D3D11_FILTER_COMPARISON_MIN_POINT_MAG_MIP_LINEAR;
+			case MERGE_FILTERS(true, (int)FilterMode::LINEAR, (int)FilterMode::POINT, (int)FilterMode::POINT):
+				return D3D11_FILTER_COMPARISON_MIN_LINEAR_MAG_MIP_POINT;
+			case MERGE_FILTERS(true, (int)FilterMode::LINEAR, (int)FilterMode::POINT, (int)FilterMode::LINEAR):
+				return D3D11_FILTER_COMPARISON_MIN_LINEAR_MAG_POINT_MIP_LINEAR;
+			case MERGE_FILTERS(true, (int)FilterMode::LINEAR, (int)FilterMode::LINEAR, (int)FilterMode::POINT):
+				return D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
+			case MERGE_FILTERS(true, (int)FilterMode::LINEAR, (int)FilterMode::LINEAR, (int)FilterMode::LINEAR):
+				return D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+			case MERGE_FILTERS(true, (int)FilterMode::ANISOTROPIC, (int)FilterMode::ANISOTROPIC, (int)FilterMode::ANISOTROPIC):
+				return D3D11_FILTER_COMPARISON_ANISOTROPIC;
+			case MERGE_FILTERS(false, (int)FilterMode::POINT, (int)FilterMode::POINT, (int)FilterMode::POINT):
+				return D3D11_FILTER_MIN_MAG_MIP_POINT;
+			case MERGE_FILTERS(false, (int)FilterMode::POINT, (int)FilterMode::POINT, (int)FilterMode::LINEAR):
+				return D3D11_FILTER_MIN_MAG_POINT_MIP_LINEAR;
+			case MERGE_FILTERS(false, (int)FilterMode::POINT, (int)FilterMode::LINEAR, (int)FilterMode::POINT):
+				return D3D11_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT;
+			case MERGE_FILTERS(false, (int)FilterMode::POINT, (int)FilterMode::LINEAR, (int)FilterMode::LINEAR):
+				return D3D11_FILTER_MIN_POINT_MAG_MIP_LINEAR;
+			case MERGE_FILTERS(false, (int)FilterMode::LINEAR, (int)FilterMode::POINT, (int)FilterMode::POINT):
+				return D3D11_FILTER_MIN_LINEAR_MAG_MIP_POINT;
+			case MERGE_FILTERS(false, (int)FilterMode::LINEAR, (int)FilterMode::POINT, (int)FilterMode::LINEAR):
+				return D3D11_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR;
+			case MERGE_FILTERS(false, (int)FilterMode::LINEAR, (int)FilterMode::LINEAR, (int)FilterMode::POINT):
+				return D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+			case MERGE_FILTERS(false, (int)FilterMode::LINEAR, (int)FilterMode::LINEAR, (int)FilterMode::LINEAR):
+				return D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+			case MERGE_FILTERS(false, (int)FilterMode::ANISOTROPIC, (int)FilterMode::ANISOTROPIC, (int)FilterMode::ANISOTROPIC):
+				return D3D11_FILTER_ANISOTROPIC;
+			default:
+				return D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 		}
 #undef MERGE_FILTERS
 	}
 
-	DXGI_FORMAT getDepthResourceFormat(TextureFormat textureFormat) {
+	DXGI_FORMAT getDepthResourceFormat(TextureFormat textureFormat) 
+	{
 		switch (textureFormat) {
 			case TextureFormat::D16:				return DXGI_FORMAT::DXGI_FORMAT_D16_UNORM;
 			case TextureFormat::D24S8:				return DXGI_FORMAT::DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -169,7 +164,8 @@ namespace DirectX {
 		return DXGI_FORMAT::DXGI_FORMAT_R24G8_TYPELESS;
 	}
 
-	D3D_PRIMITIVE_TOPOLOGY getTopology(PrimitiveTopology topology) {
+	D3D_PRIMITIVE_TOPOLOGY getTopology(PrimitiveTopology topology) 
+	{
 		switch (topology) {
 			case PrimitiveTopology::POINT:			return D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
 			case PrimitiveTopology::LINELIST:		return D3D_PRIMITIVE_TOPOLOGY_LINESTRIP;
@@ -178,5 +174,73 @@ namespace DirectX {
 			case PrimitiveTopology::TRIANGESTRIP:	return D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
 		}
 		return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	}
+
+	D3D11_COMPARISON_FUNC getComparisonFunction(const ComparisonFunction& func)
+	{
+		switch (func) {
+			case ComparisonFunction::NEVER: 	return D3D11_COMPARISON_FUNC::D3D11_COMPARISON_NEVER;
+			case ComparisonFunction::LESS: 		return D3D11_COMPARISON_FUNC::D3D11_COMPARISON_LESS;
+			case ComparisonFunction::EQUAL: 	return D3D11_COMPARISON_FUNC::D3D11_COMPARISON_EQUAL;
+			case ComparisonFunction::LEQUAL: 	return D3D11_COMPARISON_FUNC::D3D11_COMPARISON_LESS_EQUAL;
+			case ComparisonFunction::GREATER: 	return D3D11_COMPARISON_FUNC::D3D11_COMPARISON_GREATER;
+			case ComparisonFunction::NOT_EQUAL: return D3D11_COMPARISON_FUNC::D3D11_COMPARISON_NOT_EQUAL;
+			case ComparisonFunction::ALWAYS: 	return D3D11_COMPARISON_FUNC::D3D11_COMPARISON_ALWAYS;
+			default: 							return D3D11_COMPARISON_FUNC::D3D11_COMPARISON_NEVER;
+		}
+	}
+
+	D3D11_STENCIL_OP getDepthStencilOperation(const StencilOperation& stecnilOp)
+	{
+		switch (stecnilOp) {
+			case StencilOperation::KEEP: 		return D3D11_STENCIL_OP::D3D11_STENCIL_OP_KEEP;
+			case StencilOperation::ZERO: 		return D3D11_STENCIL_OP::D3D11_STENCIL_OP_ZERO;
+			case StencilOperation::INCR: 		return D3D11_STENCIL_OP::D3D11_STENCIL_OP_INCR;
+			case StencilOperation::INCR_WRAP: 	return D3D11_STENCIL_OP::D3D11_STENCIL_OP_INCR_SAT;
+			case StencilOperation::DECR: 		return D3D11_STENCIL_OP::D3D11_STENCIL_OP_DECR;
+			case StencilOperation::DECR_WRAP: 	return D3D11_STENCIL_OP::D3D11_STENCIL_OP_DECR_SAT;
+			case StencilOperation::REPLACE: 	return D3D11_STENCIL_OP::D3D11_STENCIL_OP_REPLACE;
+			case StencilOperation::INVERT: 		return D3D11_STENCIL_OP::D3D11_STENCIL_OP_INVERT;
+			default: 							return D3D11_STENCIL_OP::D3D11_STENCIL_OP_KEEP;
+		}
+	}
+
+	D3D11_DEPTH_WRITE_MASK getDepthWriteMask(const DepthWriteMask& writeMask)
+	{
+		switch (writeMask) {
+			case DepthWriteMask::ALL: 		return D3D11_DEPTH_WRITE_MASK_ALL;
+			case DepthWriteMask::ZERO: 		return D3D11_DEPTH_WRITE_MASK_ZERO;
+			default: 						return D3D11_DEPTH_WRITE_MASK_ALL;
+		}
+	}
+
+	D3D11_BLEND getBlend(const BlendFunction& blendFunc)
+	{
+		switch (blendFunc) {
+			case BlendFunction::ZERO: 				return D3D11_BLEND::D3D11_BLEND_ZERO;
+			case BlendFunction::ONE: 				return D3D11_BLEND::D3D11_BLEND_ONE;
+			case BlendFunction::SRC_COLOR: 			return D3D11_BLEND::D3D11_BLEND_SRC_COLOR;
+			case BlendFunction::INV_SRC_COLOR: 		return D3D11_BLEND::D3D11_BLEND_INV_SRC_COLOR;
+			case BlendFunction::SRC_APLHA: 			return D3D11_BLEND::D3D11_BLEND_SRC_ALPHA;
+			case BlendFunction::INV_SRC_APLHA: 		return D3D11_BLEND::D3D11_BLEND_INV_SRC_ALPHA;
+			case BlendFunction::DEST_APLHA: 		return D3D11_BLEND::D3D11_BLEND_DEST_ALPHA;
+			case BlendFunction::INV_DEST_APLHA: 	return D3D11_BLEND::D3D11_BLEND_DEST_ALPHA;
+			case BlendFunction::DEST_COLOR: 		return D3D11_BLEND::D3D11_BLEND_DEST_COLOR;
+			case BlendFunction::INV_DEST_COLOR: 	return D3D11_BLEND::D3D11_BLEND_INV_DEST_COLOR;
+			case BlendFunction::BLEND_FACTOR: 		return D3D11_BLEND::D3D11_BLEND_BLEND_FACTOR;
+			case BlendFunction::INV_BLEND_FACTOR: 	return D3D11_BLEND::D3D11_BLEND_INV_BLEND_FACTOR;
+			default: 								return D3D11_BLEND::D3D11_BLEND_ONE;
+		}
+	}
+
+	D3D11_BLEND_OP getBlendOperation(const BlendOperation& blendOp)
+	{
+		switch (blendOp) {
+			case BlendOperation::ADD: 				return D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
+			case BlendOperation::SUBTRACT: 			return D3D11_BLEND_OP::D3D11_BLEND_OP_SUBTRACT;
+			case BlendOperation::REV_SUBTRACT: 		return D3D11_BLEND_OP::D3D11_BLEND_OP_SUBTRACT;
+			case BlendOperation::MIN: 				return D3D11_BLEND_OP::D3D11_BLEND_OP_MIN;
+			case BlendOperation::MAX: 				return D3D11_BLEND_OP::D3D11_BLEND_OP_MAX;
+		}
 	}
 }

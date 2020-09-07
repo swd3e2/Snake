@@ -1,7 +1,6 @@
 #pragma once
 
 #include <chrono>
-
 #include "Components.h"
 #include "Interface/ImGuiInterface.h"
 #include "Import/TextureLoader.h"
@@ -14,18 +13,21 @@
 #include "Systems/SystemManager.h"
 #include "Scene/SceneManager.h"
 #include "Graphics/Renderer/Texture2D.h"
-
+#include "UI/UiSystem.h"
+#include "UI/Widgets/UiBlock.h"
+#include "DebugUiBuilder.h"
 
 class Application {
 private:
 	ApplicationSettings settings;
 	SystemManager systemManager;
 	SceneManager sceneManager;
+	InputManager inputManager;
+	std::unique_ptr<UiSystem> ui_system;
 
 	std::unique_ptr<EventSystem> eventSystem;
 
 	Renderer* renderer;
-	std::shared_ptr<ImGuiInterface> minterface;
 
 	std::chrono::time_point<std::chrono::steady_clock> m_Start;
 
@@ -47,7 +49,12 @@ public:
 		renderer = Renderer::create(RendererType::DirectX);
 		window = renderer->createWindow(settings.getWindowWidth(), settings.getWindowHeight());
 
-		systemManager.initialize(&settings, &sceneManager, renderer);
+		ui_system.reset(new UiSystem(renderer, &inputManager, &settings));
+
+		DebugUiBuilder ui_builder;
+		ui_builder.build(ui_system.get());
+
+		systemManager.initialize(&settings, &sceneManager, renderer, ui_system.get());
 		sceneManager.loadSceneFromFile("test.scene");
 		initSystems();
 	}
@@ -60,12 +67,12 @@ public:
 
 			eventSystem->flush();
 			systemManager.update(dt);
-			
+			ui_system->update();
 			//minterface->update(dt);
 
-			InputManager::instance()->mouseMoveX = 0.0;
-			InputManager::instance()->mouseMoveY = 0.0;
-			InputManager::instance()->mouseMoveCnt = 0;
+			inputManager.mouseMoveX = 0.0;
+			inputManager.mouseMoveY = 0.0;
+			inputManager.mouseMoveCnt = 0;
 			window->pollEvents();
 
             dt = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - m_Start).count();

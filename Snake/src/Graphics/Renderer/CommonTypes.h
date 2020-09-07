@@ -104,3 +104,42 @@ enum class PrimitiveTopology {
 	TRIANGELIST,
 	TRIANGESTRIP,
 };
+
+enum class StencilOperation {
+	KEEP,
+	ZERO,
+	INCR,
+	DECR,
+	INCR_WRAP,
+	DECR_WRAP,
+	INVERT,
+	REPLACE
+};
+
+enum class BlendFunction {
+	ZERO,
+	ONE,
+	SRC_COLOR,
+	INV_SRC_COLOR,
+	SRC_APLHA,
+	INV_SRC_APLHA,
+	DEST_APLHA,
+	INV_DEST_APLHA,
+	DEST_COLOR,
+	INV_DEST_COLOR,
+	BLEND_FACTOR,
+	INV_BLEND_FACTOR
+};
+
+enum class BlendOperation {
+	ADD,
+	SUBTRACT,
+	REV_SUBTRACT,
+	MIN,
+	MAX
+};
+
+enum class DepthWriteMask {
+	ZERO,
+	ALL
+};

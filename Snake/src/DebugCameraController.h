@@ -31,15 +31,15 @@ public:
 
     void updateRpgCamera(Camera* camera, double dt)
     {
-		if (InputManager::instance()->instance()->isKeyPressed(87)) {
+		if (InputManager::instance()->isKeyPressed(87)) {
 			camera->Position -= glm::vec3(1.0f, 0.0, 0.0) * 4.0f * (float)dt / 1000.0f;
-		} else if (InputManager::instance()->instance()->isKeyPressed(83)) {
+		} else if (InputManager::instance()->isKeyPressed(83)) {
 			camera->Position += glm::vec3(1.0f, 0.0, 0.0) * 4.0f * (float)dt / 1000.0f;
 		}
 
-		if (InputManager::instance()->instance()->isKeyPressed(65)) {
+		if (InputManager::instance()->isKeyPressed(65)) {
 			camera->Position += glm::vec3(0.0f, 0.0, 1.0) * 4.0f * (float)dt / 1000.0f;
-		} else if (InputManager::instance()->instance()->isKeyPressed(68)) {
+		} else if (InputManager::instance()->isKeyPressed(68)) {
 			camera->Position -= glm::vec3(0.0f, 0.0, 1.0) * 4.0f * (float)dt / 1000.0f;
 		}
     }
@@ -55,15 +55,15 @@ public:
 		}
 
 
-		if (InputManager::instance()->instance()->isKeyPressed(87)) {
+		if (InputManager::instance()->isKeyPressed(87)) {
 			camera->Position -= camera->Front * 4.0f * (float)dt / 1000.0f;
-		} else if (InputManager::instance()->instance()->isKeyPressed(83)) {
+		} else if (InputManager::instance()->isKeyPressed(83)) {
 			camera->Position += camera->Front * 4.0f * (float)dt / 1000.0f;
 		}
 
-		if (InputManager::instance()->instance()->isKeyPressed(65)) {
+		if (InputManager::instance()->isKeyPressed(65)) {
 			camera->Position += camera->Right * 4.0f * (float)dt / 1000.0f;
-		} else if (InputManager::instance()->instance()->isKeyPressed(68)) {
+		} else if (InputManager::instance()->isKeyPressed(68)) {
 			camera->Position -= camera->Right * 4.0f * (float)dt / 1000.0f;
 		}
     }

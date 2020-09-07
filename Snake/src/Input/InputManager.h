@@ -1,6 +1,11 @@
 #pragma once
 
-class InputManager {
+#include <assert.h>
+
+struct MousePos { double x, y; };
+
+class InputManager 
+{
 public:
 	double mousePosX = 0.0;
 	double mousePosY = 0.0;
@@ -13,8 +18,10 @@ private:
 	bool mouseButton[5];
 
 	static InputManager* _instance;
-private:
+public:
 	InputManager() {
+		assert(_instance == nullptr && "Cant create more than one input manager");
+		_instance = this;
 		for (int i = 0; i < 348; i++) {
 			keyboardKeys[i] = false;
 		}
@@ -22,18 +29,14 @@ private:
 			mouseButton[i] = false;
 		}
 	}
-public:
-	static InputManager* instance() {
-		if (_instance == nullptr) {
-			_instance = new InputManager();
-		}
-		return _instance;
-	}
+	
+	static InputManager* instance() { return _instance; }
 
 	inline bool isKeyPressed(int keyCode) { return keyboardKeys[keyCode]; }
 	inline void setKeyPressed(int keyCode, bool state) { keyboardKeys[keyCode] = state; }
 	inline bool isMouseKeyPressed(int mouseCode) { return mouseButton[mouseCode]; }
 	inline void setMouseKeyPressed(int mouseCode, bool state) { mouseButton[mouseCode] = state; }
+	inline MousePos getMousePoistion() const { return { mousePosX, mousePosY }; }
 
 	void setCursorPosition(double x, double y) {
 		mouseMoveCnt++;

@@ -31,6 +31,7 @@
 #include "ApplicationSettings.h"
 #include "Graphics/RenderQueue/RenderQueue.h"
 #include <GridSystem.h>
+#include "UI/UiSystem.h"
 
 #include "RenderSystem/RenderSystemResourceManager.h"
 #include "RenderSystem/RenderGraphBuilder.h"
@@ -48,6 +49,7 @@ public:
 	RenderQueue* renderQueue;
 	DebugCameraController cameraController;
 	RenderGraph* renderGraph;
+	UiSystem* ui_system;
 
 	GridSystem gridSystem;
     PhysicsSystem* physicsSystem;
@@ -65,9 +67,9 @@ public:
 	bool useDebugCamera = true;
 	DebugHelper debug;
 public:
-	RenderSystem(SceneManager* sceneManager, ApplicationSettings* settings, PhysicsSystem* physics, Renderer* renderer):
+	RenderSystem(SceneManager* sceneManager, ApplicationSettings* settings, PhysicsSystem* physics, Renderer* renderer, UiSystem* ui):
 		ISystem(sceneManager), physicsSystem(physics), renderer(renderer), context(renderer->getContext()),
-		eventSystem(eventSystem)
+		ui_system(ui), eventSystem(eventSystem)
 	{
 		renderQueue = new RenderQueue();
 		// Debug camera initialization
@@ -78,6 +80,7 @@ public:
 
 		resources = resourceManager.initialize(renderer, settings);
 		resources->point_repeat_sampler->bind(context);
+		resources->linear_clamp_sampler->bind(context);
 
 		RenderGraphBuilder renderGraphBuilder;
 		renderGraph = renderGraphBuilder.build(renderQueue, renderer, resources);
@@ -92,6 +95,7 @@ public:
 
 	virtual void update(double dt) override
 	{
+		renderer->setDefaultDepthStencil();
 		entt::registry* registry = sceneManager->getCurrentScene()->getRegistry();
 
 		glm::mat4 lightProjection, lightView;
@@ -125,11 +129,12 @@ public:
         renderGraph->execute(sceneManager->getCurrentScene());
 		//renderQueue->present();
 
-		debug.renderTexture(0.0f, 0.0f, 0.5f, 0.5f, resources->textures["positions"].get());
-		debug.renderFont("Dt: " + std::to_string(dt), 0.0f, 0.97f);
-		debug.renderFont("Draw calls: " + std::to_string(renderer->getContext()->getDrawCallCount()), 0.0f, 0.94f);
+		//debug.renderTexture(0.0f, 0.0f, 0.5f, 0.5f, resources->textures["positions"].get());
+		
 		//debug.renderFont("Settings", 0.435f, 0.45f);
 		//debug.renderFont("Exit", 0.45f, 0.4f);
+		ui_system->render();
+		debug.renderFont("Dt: " + std::to_string(dt) + "   Draw calls: " + std::to_string(renderer->getContext()->getDrawCallCount()), 0.88f, 0.002f, 0.5f);
 
 		renderer->swapBuffers();
 

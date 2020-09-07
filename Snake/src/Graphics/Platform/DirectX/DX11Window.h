@@ -49,7 +49,7 @@ public:
 		windowRect.bottom = height + windowRect.top;
 		AdjustWindowRect(&windowRect, WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU, FALSE);
 
-		int styles = WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU | WS_THICKFRAME;
+		int styles = WS_POPUP | WS_MINIMIZEBOX | WS_SYSMENU | WS_THICKFRAME;
 
 		hWnd = CreateWindow("SnakeWindowClass", "Hollow", styles,
 			windowRect.left, windowRect.top,
@@ -64,7 +64,7 @@ public:
 		Rid[0].hwndTarget = 0;
 
 		RegisterRawInputDevices(Rid, 1, sizeof(Rid[0]));
-		ShowWindow(hWnd, SW_SHOW); // SW_SHOWMAXIMIZED
+		ShowWindow(hWnd, SW_SHOWMAXIMIZED);
 		UpdateWindow(hWnd);
 		//ShowCursor(true);
 	}
